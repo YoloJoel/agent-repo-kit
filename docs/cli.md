@@ -1,8 +1,13 @@
 # CLI reference
 
-All commands emit JSON. Put `--repo <path>` before the subcommand, or run within a
-consumer repository/subdirectory. The vendored equivalent is `python hack/ai/ark.py`.
-Python 3.11+ is required. Commands never invoke a model automatically.
+Recommended onboarding is Agent-led from START_HERE.md, with `python <toolkit>/bootstrap.py
+<target>` and no package installation. It enables local hooks, detects GitHub CI, diagnoses
+the scaffold and tells the Agent which semantic work remains. The source is disposable.
+
+All commands emit JSON. Examples use `ark` as shorthand for the default vendored command
+`python hack/ai/ark.py`; installing a global CLI is optional. Put `--repo <path>` before the
+subcommand, or run within a consumer repository/subdirectory. Python 3.11+ is required.
+Deterministic commands never invoke a model automatically.
 
 | Command | Purpose |
 | --- | --- |

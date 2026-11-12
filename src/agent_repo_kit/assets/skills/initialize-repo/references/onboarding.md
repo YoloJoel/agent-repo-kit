@@ -13,8 +13,13 @@ Configure confirmed checks using argv arrays, for example:
 `{python}` is the current interpreter. Use manual/external check types for outside evidence.
 Commands never run via a shell; unavailable commands remain NOT_RUN.
 
-Hook commands require installed `ark` on PATH once per environment. Vendored commands
-work without global installation. Codex/Claude Hook JSON is merged and trust is runtime-owned.
+Prefer bootstrap.py and Agent-led onboarding from START_HERE.md. Package installation is
+optional. Hook commands find the target's vendored runtime from cwd/parents and use Python,
+so neither a global ark nor the original toolkit checkout is required. Codex/Claude Hook
+JSON is merged and trust is runtime-owned. Existing global-ark hook entries are migrated
+without deleting user hooks. On another OS/environment, the Agent can rerun bootstrap to
+repair its Python command; this does not require repeating semantic analysis.
 OpenCode gets native skills; lifecycle hooks are not implemented. Explicit upgrades use
-`ark init --upgrade`; edited managed files cause conflicts. Keep custom AGENTS content
+the selected source's `bootstrap.py <target> --upgrade`; an updated global CLI is an
+optional alternative. Edited managed files cause conflicts. Keep custom AGENTS content
 outside managed blocks. Inspect the recorded PID before removing a stale runtime lock.

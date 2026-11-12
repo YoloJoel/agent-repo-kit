@@ -1,7 +1,8 @@
 ## Agent Repo Kit workflow
 
-Use the user's language for explanations and documents. Work from the repository root;
-use `python hack/ai/ark.py` if the global `ark` command is unavailable.
+Use the user's language for explanations and documents. Work from the repository root.
+Run `python hack/ai/ark.py` for every example below written as `ark`; global installation
+is optional. Use the available Python 3.11+ interpreter (`python3` or `py -3` if needed).
 
 - Read `docs/engineering-standard.md` and `.ai/policy.json` when workflow details matter.
 - For onboarding or an explicit toolkit upgrade, use **initialize-repo**.

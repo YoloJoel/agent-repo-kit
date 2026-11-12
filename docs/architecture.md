@@ -16,6 +16,11 @@ tests exercise boundaries through disposable repositories and actual subprocesse
 
 ## Installation
 
+START_HERE.md is the Agent's first-use entry. bootstrap.py imports source directly with no
+pip/global installation, selects routine defaults and returns the next semantic action.
+Generated hooks locate the target's vendored runtime rather than requiring an installed
+CLI or the original toolkit checkout. The advanced package entry shares the same engine.
+
 Preflight managed targets; merge a tagged AGENTS block and structured Hook JSON, retain
 unmanaged documents. Record owned digests in manifest and preserve human content exactly
 outside managed blocks. Roll back only writes performed by the failed transaction. Version

@@ -306,6 +306,29 @@ def fingerprint(root, p, change=None):
     return digest(dump(files).encode())
 
 
+def hook_command(action, agent):
+    """A repository-relative launcher: no installed ark or toolkit checkout required."""
+    interpreter = "python" if os.name == "nt" else "python3"
+    code = (
+        "import pathlib,runpy,sys;agent_repo_kit_hook_v1=True;"
+        "p=pathlib.Path.cwd();"
+        "r=next((q for q in (p,*p.parents) if (q/'.ai/policy.json').is_file()),None);"
+        "r is None and sys.exit(0);"
+        "sys.argv=[str(r/'hack/ai/ark.py'),*sys.argv[1:]];"
+        "runpy.run_path(sys.argv[0],run_name='__main__')"
+    )
+    return f'{interpreter} -X utf8 -c "{code}" hook {action} --agent {agent}'
+
+
+def is_kit_hook(command, action, agent):
+    if not isinstance(command, str):
+        return False
+    return command == f"ark hook {action} --agent {agent}" or (
+        "agent_repo_kit_hook_v1=True" in command
+        and command.endswith(f" hook {action} --agent {agent}")
+    )
+
+
 def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=False):
     root.mkdir(parents=True, exist_ok=True)
     if agents is not None and (not agents or any(a not in AGENT_DIRS for a in agents)):
@@ -389,7 +412,7 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
         for relative, content in defaults.items():
             if not safe(root, relative).exists():
                 writes[relative] = content
-        if hooks:
+        if hooks or old_manifest.get("hooks_requested", False):
             for agent, relative in (("codex", ".codex/hooks.json"), ("claude", ".claude/settings.json")):
                 if agent not in p["agents"]:
                     continue
@@ -398,12 +421,26 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
                     raise KitError(f"Cannot merge hook configuration: {relative}")
                 hooks_map = config.setdefault("hooks", {})
                 for event, action in (("SessionStart", "session"), ("Stop", "stop")):
-                    command = f"ark hook {action} --agent {agent}"
+                    command = hook_command(action, agent)
                     entries = hooks_map.setdefault(event, [])
                     if not isinstance(entries, list):
                         raise KitError(f"{relative}: hooks.{event} must be an array")
-                    if not any(h.get("command") == command for entry in entries for h in entry.get("hooks", [])):
-                        entries.append({"hooks": [{"type": "command", "command": command, "timeout": 15}]})
+                    found = False
+                    merged_entries = []
+                    for entry in entries:
+                        handlers = []
+                        for handler in entry.get("hooks", []):
+                            if is_kit_hook(handler.get("command"), action, agent):
+                                if not found:
+                                    handlers.append({**handler, "command": command})
+                                    found = True
+                            else:
+                                handlers.append(handler)
+                        if handlers or not entry.get("hooks"):
+                            merged_entries.append({**entry, "hooks": handlers})
+                    if not found:
+                        merged_entries.append({"hooks": [{"type": "command", "command": command, "timeout": 15}]})
+                    hooks_map[event] = merged_entries
                 writes[relative] = dump(config)
         if ci:
             managed(".github/workflows/ark-verify.yml", (ASSETS / "consumer-ci.yml").read_bytes())
@@ -869,7 +906,7 @@ def doctor(root, p):
             config_path = ".codex/hooks.json" if agent == "codex" else ".claude/settings.json"
             settings = read_json(safe(root, config_path), {})
             hooks_map = settings.get("hooks", {})
-            configured = all(any(h.get("command") == f"ark hook {action} --agent {agent}" for entry in hooks_map.get(event, []) for h in entry.get("hooks", [])) for event, action in (("SessionStart", "session"), ("Stop", "stop")))
+            configured = all(any(is_kit_hook(h.get("command"), action, agent) for entry in hooks_map.get(event, []) for h in entry.get("hooks", [])) for event, action in (("SessionStart", "session"), ("Stop", "stop")))
         adapters.append({"agent": agent, "executable": executable, "skill_files": all(safe(root, AGENT_DIRS[agent] + "/" + skill + "/SKILL.md").is_file() for skill in SKILLS), "live_loading": "NOT_VERIFIED", "hook_trust": "NOT_VERIFIED", "hooks": ("CONFIGURATION_ONLY" if configured else "NOT_CONFIGURED") if agent in {"codex", "claude"} else "NOT_IMPLEMENTED"})
     return {"status": overall(findings, []), "kit_version": VERSION, "mode": p["mode"], "python": sys.version.split()[0], "git": shutil.which("git"), "ark_on_path": shutil.which("ark"), "findings": findings, "adapters": adapters, "branch_protection": "NOT_VERIFIED", "checks_configured": len(p["checks"]), "unconfirmed_command_candidates": [x for x in p.get("command_candidates", []) if not x.get("confirmed", False)], "baseline_findings": baseline_findings(root, p)}
 

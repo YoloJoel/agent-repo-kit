@@ -5,6 +5,22 @@
 Generic repository initialization and continuing AI-assisted engineering. Skills own
 semantic work; the CLI owns deterministic scaffolding, references, checks and evidence.
 
+### Requirement: Onboard without a global package installation (REQ-ONBOARD-001)
+
+Verification: automated and workflow review
+
+The recommended entry SHALL let the Agent bootstrap a complete toolkit snapshot into the
+target without pip, a virtual environment or a global ark executable. Generated hooks
+SHALL use the target's vendored runtime and remain usable after the toolkit source is removed.
+Existing owned global-command hooks SHALL migrate without losing unrelated user handlers.
+
+#### Scenario: Dispose of the toolkit after initialization
+
+- GIVEN a target and a temporary complete toolkit snapshot
+- WHEN the Agent bootstraps without installed packages and removes the snapshot
+- THEN generated hooks work from nested target directories and semantic onboarding
+  remains an explicit Agent task rather than being falsely reported complete
+
 ### Requirement: Preserve existing repository assets (REQ-INIT-001)
 
 Verification: automated

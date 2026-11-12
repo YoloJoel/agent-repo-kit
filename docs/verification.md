@@ -5,16 +5,30 @@ actual execution, not a claim that every runtime/operating system has been exerc
 
 | Validation | Actual result |
 | --- | --- |
-| Source workflow suite | 35 tests PASS |
-| Installed-wheel workflow suite | The same 35 tests PASS using only the installed distribution |
+| Source workflow suite | 40 tests PASS, including no-install/bootstrap workflows |
+| Installed-wheel workflow suite | The same 40 tests PASS using the installed distribution and repository bootstrap entry |
 | Wheel build | PASS; dependency-free Python wheel built from this implementation |
 | Official Skill frontmatter/name validation | All 3 Skills PASS |
 | Shipped JSON schemas | Both parse successfully |
-| Current requirement/test navigation | All 6 current requirements referenced by meaningful workflow tests |
+| Current requirement/test navigation | All 7 current requirements referenced by meaningful workflow tests |
 | Installed CLI entry point | `ark --version` returns 0.1.0 |
 | Installed generated-Hook smoke | Fresh init/repeat init, nested-cwd SessionStart via `ark` on PATH, consumer CI resource: PASS |
 | Existing-repository agent exercise | PASS; source-grounded baseline, actual tests, preserved assets and repeat initialization |
 | New-repository agent exercise | PASS through reviewed synchronization, real tests, delivery, archive and post-archive CI |
+
+## No-install Agent entry exercise
+
+A fresh independent Agent followed START_HERE.md on an existing Python fixture, without
+pip, a virtual environment or a global ark command. It bootstrapped with the source entry,
+preserved human instructions/dirty README/source/tests, documented actual behavior and
+contracts, reviewed all eight inventory files and ran six real tests. Baseline validation,
+doctor and structural verification passed. The exact generated SessionStart command worked
+from a nested directory with PYTHONPATH empty. No user installation steps were needed.
+
+Automated bootstrap tests additionally run with Python `-I -S` to disable installed-package
+loading, delete the toolkit checkout before invoking generated hooks, migrate legacy owned
+hooks while preserving user settings, detect GitHub CI automatically and distinguish failed
+diagnostics from successful scaffolding. Live host loading/trust remain separately unverified.
 
 ## Existing repository exercise
 

@@ -6,40 +6,36 @@ Reusable skills, templates, hooks, and checks for AI-driven software development
 按任务维护事实、规格、实现和验证证据。** 支持新仓、存量仓、已有部分 AGENTS/OpenSpec/CI
 的仓库。Python 3.11+，运行时仅使用标准库，无模型 API、常驻服务或必需的 MCP。
 
-## 安装与第一次使用
+## 推荐用法：给 Agent 一次接入指令
 
-在本工具包的克隆目录安装一次：
+在你准备接入的业务仓库中，将下面这段发给 Coding Agent：
 
-```bash
-python -m pip install .
-ark --version
+```text
+请读取 https://github.com/YoloJoel/agent-repo-kit/blob/codex/bootstrap-agent-repo-kit/START_HERE.md，
+按其中流程将当前仓库接入这套工程范式。自动完成初始化、相关现状梳理和检查，
+保留已有规则、OpenSpec 和未提交修改；不要把安装步骤转交给我执行。
 ```
 
-初始化一个业务仓库：
+当前链接指向 PR #1 的实现分支。[START_HERE.md](START_HERE.md) 是 Agent 的完整入口，
+它负责获取工具包、识别新仓/存量仓、运行接入脚本、配置规则和 Hook，再继续源码取证与检查。
+后续你直接描述开发目标，Agent 使用仓内规则和 deliver-change 工作流接续。
+
+**不需要先装包、建虚拟环境、配置 PATH 或手动选择一串初始化参数。** CLI 的 PASS 只表示
+脚手架成功，Agent 仍须继续实际 Baseline/验证，不能把目录生成冒充现状分析完成。
+Python 3.11+ 是运行条件；Agent 会先查找现有解释器。运行器自身的 Hook 信任仍按实际环境确认。
+
+如果你已经有工具包的本地目录，也可以只执行一条命令：
 
 ```bash
-ark init /path/to/project
-# 如需安装 Codex/Claude Hook 配置和 GitHub CI 模板：
-ark init /path/to/project --hooks --ci github
-ark --repo /path/to/project doctor
+python /path/to/agent-repo-kit/bootstrap.py /path/to/project
 ```
 
-Windows 可以使用本机 Python/`py` 安装；后续 `ark` 命令相同。初始化自动识别新仓/存量仓，
-也支持 `--mode new`、`--mode existing` 和 `--agents codex,claude,opencode`。
+它默认配置仓内 Hook，并在检测到 GitHub origin 时加入 CI 模板。特殊场景才需要
+`--agents`、`--no-hooks`、`--ci none` 等可选参数。源码目录用完可以删除，后续命令和 Hook
+直接调用业务仓库中的执行内核，不依赖全局 `ark` 或原工具包目录。
 
-初始化完成后，让 Agent 继续执行 `initialize-repo`：确认真实检查命令，存量仓完成
-`baseline-repo` 的源码取证；然后直接提出普通开发任务，由 `deliver-change` 接续。
-CLI 的 PASS 只表示脚手架成功，**不会把目录生成冒充现状分析完成**。
-
-初始化会将执行内核和资源放进业务仓库；即使没有安装全局命令，也可运行：
-
-```bash
-python hack/ai/ark.py doctor
-python hack/ai/ark.py verify --phase structure
-```
-
-业务仓库可以和工具包分离、离线使用。新克隆不必重做基线分析；每台开发机需要自己的 Python，
-若启用 Hook 还需让 `ark` 在 PATH 上并完成运行器的信任设置。
+下文中的 `ark ...` 是命令简写，Agent 默认运行 `python hack/ai/ark.py ...`；按实际环境
+可使用 `python3` 或 Windows 的 `py -3`。全局 CLI 安装仅是可选用法。
 
 ## 三个 Skill
 
@@ -187,8 +183,17 @@ ark context --session actual-session-id
 
 ## 升级与开发
 
-更新本机套件后显式执行 `ark init . --upgrade`。初始化记录管理文件摘要，人工修改会成为
+升级时让 Agent 用所选版本的 `bootstrap.py <target> --upgrade` 更新。初始化记录管理文件摘要，人工修改会成为
 可定位冲突。公共版本迁移、仓内定制和运行器信任分别处理，不在每次会话启动自动拉取最新版。
+
+如果你偏好全局命令，可选安装：
+
+```bash
+python -m pip install .
+ark init /path/to/project --hooks --ci github
+```
+
+工具包开发和测试：
 
 ```bash
 python -m pip install -e .
