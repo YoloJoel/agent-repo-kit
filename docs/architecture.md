@@ -1,7 +1,8 @@
 # Architecture
 
-The product is a Python distribution plus versioned repository assets. `ark init` vendors
-the same runtime/resources into a consumer, so agent rules, direct CLI and CI share behavior.
+The product is a native Claude plugin plus standard standalone Skill folders, with an
+optional Python developer distribution. Project initialization vendors the same runtime/
+resources into a consumer, so agent rules, direct CLI and CI share behavior.
 The single self-contained runtime is deliberate for a dependency-free consumer installation;
 tests exercise boundaries through disposable repositories and actual subprocesses.
 
@@ -16,10 +17,15 @@ tests exercise boundaries through disposable repositories and actual subprocesse
 
 ## Installation
 
-START_HERE.md is the Agent's first-use entry. bootstrap.py imports source directly with no
-pip/global installation, selects routine defaults and returns the next semantic action.
-Generated hooks locate the target's vendored runtime rather than requiring an installed
-CLI or the original toolkit checkout. The advanced package entry shares the same engine.
+The host installs the plugin or three Skill folders once. The installed initialize-repo
+Skill resolves its own scripts/initialize.py and uses its bundled engine/resources, without
+another checkout, URL guide, package installation or bootstrap. It initializes the target
+and leaves Skill lifecycle to the host rather than copying duplicates into each project.
+Generated hooks use the target's vendored runtime. Source bootstrap is compatibility only.
+
+Root skills/ artifacts are generated from canonical WORKFLOW.md sources, the runtime and
+assets. One initialized Skill folder is self-contained; its checksum-bound text resource
+bundle avoids external relative paths and hidden nested SKILL discovery. CI checks drift.
 
 Preflight managed targets; merge a tagged AGENTS block and structured Hook JSON, retain
 unmanaged documents. Record owned digests in manifest and preserve human content exactly

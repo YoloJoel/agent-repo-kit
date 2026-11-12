@@ -5,6 +5,10 @@ description: Establish or refresh a source-grounded explanation of an existing r
 
 # Explain and verify current behavior
 
+If the target lacks `.ai/policy.json` or `hack/ai/ark.py`, invoke the installed
+initialize-repo Skill first. Its bundled helper requires no source checkout or package
+installation. After that, run `python hack/ai/ark.py` for examples written as `ark`.
+
 1. Read policy, baseline index and relevant manuals as navigation/candidate evidence.
    Inspect actual source/config/tests for important claims and contradictory information.
 2. Run `ark baseline inventory`. Inspect coverage.json and classify source, generated/

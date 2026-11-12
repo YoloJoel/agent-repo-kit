@@ -1,6 +1,6 @@
 # 0003: Agent-led onboarding without global package installation
 
-Status: Accepted
+Status: Superseded by ADR-0004
 
 ## Context
 

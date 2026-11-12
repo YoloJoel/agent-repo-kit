@@ -4,8 +4,14 @@ This repository builds a generic toolkit; keep business domains, programming lan
 model providers and runtime adapters separate. The user's requested scope takes priority.
 
 - Runtime implementation: `src/agent_repo_kit/core.py`, Python 3.11+ standard library only.
-- Distribution assets: `src/agent_repo_kit/assets/`. Skills are shipped into consumer repos;
+- Distribution assets: `src/agent_repo_kit/assets/`. Native installers manage Skills;
+  project initialization writes rules/runtime and preserves installer-owned folders;
   editing these does not install a personal ChatGPT skill or authorize changing global settings.
+- Native release: root `skills/` plus `.claude-plugin/`; regenerate using
+  `python tools/build_native.py` after runtime/workflow/resource changes, and check with
+  `python tools/build_native.py --check`. Never hand-edit generated native resources.
+- Workflow sources are `assets/skills/*/WORKFLOW.md`; root SKILL.md files are generated.
+  Installed plugin/Skills are the primary user entry; source bootstrap remains compatibility.
 - Behavioral promises: `openspec/specs/toolkit/spec.md`. Architecture choices: `docs/adr/`.
 - Reuse current source, specifications and actual execution results; distinguish planned
   adapter support from implemented configuration/protocol/live-runtime verification.

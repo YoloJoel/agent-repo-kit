@@ -6,36 +6,57 @@ Reusable skills, templates, hooks, and checks for AI-driven software development
 按任务维护事实、规格、实现和验证证据。** 支持新仓、存量仓、已有部分 AGENTS/OpenSpec/CI
 的仓库。Python 3.11+，运行时仅使用标准库，无模型 API、常驻服务或必需的 MCP。
 
-## 推荐用法：给 Agent 一次接入指令
+## 安装：Claude 用 plugin，其他工具装 Skills
 
-在你准备接入的业务仓库中，将下面这段发给 Coding Agent：
+**工具安装一次，每个业务仓库调用一次初始化 Skill，之后直接描述开发任务。**
+初始化脚本和模板已经随 Skill 打包，无需读入口网址、下载工具源码、安装 Python 包或执行 bootstrap。
+Python 3.11+ 是执行检查脚本的运行条件，Agent 会先检测；运行器自身的信任由实际环境处理。
+
+### Claude Code
+
+当前代码在 PR #1 分支，可在 Claude Code 中原生安装：
 
 ```text
-请读取 https://github.com/YoloJoel/agent-repo-kit/blob/codex/bootstrap-agent-repo-kit/START_HERE.md，
-按其中流程将当前仓库接入这套工程范式。自动完成初始化、相关现状梳理和检查，
-保留已有规则、OpenSpec 和未提交修改；不要把安装步骤转交给我执行。
+/plugin install agent-repo-kit --marketplace YoloJoel/agent-repo-kit#codex/bootstrap-agent-repo-kit
 ```
 
-当前链接指向 PR #1 的实现分支。[START_HERE.md](START_HERE.md) 是 Agent 的完整入口，
-它负责获取工具包、识别新仓/存量仓、运行接入脚本、配置规则和 Hook，再继续源码取证与检查。
-后续你直接描述开发目标，Agent 使用仓内规则和 deliver-change 工作流接续。
+不支持单步 marketplace 安装的版本可以使用常规两步：
 
-**不需要先装包、建虚拟环境、配置 PATH 或手动选择一串初始化参数。** CLI 的 PASS 只表示
-脚手架成功，Agent 仍须继续实际 Baseline/验证，不能把目录生成冒充现状分析完成。
-Python 3.11+ 是运行条件；Agent 会先查找现有解释器。运行器自身的 Hook 信任仍按实际环境确认。
+```text
+/plugin marketplace add YoloJoel/agent-repo-kit#codex/bootstrap-agent-repo-kit
+/plugin install agent-repo-kit@agent-repo-kit
+```
 
-如果你已经有工具包的本地目录，也可以只执行一条命令：
+进入业务仓库，调用一次：
+
+```text
+/agent-repo-kit:initialize-repo
+```
+
+该 Skill 自动识别新仓/存量仓，建立规则与检查，并继续必要的源码 Baseline。
+插件还提供 `/agent-repo-kit:baseline-repo`、`/agent-repo-kit:deliver-change`。
+安装插件本身不会静默修改每个打开的仓库。
+
+### Codex / OpenCode 等
+
+用你现有的 Skills 安装器安装本仓库的三个标准 Skill 目录即可。也可以使用通用 Skills CLI：
 
 ```bash
-python /path/to/agent-repo-kit/bootstrap.py /path/to/project
+npx skills add https://github.com/YoloJoel/agent-repo-kit/tree/codex/bootstrap-agent-repo-kit --skill "*" -a codex -g
 ```
 
-它默认配置仓内 Hook，并在检测到 GitHub origin 时加入 CI 模板。特殊场景才需要
-`--agents`、`--no-hooks`、`--ci none` 等可选参数。源码目录用完可以删除，后续命令和 Hook
-直接调用业务仓库中的执行内核，不依赖全局 `ark` 或原工具包目录。
+OpenCode 将 `-a codex` 换成 `-a opencode`；也可以用原生安装器或手动复制整个 Skill 文件夹。
+安装器选项属于所选工具，Python 运行内核没有 Node/npm 依赖。
 
-下文中的 `ark ...` 是命令简写，Agent 默认运行 `python hack/ai/ark.py ...`；按实际环境
-可使用 `python3` 或 Windows 的 `py -3`。全局 CLI 安装仅是可选用法。
+在 Codex 的业务仓库中调用 `$initialize-repo`，在其他工具中调用或要求使用
+`initialize-repo` Skill。之后正常提出功能、修复或重构任务。
+
+合入 main 后，安装源可简写为 `YoloJoel/agent-repo-kit`；当前示例明确选择 PR 分支。
+无需把 Skills 再复制到每个业务仓库：初始化会记录使用已安装的 Skills，只留下仓内规则、
+知识、规格与验证内核。以后换会话仍可依赖这些持久资产接续。
+
+下文 `ark ...` 是命令简写，Agent 实际使用 `python hack/ai/ark.py ...`，无需全局 CLI。
+源码 bootstrap 和 pip 安装仅保留为开发/兼容入口，见 [开发说明](#升级与开发)。
 
 ## 三个 Skill
 
@@ -45,9 +66,11 @@ python /path/to/agent-repo-kit/bootstrap.py /path/to/project
 | `baseline-repo` | 解释实际模块/完整流程、外部契约、状态与异常，记录源码证据/覆盖/缺口 |
 | `deliver-change` | 分析影响、保留必要行为、规格/设计/实现/测试、同步与实际验证 |
 
-Skill 源码位于 `src/agent_repo_kit/assets/skills/`。初始化复制到选择的运行器发现目录，
-这些生成副本由清单看护；修改公共流程应在工具包中完成，再显式升级消费仓。
-Skill 是模型执行的工作流，Python 内核负责确定性检查，两者职责分别清楚。
+原生安装包位于 `skills/`，Claude 元数据位于 `.claude-plugin/`。三个 Skill 可直接安装；
+`initialize-repo` 自带初始化助手、执行内核和文本资源包，只复制这个完整文件夹也能执行初始化。
+平台负责发现/更新 Skills；初始化不会覆盖安装器管理的副本。底层工作流源文件位于
+`src/agent_repo_kit/assets/skills/*/WORKFLOW.md`，由 `tools/build_native.py` 生成发布目录。
+Skill 负责模型执行流程，Python 内核负责确定性检查。
 
 ## 仓内资产
 
@@ -183,10 +206,17 @@ ark context --session actual-session-id
 
 ## 升级与开发
 
-升级时让 Agent 用所选版本的 `bootstrap.py <target> --upgrade` 更新。初始化记录管理文件摘要，人工修改会成为
+正常使用先通过 plugin/Skills 安装器更新，再调用初始化 Skill 做显式仓内升级。它使用自身携带的
+助手和 `--upgrade`，用户不用定位脚本。初始化记录管理文件摘要，人工修改会成为
 可定位冲突。公共版本迁移、仓内定制和运行器信任分别处理，不在每次会话启动自动拉取最新版。
 
-如果你偏好全局命令，可选安装：
+源码开发的兼容入口：
+
+```bash
+python bootstrap.py /path/to/project
+```
+
+开发者若偏好全局命令，可以选择安装：
 
 ```bash
 python -m pip install .
@@ -197,6 +227,8 @@ ark init /path/to/project --hooks --ci github
 
 ```bash
 python -m pip install -e .
+python tools/build_native.py
+python tools/build_native.py --check
 python -m unittest discover -s tests -v
 python -m pip wheel --no-deps --no-build-isolation .
 ```

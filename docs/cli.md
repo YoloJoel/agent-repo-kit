@@ -1,8 +1,9 @@
 # CLI reference
 
-Recommended onboarding is Agent-led from START_HERE.md, with `python <toolkit>/bootstrap.py
-<target>` and no package installation. It enables local hooks, detects GitHub CI, diagnoses
-the scaffold and tells the Agent which semantic work remains. The source is disposable.
+Normal onboarding invokes the installed initialize-repo Skill, namespaced as
+`/agent-repo-kit:initialize-repo` in Claude Code. Its bundled helper needs no checkout,
+URL guide, package installation or bootstrap. It sets skill_delivery=installed and does
+not duplicate host-managed Skills in the target. Source bootstrap remains compatibility.
 
 All commands emit JSON. Examples use `ark` as shorthand for the default vendored command
 `python hack/ai/ark.py`; installing a global CLI is optional. Put `--repo <path>` before the

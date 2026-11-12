@@ -9,6 +9,7 @@
     "mode": {"enum": ["new", "existing"]},
     "agents": {"type": "array", "uniqueItems": true, "items": {"enum": ["codex", "claude", "opencode"]}},
     "hook_mode": {"enum": ["advisory", "enforce"]},
+    "skill_delivery": {"enum": ["repository", "installed"]},
     "paths": {
       "type": "object",
       "required": ["baseline", "specs", "changes", "adr", "templates"],

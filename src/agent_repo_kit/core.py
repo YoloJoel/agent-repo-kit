@@ -182,6 +182,8 @@ def policy_at(root):
         raise KitError("policy.paths must be an object")
     if p.get("hook_mode", "advisory") not in {"advisory", "enforce"}:
         raise KitError("policy.hook_mode must be advisory or enforce")
+    if p.get("skill_delivery", "repository") not in {"repository", "installed"}:
+        raise KitError("policy.skill_delivery must be repository or installed")
     if not isinstance(p.get("agents", []), list) or any(a not in AGENT_DIRS for a in p.get("agents", [])):
         raise KitError("policy.agents must contain supported adapter IDs")
     for key in ("baseline", "specs", "changes", "adr", "templates"):
@@ -277,7 +279,7 @@ def default_policy(mode, agents):
         "$schema": "../hack/ai/assets/policy.schema.json", "schema_version": 1, "kit_version": VERSION, "mode": mode,
         "agents": sorted(set(agents)), "source_paths": ["."], "test_paths": ["tests", "src/test"],
         "paths": {"baseline": "docs/baseline", "specs": "openspec/specs", "changes": "openspec/changes", "adr": "docs/adr", "templates": "docs/templates"},
-        "exclude": [".ai", "hack/ai", ".agents/skills", ".claude/skills", ".opencode/skills", "docs/baseline", "docs/templates", "openspec/changes"],
+        "exclude": [".ai", "hack/ai", ".agents/skills", ".claude/skills", ".opencode/skills", "skills-lock.json", "docs/baseline", "docs/templates", "openspec/changes"],
         "checks": [], "requirements": {}, "command_candidates": [], "hook_mode": "advisory",
     }
 
@@ -329,7 +331,7 @@ def is_kit_hook(command, action, agent):
     )
 
 
-def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=False):
+def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=False, copy_skills=None):
     root.mkdir(parents=True, exist_ok=True)
     if agents is not None and (not agents or any(a not in AGENT_DIRS for a in agents)):
         raise KitError("Supported adapters: codex, claude, opencode")
@@ -354,6 +356,9 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
                 if (root / marker).is_file():
                     candidates.append({"marker": marker, "argv": argv, "confirmed": False})
             p["command_candidates"] = candidates
+        if copy_skills is None:
+            copy_skills = p.get("skill_delivery", "repository") == "repository"
+        p["skill_delivery"] = "repository" if copy_skills else "installed"
         writes = {POLICY: dump(p)}
         owned = dict(old_manifest.get("files", {}))
 
@@ -387,12 +392,15 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
         ignore_text = ignore_path.read_bytes().decode("utf-8") if ignore_path.exists() else ""
         if ".ai/runtime/" not in ignore_text.splitlines():
             writes[".gitignore"] = ignore_text + ("\n" if ignore_text and not ignore_text.endswith("\n") else "") + "# Agent Repo Kit local evidence, locks, and session pointers\n.ai/runtime/\n"
-        for agent in p["agents"]:
-            for skill in SKILLS:
-                for path in sorted((ASSETS / "skills" / skill).rglob("*")):
-                    if path.is_file():
-                        relative = path.relative_to(ASSETS / "skills" / skill).as_posix()
-                        managed(f"{AGENT_DIRS[agent]}/{skill}/{relative}", path.read_bytes())
+        if copy_skills:
+            for agent in p["agents"]:
+                for skill in SKILLS:
+                    for path in sorted((ASSETS / "skills" / skill).rglob("*")):
+                        if path.is_file():
+                            relative = path.relative_to(ASSETS / "skills" / skill).as_posix()
+                            if relative == "WORKFLOW.md":
+                                relative = "SKILL.md"
+                            managed(f"{AGENT_DIRS[agent]}/{skill}/{relative}", path.read_bytes())
         if "claude" in p["agents"]:
             path = safe(root, "CLAUDE.md")
             text = path.read_bytes().decode("utf-8") if path.exists() else ""
@@ -453,6 +461,28 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
         report = {"status": "PASS", "meaning": "Scaffolding installed; no semantic baseline or runtime hook trust is asserted.", "mode": p["mode"], "changed": changed, "changed_scope": "Installation/configuration assets; excludes this generated report and baseline/runtime observations.", "baseline": baseline_status, "checks": "NOT_RUN", "hook_trust": "NOT_VERIFIED", "branch_protection": "NOT_VERIFIED", "kit_version": VERSION}
         atomic(safe(root, ".ai/init-report.json"), dump(report))
         return report
+
+
+def onboard_repo(root, mode="auto", agents=None, hooks=True, ci="auto", upgrade=False, copy_skills=None):
+    """Shared first-use operation for installed Skills and the compatibility entry."""
+    origin = git(root, "remote", "get-url", "origin", optional=True)
+    github = bool(origin and re.search(r"(?:^|[@/:])github\.com[:/]", origin.decode("utf-8"), re.IGNORECASE))
+    enable_ci = ci == "github" or (ci == "auto" and github)
+    result = init_repo(root, mode, agents, hooks, enable_ci, upgrade, copy_skills)
+    p = policy_at(root)
+    health = doctor(root, p)
+    result["scaffold_status"] = result["status"]
+    result["status"] = health["status"]
+    result["setup"] = "No package or global command installation required; use the vendored runtime after initialization."
+    result["skill_delivery"] = p["skill_delivery"]
+    result["local_command"] = [sys.executable, "hack/ai/ark.py"]
+    result["diagnostics"] = health
+    result["agent_next_step"] = (
+        "Continue initialize-repo and baseline-repo: inspect actual source/config/tests, confirm real checks, explain behavior and record coverage/gaps. Scaffolding PASS is not semantic completion."
+        if result["mode"] == "existing" else
+        "Continue initialize-repo; retain historical Baseline as not applicable and establish real requirements only when goals are known."
+    )
+    return result
 
 
 def baseline_inventory(root, p):
@@ -907,7 +937,9 @@ def doctor(root, p):
             settings = read_json(safe(root, config_path), {})
             hooks_map = settings.get("hooks", {})
             configured = all(any(is_kit_hook(h.get("command"), action, agent) for entry in hooks_map.get(event, []) for h in entry.get("hooks", [])) for event, action in (("SessionStart", "session"), ("Stop", "stop")))
-        adapters.append({"agent": agent, "executable": executable, "skill_files": all(safe(root, AGENT_DIRS[agent] + "/" + skill + "/SKILL.md").is_file() for skill in SKILLS), "live_loading": "NOT_VERIFIED", "hook_trust": "NOT_VERIFIED", "hooks": ("CONFIGURATION_ONLY" if configured else "NOT_CONFIGURED") if agent in {"codex", "claude"} else "NOT_IMPLEMENTED"})
+        skill_delivery = p.get("skill_delivery", "repository")
+        skill_files = all(safe(root, AGENT_DIRS[agent] + "/" + skill + "/SKILL.md").is_file() for skill in SKILLS) if skill_delivery == "repository" else None
+        adapters.append({"agent": agent, "executable": executable, "skill_delivery": skill_delivery, "skill_files": skill_files, "live_loading": "NOT_VERIFIED", "hook_trust": "NOT_VERIFIED", "hooks": ("CONFIGURATION_ONLY" if configured else "NOT_CONFIGURED") if agent in {"codex", "claude"} else "NOT_IMPLEMENTED"})
     return {"status": overall(findings, []), "kit_version": VERSION, "mode": p["mode"], "python": sys.version.split()[0], "git": shutil.which("git"), "ark_on_path": shutil.which("ark"), "findings": findings, "adapters": adapters, "branch_protection": "NOT_VERIFIED", "checks_configured": len(p["checks"]), "unconfirmed_command_candidates": [x for x in p.get("command_candidates", []) if not x.get("confirmed", False)], "baseline_findings": baseline_findings(root, p)}
 
 

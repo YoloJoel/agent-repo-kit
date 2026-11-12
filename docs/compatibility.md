@@ -6,9 +6,11 @@ generated config, a protocol test and a live trusted runtime are different claim
 | Surface | Shipped behavior | Local validation | Environment-specific follow-through |
 | --- | --- | --- | --- |
 | Python package/CLI | Python 3.11+, stdlib runtime, packaged resources and console entry | Unit/consumer tests and installed-wheel exercise | Python on each developer/CI machine |
-| Codex instructions/skills | AGENTS plus `.agents/skills` copies | Asset and managed-file checks | Confirm actual instruction/skill loading in selected runtime |
+| Standalone Skills | Standard root `skills/<name>/SKILL.md`; self-contained initialize helper | Actual Skills CLI discovery/installation and copied-folder execution | Host controls installation scope/loading; invoke initialize-repo per repository |
+| Codex instructions/skills | Installed Skills plus generated project AGENTS | Native source/assets and project runtime checks | Confirm actual instruction/skill loading in selected runtime |
 | Codex Hooks | `.codex/hooks.json`, SessionStart and bounded Stop | Real JSON stdin/stdout subprocess protocol | Project/config trust; Python interpreter; live runtime behavior |
-| Claude instructions/skills | CLAUDE import and `.claude/skills` copies | Merge/import/asset checks | Confirm loading mode and avoid competing instruction copies |
+| Claude plugin | Native plugin/marketplace metadata plus root skills/ | Actual Claude CLI strict manifest validation | Install through native marketplace; live model invocation is separate |
+| Claude instructions/skills | Plugin Skills plus project CLAUDE/AGENTS | Merge/import/asset checks | Avoid duplicate project Skill copies after platform installation |
 | Claude Hooks | Merge `.claude/settings.json`, SessionStart/Stop | Settings-preservation and subprocess protocol tests | Actual runtime/config permission and Python interpreter |
 | OpenCode | AGENTS and `.opencode/skills` | Native discovery layout generated | Confirm live skill discovery; lifecycle plugin not implemented |
 | GitHub Actions | Consumer workflow plus toolkit OS/Python matrix | Local check/CI command exercises | Remote Actions execution and separately required check rules |
@@ -18,12 +20,12 @@ Local development executes on Linux/Python 3.12. The toolkit CI is configured fo
 Windows and macOS with Python 3.11/3.13; inspect actual workflow runs for their result.
 A configured matrix is not a claim that it has already passed remotely.
 
-The recommended Agent entry is START_HERE.md with bootstrap.py; no package or global
-command installation is required. Generated hooks find the vendored runtime from their
-working directory/parents and use Python. The source checkout is disposable. On another
-OS, an Agent can rerun bootstrap to repair the Python command without repeating semantic
-analysis. Initialization does not modify global instructions, silently authorize hooks
-or configure branch protection. A global CLI remains an optional convenience.
+Install once through Claude plugin or a Skills installer, then invoke initialize-repo per
+repository. Its code/resources are inside the Skill folder; no source bootstrap, additional
+checkout, URL instructions or global CLI is needed. Generated hooks use the vendored project
+runtime. Skill loading and runtime trust remain host-owned. The source bootstrap/package
+are developer compatibility entries, not normal user setup. Initialization does not modify
+global instructions, silently authorize hooks or configure branch protection.
 
 ## Primary documentation
 

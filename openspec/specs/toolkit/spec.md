@@ -5,6 +5,23 @@
 Generic repository initialization and continuing AI-assisted engineering. Skills own
 semantic work; the CLI owns deterministic scaffolding, references, checks and evidence.
 
+### Requirement: Install through native plugin or Skill distribution (REQ-NATIVE-001)
+
+Verification: automated and native-tool checks
+
+Claude Code SHALL receive a native plugin and marketplace manifest with three Skills.
+Other hosts SHALL be able to install standard root skills/<name>/SKILL.md folders.
+The initialize-repo folder SHALL contain all initialization code/resources and work when
+copied alone without the repository, installed Python packages or a source bootstrap.
+Project initialization SHALL preserve installer-owned Skills and avoid creating duplicates.
+
+#### Scenario: Initialize from a copied installed Skill
+
+- GIVEN only the complete initialize-repo folder in a host's installed Skills directory
+- WHEN the Agent invokes its bundled initializer
+- THEN project rules/runtime are created, existing content is preserved, and installed
+  Skills remain the platform's responsibility rather than copied into every repository
+
 ### Requirement: Onboard without a global package installation (REQ-ONBOARD-001)
 
 Verification: automated and workflow review

@@ -5,6 +5,9 @@ description: Implement scoped features, fixes, refactors, upgrades or behavior-a
 
 # Deliver a repository change
 
+If repository rules/runtime are absent, invoke the installed initialize-repo Skill first.
+Run `python hack/ai/ark.py` for examples written as `ark`; no global CLI is required.
+
 1. Inspect task, actual diff and relevant specs/ADRs/source. Read only needed context;
    distinguish observed behavior, accepted promises and planned changes.
 2. Use a light path for docs/mechanical nonbehavior edits: record a hash-bound rationale

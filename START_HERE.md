@@ -1,4 +1,10 @@
-# Agent entry: onboard the current repository
+# Compatibility entry for source checkouts
+
+Normal users install the Claude plugin or the standalone Skills from README.md, then
+invoke initialize-repo in the target repository. They do not need this URL/checkout flow.
+The installed Skill includes its own initializer; do not send plugin/Skills users here.
+
+The remaining instructions are retained for explicit source-development compatibility.
 
 This page is an executable workflow for the Coding Agent. The user has requested this
 toolkit for their current repository. Complete the setup and relevant semantic work;
@@ -14,7 +20,7 @@ Reuse a supplied local toolkit checkout. Otherwise obtain this repository into a
 directory using an available connector or Git/download capability. Preserve the branch or
 commit selected in the URL used to read this page. For a branch URL, resolve its current
 commit and record it; do not silently switch to main or another version. Read its
-initialize-repo Skill at `src/agent_repo_kit/assets/skills/initialize-repo/SKILL.md`.
+initialize-repo workflow at `src/agent_repo_kit/assets/skills/initialize-repo/WORKFLOW.md`.
 
 ## 2. Run one local bootstrap
 

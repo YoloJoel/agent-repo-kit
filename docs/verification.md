@@ -5,16 +5,46 @@ actual execution, not a claim that every runtime/operating system has been exerc
 
 | Validation | Actual result |
 | --- | --- |
-| Source workflow suite | 40 tests PASS, including no-install/bootstrap workflows |
-| Installed-wheel workflow suite | The same 40 tests PASS using the installed distribution and repository bootstrap entry |
+| Source workflow suite | 47 tests PASS, including native installed-folder workflows |
+| Installed-wheel workflow suite | The same 47 tests PASS using the installed runtime and repository native artifacts |
 | Wheel build | PASS; dependency-free Python wheel built from this implementation |
 | Official Skill frontmatter/name validation | All 3 Skills PASS |
 | Shipped JSON schemas | Both parse successfully |
-| Current requirement/test navigation | All 7 current requirements referenced by meaningful workflow tests |
+| Current requirement/test navigation | All 8 current requirements referenced by meaningful workflow tests |
 | Installed CLI entry point | `ark --version` returns 0.1.0 |
 | Installed generated-Hook smoke | Fresh init/repeat init, nested-cwd SessionStart via `ark` on PATH, consumer CI resource: PASS |
 | Existing-repository agent exercise | PASS; source-grounded baseline, actual tests, preserved assets and repeat initialization |
 | New-repository agent exercise | PASS through reviewed synchronization, real tests, delivery, archive and post-archive CI |
+| Native Claude manifests | Claude Code 2.1.322 strict runtime validation: plugin and marketplace PASS |
+| Standard Skills installation | Skills CLI 1.8.1 discovers and installs exactly 3 Skills into an isolated Codex project |
+| Installed-Skill agent exercise | PASS; all 11 inventory files reviewed, 8 actual tests PASS, installer and user content preserved |
+
+## Native distribution
+
+The recommended release is a native Claude plugin/custom marketplace plus standard root
+Skill folders. Actual `claude plugin validate` strict checks passed for both manifest
+files. Actual Skills CLI discovery found exactly three Skills, and a project-scope copy
+installation preserved bundled scripts/resources. No user-level plugin or Skill setting
+was changed by these isolated checks.
+
+Native tests copy only the complete initialize-repo folder, disable site-package loading,
+initialize without a source checkout and then delete the installed source before checking
+the vendored runtime. They also verify no duplicate project Skill copies, installer-owned
+folder preservation, empty-repo classification with a skills lock, checksum/traversal
+failure before target mutation and deterministic native-artifact drift detection.
+
+An independent Agent used the actual project-scope installed Skills on a Python retry
+utility, without accessing toolkit source or installing a Python package. It explained all
+11 inventory files in three source-cited module documents, recorded gaps, confirmed the
+real test command and ran eight behavior tests. Baseline validation, doctor, structural
+verification and both generated hook commands from a nested directory passed. Repeat
+initialization returned no changes and kept the review current; all 13 installer-owned
+file hashes, the dirty README bytes and the original AGENTS prefix were preserved.
+
+Runtime manifest validation is distinct from submission to Anthropic's official directory;
+the supported route is the repository's custom marketplace. Live model invocation and
+host trust remain separately unverified: the fixture's live Codex process could not start
+because the host state directory was read-only. Hook smoke checks do not claim live loading.
 
 ## No-install Agent entry exercise
 
