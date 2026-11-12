@@ -42,7 +42,7 @@ Python 3.11+ 是执行检查脚本的运行条件，Agent 会先检测；运行�
 用你现有的 Skills 安装器安装本仓库的三个标准 Skill 目录即可。也可以使用通用 Skills CLI：
 
 ```bash
-npx skills add https://github.com/YoloJoel/agent-repo-kit/tree/codex/bootstrap-agent-repo-kit --skill "*" -a codex -g
+npx skills@1.8.1 add "YoloJoel/agent-repo-kit#codex/bootstrap-agent-repo-kit" --skill "*" -a codex -g
 ```
 
 OpenCode 将 `-a codex` 换成 `-a opencode`；也可以用原生安装器或手动复制整个 Skill 文件夹。
@@ -51,7 +51,8 @@ OpenCode 将 `-a codex` 换成 `-a opencode`；也可以用原生安装器或手
 在 Codex 的业务仓库中调用 `$initialize-repo`，在其他工具中调用或要求使用
 `initialize-repo` Skill。之后正常提出功能、修复或重构任务。
 
-合入 main 后，安装源可简写为 `YoloJoel/agent-repo-kit`；当前示例明确选择 PR 分支。
+合入 main 后，安装源可简写为 `YoloJoel/agent-repo-kit`；当前示例使用已验证的 `#分支` 写法，
+避免 Skills CLI 将含 `/` 的 tree URL 分支误认为目录。
 无需把 Skills 再复制到每个业务仓库：初始化会记录使用已安装的 Skills，只留下仓内规则、
 知识、规格与验证内核。以后换会话仍可依赖这些持久资产接续。
 

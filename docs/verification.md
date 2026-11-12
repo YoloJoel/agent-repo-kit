@@ -17,6 +17,7 @@ actual execution, not a claim that every runtime/operating system has been exerc
 | New-repository agent exercise | PASS through reviewed synchronization, real tests, delivery, archive and post-archive CI |
 | Native Claude manifests | Claude Code 2.1.322 strict runtime validation: plugin and marketplace PASS |
 | Standard Skills installation | Skills CLI 1.8.1 discovers and installs exactly 3 Skills into an isolated Codex project |
+| Remote Git-ref Skills installation | Actual GitHub `owner/repo#branch` installation and installed-helper initialization PASS |
 | Installed-Skill agent exercise | PASS; all 11 inventory files reviewed, 8 actual tests PASS, installer and user content preserved |
 
 ## Native distribution
@@ -26,6 +27,12 @@ Skill folders. Actual `claude plugin validate` strict checks passed for both man
 files. Actual Skills CLI discovery found exactly three Skills, and a project-scope copy
 installation preserved bundled scripts/resources. No user-level plugin or Skill setting
 was changed by these isolated checks.
+
+The actual published GitHub branch was also installed into a separate empty project with
+Skills CLI 1.8.1 using `YoloJoel/agent-repo-kit#codex/bootstrap-agent-repo-kit`. All three
+Skills were copied; the installed helper ran under `python -I -S` and returned PASS, mode
+new and skill_delivery installed. README pins this verified CLI and uses Git-ref syntax
+because a tree URL parses slash-containing branch names incorrectly in this version.
 
 Native tests copy only the complete initialize-repo folder, disable site-package loading,
 initialize without a source checkout and then delete the installed source before checking
@@ -105,6 +112,7 @@ OpenSpec CLI execution was NOT_RUN in the agent fixtures; reviewed synchronizati
 explicitly recorded and does not claim otherwise.
 
 The GitHub Actions matrix covers Linux/Windows/macOS with Python 3.11/3.13. Its actual run
-status is separate from the local results above. Remote branch protection is not enabled
+at commit 1f237da79db5d11afdc875ebb64e2acdbbc5d754 passed all seven jobs, including native
+manifest/installer checks. Later commit status is reported separately. Remote branch protection is not enabled
 by this implementation. Evidence/requirements links establish traceability, not complete
 semantic correctness or adequate assertions by themselves.

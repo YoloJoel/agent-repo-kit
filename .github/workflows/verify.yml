@@ -51,3 +51,14 @@ jobs:
           git init
           npx --yes skills@1.8.1 add "$GITHUB_WORKSPACE" --skill '*' --agent codex --copy --yes
           python -I -S .agents/skills/initialize-repo/scripts/initialize.py . --agents codex --no-hooks --ci none
+      - name: Install through the documented remote Git-ref source
+        env:
+          DISABLE_TELEMETRY: '1'
+          SOURCE_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          SOURCE_REF: ${{ github.head_ref || github.ref_name }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/ark-remote-project"
+          cd "$RUNNER_TEMP/ark-remote-project"
+          git init
+          npx --yes skills@1.8.1 add "$SOURCE_REPOSITORY#$SOURCE_REF" --skill '*' --agent codex --copy --yes
+          python -I -S .agents/skills/initialize-repo/scripts/initialize.py . --agents codex --no-hooks --ci none
