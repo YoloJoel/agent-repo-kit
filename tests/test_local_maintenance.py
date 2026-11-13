@@ -104,3 +104,31 @@ class LocalMaintenanceTests(RepositoryCase):
         before = hook.read_bytes()
         self.assertEqual(kit.install_git_hook(self.root, p)["status"], "PENDING")
         self.assertEqual(hook.read_bytes(), before)
+
+    def test_path_association_disambiguates_native_work_without_a_global_pointer(self):
+        p = self.fixture()
+        self.change(p, "beta", scope=["app.py"])
+        p["change_associations"] = {"app.py": "alpha"}
+        self.configure(p, p["checks"])
+        result = kit.local_check(self.root, p)
+        self.assertEqual(result["status"], "PASS", result)
+        alpha = next(item for item in result["changes"] if item.get("change") == "alpha")
+        beta = next(item for item in result["changes"] if item.get("change") == "beta")
+        self.assertEqual(alpha["phase"], "delivery")
+        self.assertEqual(beta["phase"], "specification")
+        self.assertIsNone(kit.active(self.root))
+        p["change_associations"] = {"app.py": "missing-work"}
+        result = kit.local_check(self.root, p)
+        self.assertEqual(result["status"], "FAIL", result)
+
+    def test_native_bulleted_adr_status_is_valid_and_accepted_body_is_protected(self):
+        self.git_start()
+        p = self.initialize()
+        text = "# Native ADR\n- Status: Accepted\n## Context\nOriginal\n## Decision\nUse native artifacts.\n## Alternatives\nRewrite everything.\n## Consequences\nPreserve history.\n"
+        self.write("docs/adr/0001-native.md", text)
+        self.assertEqual(kit.structure_findings(self.root, p), [])
+        self.commit()
+        self.write("docs/adr/0001-native.md", text.replace("Original", "Changed accepted history"))
+        result = kit.local_check(self.root, p)
+        self.assertEqual(result["status"], "FAIL", result)
+        self.assertIn("accepted-adr", {item.get("code") for item in result["changes"]})

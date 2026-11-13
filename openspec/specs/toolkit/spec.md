@@ -216,3 +216,20 @@ startup execution, protocol tests, native trust and unverified model-conversatio
 - WHEN native work is selected by its actual diff and a paused checkpoint is saved
 - THEN context can resume it without a toolkit activity pointer or sidecar
 - AND Stop allows the handoff without forcing a development Skill or infinite continuation
+
+### Requirement: Reuse native schemas and migrate owned assets safely (REQ-MIGRATION-001)
+
+Verification: automated and real-repository qualification
+
+First initialization SHALL support existing asset mappings before scaffold creation, preserve
+native ledgers/report formats and avoid adding incompatible generic documents to established
+ADR directories. Machine evidence SHALL support a mapped immutable location. Explicit legacy
+upgrade SHALL retire only unmodified owned copies, preserve customization/history and restore
+its own deleted/written files on failure. Release claims SHALL be bounded by actual native,
+real-repository and platform evidence.
+
+#### Scenario: Initialize a repository with a dated native raw-evidence schema
+
+- WHEN initialization maps machine evidence and the existing native ledger before writing
+- THEN original raw batches, IDs, native formats and human work remain valid
+- AND mapped execution evidence is still immutable and distinct from business source

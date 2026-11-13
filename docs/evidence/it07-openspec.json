@@ -1,0 +1,104 @@
+{
+  "baseline_before_second": {
+    "checks": [
+      {
+        "name": "regression",
+        "status": "PASS"
+      }
+    ],
+    "run_id": "20261113T072038-b35e0dee",
+    "status": "PASS"
+  },
+  "commands": [
+    {
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+        "-I",
+        "-S",
+        "/workspace/scratch/f2ad980ad476/agent-repo-kit-execution/skills/initialize-repo/scripts/initialize.py",
+        "/tmp/ark-openspec-qualification-1l5up4nr",
+        "--agents",
+        "codex",
+        "--no-hooks",
+        "--ci",
+        "none"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"agent_next_step\": \"Continue initialize-repo; retain historical Baseline as not applicable and establish real requirements only when goals are known.\",\n  \"baseline\": \"NOT_APPLICABLE\",\n  \"branch_protection\": \"NOT_VERIFIED\",\n  \"changed\": [\n    \".ai/policy.json\",\n    \".ai/established.json\",\n    \".ai/project.json\",\n    \"hack/ai/ark.py\",\n    \"hack/ai/assets/agents.md\",\n    \"hack/ai/assets/change.schema.json\",\n    \"hack/ai/assets/consumer-ci.yml\",\n    \"hack/ai/assets/engineering-standard.md\",\n    \"hack/ai/assets/policy.schema.json\",\n    \"hack/ai/assets/skills/baseline-repo/WORKFLOW.md\",\n    \"hack/ai/assets/skills/baseline-repo/agents/openai.yaml\",\n    \"hack/ai/assets/skills/baseline-repo/references/analysis.md\",\n    \"hack/ai/assets/skills/initialize-repo/WORKFLOW.md\",\n    \"hack/ai/assets/skills/initialize-repo/agents/openai.yaml\",\n    \"hack/ai/assets/skills/initialize-repo/references/onboarding.md\",\n    \"hack/ai/assets/templates/adr.md\",\n    \"hack/ai/assets/templates/architecture.md\",\n    \"hack/ai/assets/templates/behavior-plan.json\",\n    \"hack/ai/assets/templates/contract.md\",\n    \"hack/ai/assets/templates/decision.md\",\n    \"hack/ai/assets/templates/delta.md\",\n    \"hack/ai/assets/templates/design.md\",\n    \"hack/ai/assets/templates/dt-cases.md\",\n    \"hack/ai/assets/templates/module.md\",\n    \"hack/ai/assets/templates/proposal.md\",\n    \"hack/ai/assets/templates/spec-sync.md\",\n    \"hack/ai/assets/templates/spec.md\",\n    \"hack/ai/assets/templates/tasks.md\",\n    \"hack/ai/assets/templates/verify-review.md\",\n    \"AGENTS.md\",\n    \".gitignore\",\n    \"docs/templates/adr.md\",\n    \"docs/templates/architecture.md\",\n    \"docs/templates/behavior-plan.json\",\n    \"docs/templates/contract.md\",\n    \"docs/templates/decision.md\",\n    \"docs/templates/delta.md\",\n    \"docs/templates/design.md\",\n    \"docs/templates/dt-cases.md\",\n    \"docs/templates/module.md\",\n    \"docs/templates/proposal.md\",\n    \"docs/templates/spec-sync.md\",\n    \"docs/templates/spec.md\",\n    \"docs/templates/tasks.md\",\n    \"docs/templates/verify-review.md\",\n    \"docs/project-context.md\",\n    \"docs/engineering-standard.md\",\n    \"docs/baseline/README.md\",\n    \"docs/baseline/questions.json\",\n    \"docs/adr/README.md\",\n    \".ai/manifest.json\"\n  ],\n  \"changed_scope\": \"Installation/configuration assets; excludes this generated report and baseline/runtime observations.\",\n  \"checks\": \"NOT_RUN\",\n  \"diagnostics\": {\n    \"adapters\": [\n      {\n        \"agent\": \"codex\",\n        \"executable\": \"/opt/codex/bin/codex\",\n        \"hook_trust\": \"NOT_VERIFIED\",\n        \"hooks\": \"NOT_CONFIGURED\",\n        \"live_loading\": \"NOT_VERIFIED\",\n        \"skill_delivery\": \"installed\",\n        \"skill_files\": null\n      }\n    ],\n    \"ark_on_path\": null,\n    \"baseline_findings\": [],\n    \"branch_protection\": \"NOT_VERIFIED\",\n    \"checks_configured\": 0,\n    \"findings\": [],\n    \"git\": \"/usr/local/bin/git\",\n    \"kit_version\": \"0.2.0\",\n    \"mode\": \"new\",\n    \"python\": \"3.12.14\",\n    \"status\": \"PASS\",\n    \"unconfirmed_command_candidates\": []\n  },\n  \"entry\": \"installed-skill\",\n  \"hook_trust\": \"NOT_VERIFIED\",\n  \"installation\": \"Use the platform-installed Skills. No repository download, pip, global CLI or duplicate project Skill installation is needed.\",\n  \"kit_version\": \"0.2.0\",\n  \"local_command\": [\n    \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python\",\n    \"hack/ai/ark.py\"\n  ],\n  \"meaning\": \"Scaffolding installed; no semantic baseline or runtime hook trust is asserted.\",\n  \"mode\": \"new\",\n  \"scaffold_status\": \"PASS\",\n"
+    }
+  ],
+  "consumer_ci": null,
+  "entry": "installed initialize helper then native OpenSpec/direct implementation; no delivery Skill/pointer/sidecar",
+  "final": {
+    "business_checks_executed": true,
+    "status": "PASS"
+  },
+  "first": {
+    "checks": [
+      {
+        "name": "regression",
+        "status": "PASS"
+      }
+    ],
+    "run_id": "20261113T071944-f2c0bca7",
+    "status": "PASS"
+  },
+  "first_archive": {
+    "checks": [
+      {
+        "name": "regression",
+        "status": "PASS"
+      }
+    ],
+    "run_id": "20261113T072020-48ce8d84",
+    "status": "PASS"
+  },
+  "negative_mutation": {
+    "checks": [
+      {
+        "name": "regression",
+        "status": "FAIL"
+      },
+      {
+        "name": "acceptance",
+        "status": "PASS"
+      }
+    ],
+    "run_id": "20261113T072038-eae0ce29",
+    "status": "FAIL"
+  },
+  "openspec": "2.0.0",
+  "python": "3.12.14",
+  "remote": null,
+  "repaired": {
+    "checks": [
+      {
+        "name": "regression",
+        "status": "PASS"
+      },
+      {
+        "name": "acceptance",
+        "status": "PASS"
+      }
+    ],
+    "run_id": "20261113T072039-3a489a91",
+    "status": "PASS"
+  },
+  "runtime_sha256": "9c0e48d2e6bd470d9df920c90e35fb0fdca726c15729f3db296c3f5574f5b0d2",
+  "status": "PASS",
+  "target": {
+    "checks": [
+      {
+        "name": "regression",
+        "status": "PASS"
+      },
+      {
+        "name": "acceptance",
+        "status": "PASS"
+      }
+    ],
+    "run_id": "20261113T072038-63826fa2",
+    "status": "PASS"
+  },
+  "workspace": "/tmp/ark-openspec-qualification-1l5up4nr"
+}

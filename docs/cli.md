@@ -144,3 +144,22 @@ business_checks_executed flag. Document-only PASS is not a business-test claim.
 `checkpoint ... --paused` supports normal handoff without adding ark.json to native work.
 `install-git-hook` optionally installs a real local pre-commit check, preserving custom hooks.
 See local-operation.md for no-CI use, other hosts, review and runtime/trust boundaries.
+
+## Native layout reuse and upgrade
+
+The initializer and installed helper accept repeated `--path KEY=repository-relative-path`
+for first-use mappings. For example `--path questions=docs/baseline/open-questions.md`
+reuses a native ledger without creating another JSON source; `--path evidence=docs/agent-evidence`
+keeps machine snapshots outside a native dated-raw-batch schema. Exact repeated mappings are
+inert. Existing asset relocation requires preserving history explicitly; the flag does not
+silently move established data. Current numeric ADR directories do not receive an extra README.
+Plain, bulleted and common bold ADR Status headers are accepted and protected consistently.
+
+`policy.change_associations` can map concrete path prefixes to existing native work IDs when
+broad activity scopes overlap. The most specific prefix wins; an association does not expand
+scope. Unknown/uncovered ownership still fails, and no global task pointer is required.
+
+Explicit 0.1 upgrade retires only unmodified manifest-owned deliver-change copies and obsolete
+asset entry points. Customized copies remain and are recorded as user-maintained in manifest
+migration history. Managed runtime/entry conflicts abort before mutation; failed deletion/write
+transactions restore only their own touched files. Old raw and accepted history remain.

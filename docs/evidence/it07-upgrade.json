@@ -1,0 +1,36 @@
+{
+  "explicit_upgrade": true,
+  "human_agents_bytes_preserved": true,
+  "migration": [
+    {
+      "from": "0.1.0",
+      "preserved_custom": [
+        ".agents/skills/deliver-change/SKILL.md"
+      ],
+      "retired": [
+        ".agents/skills/deliver-change/agents/openai.yaml",
+        ".agents/skills/deliver-change/references/verification.md",
+        ".claude/skills/deliver-change/SKILL.md",
+        ".claude/skills/deliver-change/agents/openai.yaml",
+        ".claude/skills/deliver-change/references/verification.md",
+        ".opencode/skills/deliver-change/SKILL.md",
+        ".opencode/skills/deliver-change/agents/openai.yaml",
+        ".opencode/skills/deliver-change/references/verification.md",
+        "hack/ai/assets/skills/deliver-change/WORKFLOW.md",
+        "hack/ai/assets/skills/deliver-change/agents/openai.yaml",
+        "hack/ai/assets/skills/deliver-change/references/verification.md"
+      ],
+      "to": "0.2.0"
+    }
+  ],
+  "new_version": "0.2.0",
+  "old_revision": "ed5573c6e4a74c121ca31a875b21c538a644e585",
+  "old_version": "0.1.0",
+  "preserved": [
+    "docs/baseline/raw/original-review.md",
+    "README.md",
+    ".agents/skills/deliver-change/SKILL.md"
+  ],
+  "repeat_changed": [],
+  "status": "PASS"
+}

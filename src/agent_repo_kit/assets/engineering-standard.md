@@ -109,3 +109,11 @@ or delivered. A missing old runtime remains PENDING; do not invent before-change
 Optional JSON replay comparison uses exact JSON equality by default. Any ignored output leaf
 needs an explicit pointer and nonbusiness reason. Keep the raw hashes and normalization visible;
 never normalize away a true business difference. Native project test commands remain primary.
+
+## Native asset formats
+
+Reuse native report and knowledge front-matter formats as well as paths and IDs. Map machine
+evidence with paths.evidence when native raw-batch directories have their own schema. Those
+snapshots remain immutable and excluded from source inventory. Use path-scoped
+change_associations only to clarify genuinely overlapping work; this does not expand a
+change scope or create a global active-task pointer.

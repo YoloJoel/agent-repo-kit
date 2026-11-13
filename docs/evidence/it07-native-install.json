@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-13",
+  "claude_version": "2.1.322",
+  "marketplace": {
+    "command": [
+      "claude",
+      "plugin",
+      "marketplace",
+      "add",
+      "YoloJoel/agent-repo-kit",
+      "--scope",
+      "project",
+      "--json"
+    ],
+    "outcome": "ok",
+    "scope": "project"
+  },
+  "plugin": {
+    "command": [
+      "claude",
+      "plugin",
+      "install",
+      "agent-repo-kit@agent-repo-kit",
+      "--scope",
+      "project",
+      "--json"
+    ],
+    "outcome": "ok",
+    "scope": "project"
+  },
+  "limits": "Native project-scoped installation, not a claim of full model-conversation or trusted Codex Stop execution"
+}

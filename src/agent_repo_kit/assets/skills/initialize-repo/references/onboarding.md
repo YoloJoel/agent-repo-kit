@@ -35,3 +35,7 @@ outside managed blocks. Inspect the recorded PID before removing a stale runtime
 Read .ai/project.json and the context document mapped by policy.paths.context (default docs/project-context.md). Verify observed languages, build manifests, declared versions and test roots against actual files. Fill real project boundaries and command knowledge; retain explicit unknowns. Existing human context is preserved. The engineering standard defines risk-appropriate assets and stage completion.
 
 All checks operate locally. Hosted CI generation is opt-in with --ci github, including for GitHub origins. No CI or remote is required. Report asset setup, semantic coverage, real check execution, runtime trust and optional remote settings separately.
+
+## Existing native schemas
+
+Inspect authority documents before initialization. The bundled helper accepts repeated --path KEY=repository-relative-path for baseline/specs/changes/adr/templates/context/standard/questions/decision_view/decision_details/evidence. Set first-use mappings before scaffold creation. Exact repeated mappings are inert; relocating an already initialized asset requires preserving its history explicitly. Use paths.evidence for machine snapshots when a native raw directory requires dated batches/front matter. Preserve the native verification report sections and append managed runtime evidence to the existing report.

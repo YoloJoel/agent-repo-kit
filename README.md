@@ -73,3 +73,15 @@ python -m unittest discover -s tests -v
 原生发布目录 skills/ 从 assets/skills/*/WORKFLOW.md、内核和资源生成。不要手改生成副本。
 
 [架构](docs/architecture.md) · [CLI](docs/cli.md) · [支持状态](docs/compatibility.md) · [迭代计划](docs/roadmap.md) · [执行记录](docs/iterations/IT-01.md)
+
+## 完成状态与使用说明
+
+0.2.0 默认只提供两个接入 Skill。日常开发入口自由，本地检查是基础；Plugin/Skills 安装、
+原生 OpenSpec 两次交付与归档、存量 Java/Maven 仓的实施前验证和回归、0.1 升级均有实际记录。
+
+- [新仓 / 存量仓 / 已有 OpenSpec 的使用方式](docs/getting-started.md)
+- [实仓对标与最终验收](docs/acceptance.md)
+- [本地反馈、可选 Git Hook 与其他流水线](docs/local-operation.md)
+- [逐项支持和未实测边界](docs/compatibility.md)
+
+自动检查验证可确定的结构、关联、状态和执行证据；业务解释、用例完整性及断言质量仍需源码分析和审阅。
