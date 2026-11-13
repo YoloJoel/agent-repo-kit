@@ -1,0 +1,18 @@
+{
+  "runtime_sha256": "f670eee08aed8bed9188207cf7551ae07505d73b8795c1dcdd0153a1e0efed7f",
+  "source_restored": true,
+  "first": "PASS",
+  "negative": {
+    "preserved_test_exit": 1,
+    "target_test_exit": 0,
+    "overall": "FAIL",
+    "preserved_output": "..............F....F.F.F....\n======================================================================\nFAIL: test_semantic_retry_is_same_record_and_one_row (tests.test_core.StoreTests.test_semantic_retry_is_same_record_and_one_row)\nREQ-DEVICE-002: key order, whitespace, escaping and decimal spelling are ignored.\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspace/scratch/f2ad980ad476/repair-final-daily/tests/test_core.py\", line 33, in test_semantic_retry_is_same_record_and_one_row\n    self.assertFalse(retry.created)\nAssertionError: True is not false\n\n======================================================================\nFAIL: test_concurrent_process_retries_have_one_creator (tests.test_cli.CliTests.test_concurrent_process_retries_have_one_creator)\nREQ-DEVICE-002 REQ-DEVICE-007: actual independent processes share one record.\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspace/scratch/f2ad980ad476/repair-final-daily/tests/test_cli.py\", line 160, in test_concurrent_process_retries_have_one_creator\n    self.assertEqual(sum(record[\"created\"] for record in records), 1)\nAssertionError: 6 != 1\n\n======================================================================\nFAIL: test_independent_processes_persist_retry_conflict_and_read_order (tests.test_cli.CliTests.test_independent_processes_persist_retry_conflict_and_read_order)\nREQ-DEVICE-002 REQ-DEVICE-003 REQ-DEVICE-005 REQ-DEVICE-006.\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspace/scratch/f2ad980ad476/repair-final-daily/tests/test_cli.py\", line 36, in test_independent_processes_persist_retry_conflict_and_read_order\n    self.assertFalse(json.loads(retry.stdout)[\"created\"])\nAssertionError: True is not false\n\n======================================================================\nFAIL: test_payload_file_and_stdin (tests.test_cli.CliTests.test_payload_file_and_stdin)\nREQ-DEVICE-006: file and standard-input paths use UTF-8 JSON.\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspace/scratch/f2ad980ad476/repair-final-daily/tests/test_cli.py\", line 59, in test_payload_file_and_stdin\n    self.assertFalse(json.loads(retry.stdout)[\"created\"])\nAssertionError: True is not false\n\n----------------------------------------------------------------------\nRan 28 tests in 1.750s\n\nFAILED (failures=4)\n",
+    "target_output": ".......\n----------------------------------------------------------------------\nRan 7 tests in 2.342s\n\nOK\n"
+  },
+  "restored": {
+    "status": "PASS",
+    "business_checks_executed": true
+  },
+  "scope": "Independent model continuation, duplicate-created flag mutation; native OpenSpec list limit remains valid",
+  "release_runtime_sha256": "f670eee08aed8bed9188207cf7551ae07505d73b8795c1dcdd0153a1e0efed7f"
+}

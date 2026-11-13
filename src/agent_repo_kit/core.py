@@ -40,6 +40,14 @@ SKILLS = ("initialize-repo", "baseline-repo")
 AGENT_DIRS = {"codex": ".agents/skills", "claude": ".claude/skills", "opencode": ".opencode/skills"}
 IGNORED_DIRS = {".git", ".hg", ".svn", "node_modules", ".venv", "venv", "__pycache__", ".pytest_cache", "target", "build", "dist"}
 SOURCE_SUFFIXES = {".py", ".java", ".kt", ".go", ".rs", ".c", ".h", ".cpp", ".hpp", ".js", ".ts", ".tsx", ".jsx", ".cs", ".rb", ".php", ".sh", ".sql", ".yaml", ".yml", ".toml", ".xml", ".json"}
+TEST_SOURCE_SUFFIXES = (SOURCE_SUFFIXES - {".yaml", ".yml", ".toml", ".xml", ".json"}) | {
+    ".mjs", ".cjs", ".mts", ".cts", ".kts", ".cc", ".cxx", ".hh", ".hxx",
+    ".swift", ".m", ".mm", ".scala", ".groovy", ".dart", ".lua", ".r", ".jl",
+    ".pl", ".pm", ".ex", ".exs", ".erl", ".hs", ".lhs", ".ml", ".fs", ".fsx",
+    ".f", ".f90", ".f95", ".bash", ".zsh", ".ps1", ".psm1", ".bat", ".cmd",
+    ".feature", ".robot", ".phpt",
+}
+LOCAL_IGNORE = "# Agent Repo Kit local evidence, locks, and session pointers\n.ai/runtime/\n"
 
 
 class KitError(Exception):
@@ -305,7 +313,7 @@ def is_behavior(relative, p=None):
         return False
     if path.suffix.lower() == ".txt" and (path.parts[0] in {"docs", "doc"} or path.stem.upper() in {"README", "CHANGELOG", "LICENSE", "COPYING", "NOTICE", "AUTHORS"}):
         return False
-    return path.name not in {"README", "LICENSE", "COPYING", "NOTICE", "AUTHORS", ".gitignore", ".gitattributes", ".editorconfig"}
+    return path.name not in {"README", "LICENSE", "COPYING", "NOTICE", "AUTHORS"}
 
 
 def default_policy(mode, agents):
@@ -351,7 +359,9 @@ def project_profile(root, p):
                 unknown.append(f"Could not parse build facts: {name}")
     source_roots = [name for name in ("src/main", "src", "app", "lib", "source") if (root / name).is_dir()]
     test_roots = [name for name in p["test_paths"] if (root / name).is_dir()]
-    behavior = {name: item["sha256"] for name, item in inventory.items() if is_behavior(name, p)}
+    # Initialization appends its local-runtime ignore rule. It is not a project
+    # language/build fact; delivery fingerprints and diff checks still include it.
+    behavior = {name: item["sha256"] for name, item in inventory.items() if name != ".gitignore" and is_behavior(name, p)}
     return {"schema_version": 1, "languages": languages, "build_manifests": manifests,
             "source_roots": source_roots, "test_roots": test_roots, "declared_versions": versions,
             "source_fingerprint": digest(dump(behavior).encode()),
@@ -389,6 +399,7 @@ def fingerprint(root, p, change=None):
         files["@behavior-plan"] = plan
         files["@behavior-fixtures"] = behavior_signature(root, p, change)["fixtures"]
         files["@change"] = {k: metadata.get(k) for k in ("id", "kind", "scope", "requirements", "removed_requirements")}
+    files["@knowledge"] = knowledge_status(root, p, metadata["scope"] if change else None)["documents"]
     for relative in required:
         path = safe(root, relative)
         if path.is_file():
@@ -520,7 +531,7 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
         ignore_path = safe(root, ".gitignore")
         ignore_text = ignore_path.read_bytes().decode("utf-8") if ignore_path.exists() else ""
         if ".ai/runtime/" not in ignore_text.splitlines():
-            writes[".gitignore"] = ignore_text + ("\n" if ignore_text and not ignore_text.endswith("\n") else "") + "# Agent Repo Kit local evidence, locks, and session pointers\n.ai/runtime/\n"
+            writes[".gitignore"] = ignore_text + ("\n" if ignore_text and not ignore_text.endswith("\n") else "") + LOCAL_IGNORE
         if copy_skills:
             for agent in p["agents"]:
                 for skill in SKILLS:
@@ -750,7 +761,8 @@ def knowledge_status(root, p, scope=None):
     index = read_json(safe(root, p["paths"]["baseline"] + "/knowledge.json"), {"documents": {}})
     documents = []
     for name, item in index["documents"].items():
-        if scope and not any(under(name, prefix) or any(under(path, prefix) for path in item["sources"]) for prefix in scope):
+        if scope and not any(under(name, prefix) or item.get("decision") and under(item["decision"], prefix)
+                             or any(under(path, prefix) for path in item["sources"]) for prefix in scope):
             continue
         stale = []
         if item.get("state") != "obsolete":
@@ -1036,7 +1048,8 @@ def requirement_test_findings(root, p, records, current=False):
     """Check every effective promise, including ones absent from the selected delta."""
     findings = []
     tests = "\n".join(safe(root, name).read_text(encoding="utf-8", errors="replace")
-                      for name in inventory_files(root, p) if any(under(name, prefix) for prefix in p["test_paths"]))
+                      for name in inventory_files(root, p) if Path(name).suffix.lower() in TEST_SOURCE_SUFFIXES
+                      and any(under(name, prefix) for prefix in p["test_paths"]))
     for item in records:
         if item["section"] in {"REMOVED", "RENAMED"}:
             continue
@@ -1700,7 +1713,8 @@ def work_selection(root, p, changed=None, behavior=None):
 def knowledge_navigation(root, p, changed):
     index = read_json(safe(root, p["paths"]["baseline"] + "/knowledge.json"), {"documents": {}})
     return [document for document, item in index["documents"].items()
-            if item.get("state") != "obsolete" and (document in changed or any(path in changed for path in item.get("sources", {})))]
+            if item.get("state") != "obsolete" and (document in changed or item.get("decision") in changed
+                                                     or any(path in changed for path in item.get("sources", {})))]
 
 
 def context(root, p, session="default"):
@@ -1779,11 +1793,12 @@ def ci_verify(root, p, base, local=False):
     if (not base or set(base) == {"0"}) and not local:
         raise KitError("CI requires a real comparison base; configure the main-branch base for an initial push.")
     changed = changed_files(root, base)
-    if local and git(root, "rev-parse", "--is-inside-work-tree", optional=True) is None:
+    without_git = git(root, "rev-parse", "--is-inside-work-tree", optional=True) is None
+    if local and without_git:
         changed = sorted(inventory_files(root, p))
     immutable = []
+    comparison = git(root, "merge-base", base, "HEAD").decode().strip() if base else "HEAD"
     for relative in changed:
-        comparison = (git(root, "merge-base", base, "HEAD").decode().strip() if base else "HEAD")
         old = git(root, "show", f"{comparison}:{relative}", optional=True)
         if old is None:
             continue
@@ -1805,6 +1820,14 @@ def ci_verify(root, p, base, local=False):
     manifest = read_json(safe(root, MANIFEST))
     owned = set(manifest.get("files", {}))
     behavior = [x for x in changed if is_behavior(x, p) and not excluded(x, p) and x not in owned]
+    ignore = safe(root, ".gitignore")
+    prior_ignore = None if without_git else git(root, "show", f"{comparison}:.gitignore", optional=True)
+    original_ignore = prior_ignore or b""
+    setup_ignore = original_ignore + (b"\n" if original_ignore and not original_ignore.endswith(b"\n") else b"") + LOCAL_IGNORE.encode()
+    if ignore.is_file() and ignore.read_bytes() == setup_ignore:
+        # Only the exact known initializer append is setup. Arbitrary changes to
+        # existing ignore/attributes rules still require scoped impact review.
+        behavior = [x for x in behavior if x != ".gitignore"]
     lightweight = set()
     for path in safe(root, ".ai/notes").glob("*.json"):
         if path.relative_to(root).as_posix() not in changed:
@@ -1848,6 +1871,7 @@ def ci_verify(root, p, base, local=False):
             elif check.get("required", True):
                 light_checks.append({"name": check["name"], "required": True, "status": "NOT_RUN", "reason": "Required outside verification needs a scoped change/evidence record."})
         atomic(run_dir / "result.json", dump({"checks": light_checks, "status": overall([], light_checks)}))
+    results += delivery_knowledge_findings(root, p, changed)
     return {"status": overall(results, light_checks), "execution": "local" if local else "ci", "base": base, "executed_check_count": executed_count + sum(item["status"] in {"PASS", "FAIL"} for item in light_checks), "behavior_files": behavior, "lightweight_files": sorted(lightweight), "lightweight_checks": light_checks, "changes": results, "control_review": "Review lightweight declarations and policy/runtime/CI/manifest changes independently; repository-controlled checks are not a security boundary."}
 
 

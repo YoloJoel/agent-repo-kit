@@ -1,0 +1,54 @@
+{
+  "base": "779668a",
+  "behavior_files": [
+    "device_records/cli.py",
+    "device_records/core.py",
+    "tests/test_list_limit.py"
+  ],
+  "business_checks_executed": true,
+  "changes": [
+    {
+      "change": "add-list-limit",
+      "checks": [
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-v"
+          ],
+          "cwd": "/workspace/scratch/f2ad980ad476/repair-final-daily",
+          "duration_seconds": 14.556,
+          "exit_code": 0,
+          "finished_at": "2026-11-13T12:00:41+00:00",
+          "log": ".ai/runtime/runs/20261113T120027-712b7fbe/unit.log",
+          "name": "unit",
+          "required": true,
+          "started_at": "2026-11-13T12:00:27+00:00",
+          "status": "PASS",
+          "type": "command"
+        }
+      ],
+      "phase": "delivery",
+      "run_id": "20261113T120027-712b7fbe",
+      "status": "PASS"
+    }
+  ],
+  "control_review": "Review lightweight declarations and policy/runtime/CI/manifest changes independently; repository-controlled checks are not a security boundary.",
+  "created_at": "2026-11-13T12:00:41+00:00",
+  "executed_check_count": 1,
+  "execution": "local",
+  "findings": [],
+  "knowledge_review_candidates": [
+    "docs/baseline/device-records.md"
+  ],
+  "lightweight_checks": [],
+  "lightweight_files": [],
+  "stage": "candidate-delivery",
+  "status": "PASS",
+  "release_runtime_sha256": "f670eee08aed8bed9188207cf7551ae07505d73b8795c1dcdd0153a1e0efed7f"
+}

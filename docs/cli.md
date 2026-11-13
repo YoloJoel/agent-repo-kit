@@ -177,6 +177,9 @@ Automated promises need an exact test-source identity or an explicit required de
 mapping. Manual/external promises need matching required delivery checks. Ready-only, optional
 or wrong-type checks do not satisfy this relation. Test references are navigation, not proof
 of assertion quality; actual commands and substantive review remain necessary.
+README/prose and JSON/YAML input fixtures do not count as executable test-source references.
+Use explicit required check mappings for nonstandard executable test formats. Git ignore,
+attributes and editor configuration also require impact review; they are not prose exceptions.
 
 Delivery checks gate affected registered explanations on source/document/decision freshness.
 Refresh inventory and re-review current modules/contracts/cases after implementation. Use
@@ -184,6 +187,8 @@ baseline retire with --document, --decision and --reviewer for an actual histori
 raw snapshots and executed pre-change anchors remain immutable. Unrelated stale documents
 do not block scoped work. Empty or binary sources use file@sha256:<actual digest> in evidence
 because they have no valid source line ranges; explain the reader contract and semantic gaps.
+Recorded decisions participate in scope/navigation. Current knowledge is bound to verification
+fingerprints, so a check cannot change its explanation or review record and reuse PASS.
 
 Upgrade existing consumers explicitly with the updated initialize-repo helper --upgrade.
 Run local checks again; previous false PASS results may now be FAIL or PENDING. This adds no

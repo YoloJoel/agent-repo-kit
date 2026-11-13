@@ -1,0 +1,68 @@
+{
+  "runtime_sha256": "f670eee08aed8bed9188207cf7551ae07505d73b8795c1dcdd0153a1e0efed7f",
+  "source_restored": true,
+  "negative": {
+    "status": "FAIL",
+    "exit_code": 1,
+    "checks": [
+      {
+        "change": "cache-get-many",
+        "name": "regression",
+        "status": "PASS"
+      },
+      {
+        "change": "cache-get-many",
+        "name": "acceptance",
+        "status": "FAIL"
+      },
+      {
+        "change": "cache-get-many",
+        "name": "full-suite",
+        "status": "FAIL"
+      },
+      {
+        "change": "cache-get-many",
+        "name": "syntax",
+        "status": "PASS"
+      },
+      {
+        "change": "cache-get-many",
+        "name": "stub-syntax",
+        "status": "PASS"
+      },
+      {
+        "change": "review-onboarding-boundaries",
+        "name": "regression",
+        "status": "PASS"
+      },
+      {
+        "change": "review-onboarding-boundaries",
+        "name": "acceptance",
+        "status": "FAIL"
+      },
+      {
+        "change": "review-onboarding-boundaries",
+        "name": "full-suite",
+        "status": "FAIL"
+      },
+      {
+        "change": "review-onboarding-boundaries",
+        "name": "syntax",
+        "status": "PASS"
+      },
+      {
+        "change": "review-onboarding-boundaries",
+        "name": "stub-syntax",
+        "status": "PASS"
+      }
+    ]
+  },
+  "restored": {
+    "status": "PASS",
+    "exit_code": 0,
+    "business_checks_executed": true
+  },
+  "source_revision": "tkem/cachetools 1ce79efa552d1bdda70d144d401ef9105d999184",
+  "scope": "get_many duplicate-key mutation; original 416 preserved tests remain unchanged",
+  "release_runtime_sha256": "f670eee08aed8bed9188207cf7551ae07505d73b8795c1dcdd0153a1e0efed7f"
+}

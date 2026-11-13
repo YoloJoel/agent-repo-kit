@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import shutil
 
 from agent_repo_kit import core as kit
 from test_workflows import RepositoryCase
@@ -51,6 +52,35 @@ class DeliveryIntegrityTests(RepositoryCase):
         with self.assertRaises(kit.KitError):
             kit.policy_at(self.root)
 
+    def test_git_distribution_configuration_is_not_harmless_prose(self):
+        self.git_start()
+        self.write("app.py", "value = 1\n")
+        p = self.initialize("existing")
+        base = self.commit()
+        self.write(".gitattributes", "app.py export-ignore\n")
+        self.commit()
+        archive = subprocess.run(["git", "-C", str(self.root), "archive", "HEAD", "app.py"], capture_output=True, check=True)
+        self.assertNotIn(b"app.py", archive.stdout)
+        report = kit.local_check(self.root, p, base)
+        self.assertEqual(report["status"], "FAIL", report)
+        self.assertIn(".gitattributes", report["behavior_files"])
+
+    def test_initializer_ignore_append_is_setup_but_human_ignore_changes_need_review(self):
+        self.git_start()
+        self.write("app.py", "value = 1\n")
+        self.write(".gitignore", "existing-local-file")
+        base = self.commit()
+        p = self.initialize("existing")
+        first = kit.local_check(self.root, p, base)
+        self.assertEqual(first["status"], "PASS", first)
+        self.assertNotIn(".gitignore", first["behavior_files"])
+        self.assertFalse(first["business_checks_executed"])
+        ignore = self.root / ".gitignore"
+        ignore.write_text(ignore.read_text(encoding="utf-8") + "app.py\n", encoding="utf-8")
+        changed = kit.local_check(self.root, p, base)
+        self.assertEqual(changed["status"], "FAIL", changed)
+        self.assertIn(".gitignore", changed["behavior_files"])
+
     def current_fixture(self):
         self.git_start()
         self.write("app.py", "def ping(): return 'pong'\ndef health(): return 'ready'\n")
@@ -83,6 +113,30 @@ class DeliveryIntegrityTests(RepositoryCase):
         self.commit()
         self.write("README.md", "Document the existing ping endpoint.\n")
         self.assertEqual(kit.local_check(self.root, p)["status"], "PENDING")
+
+    def test_readme_and_fixture_ids_cannot_replace_executable_test_sources(self):
+        p = self.current_fixture()
+        (self.root / "tests/test_ping.py").unlink()
+        for relative in ("tests/README.md", "tests/cases.json", "tests/matrix.yaml", "tests/fixture.txt"):
+            with self.subTest(reference=relative):
+                self.write(relative, "REQ-PING-001 is mentioned here.\n")
+                findings = kit.structure_findings(self.root, p)
+                self.assertTrue(any(item["code"] == "current-requirement-test" and "REQ-PING-001" in item["message"] for item in findings))
+                (self.root / relative).unlink()
+
+    def test_esm_test_reference_and_actual_node_execution_remain_supported(self):
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("Native ESM execution needs Node; non-Node consumers do not require it")
+        p = self.current_fixture()
+        (self.root / "tests/test_ping.py").unlink()
+        self.write("tests/test_ping.mjs", "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { execFileSync } from 'node:child_process';\n// REQ-PING-001\ntest('real ping', () => { const value = execFileSync(" + json.dumps(sys.executable) + ", ['-c', 'from app import ping; print(ping())'], {encoding:'utf8'}).trim(); assert.equal(value, 'pong'); });\n")
+        self.configure(p, p["checks"] + [{"name": "node-esm", "argv": [node, "--test", "tests/test_ping.mjs"]}])
+        self.write("openspec/changes/migrate-ping-test/proposal.md", "# Migrate test\nKind: maintenance\n## Impact\nUpdate `tests/`.\n")
+        self.write("openspec/changes/migrate-ping-test/tasks.md", "- [x] Migrate ping verification; retain health test.\n")
+        report = kit.local_check(self.root, p)
+        self.assertEqual(report["status"], "PASS", report)
+        self.assertEqual([item["status"] for item in report["changes"][0]["checks"]], ["PASS", "PASS"])
 
     def test_current_mapping_must_be_required_and_applicable_to_delivery(self):
         p = self.current_fixture()
@@ -143,3 +197,36 @@ class DeliveryIntegrityTests(RepositoryCase):
         self.assertEqual(report["status"], "PENDING", report)
         kit.baseline_review(self.root, p, document, ["app.py"], "reviewer")
         self.assertEqual(kit.local_check(self.root, p)["status"], "PASS")
+
+    def test_decision_changes_are_knowledge_impact_and_keep_delivery_pending(self):
+        self.git_start()
+        self.write("app.py", "def double(x):\n    return x * 2\n")
+        p = self.initialize("existing")
+        self.review_app(p)
+        self.write("tests/test_app.py", "# REQ-MATH-001\n")
+        self.write("openspec/specs/math/spec.md", "### Requirement: REQ-MATH-001 Double\nVerification: automated\nThe function SHALL double integers.\n#### Scenario: Double\n- WHEN input is 2\n- THEN output is 4\n")
+        self.write("docs/decision.md", "Accept integer doubling.\n")
+        kit.knowledge_transition(self.root, p, "docs/baseline/modules/app.md", "reviewer", "docs/decision.md", ["REQ-MATH-001"])
+        self.commit()
+        self.write("docs/decision.md", "Accept only positive integer doubling.\n")
+        report = kit.local_check(self.root, p)
+        self.assertEqual(report["status"], "PENDING", report)
+        self.assertIn("docs/baseline/modules/app.md", report["knowledge_review_candidates"])
+        self.assertTrue(any(item.get("code") == "knowledge-stale" for item in report["changes"]))
+
+    def test_required_check_cannot_make_its_current_explanation_stale_and_pass(self):
+        self.git_start()
+        p = self.initialize()
+        command = "from pathlib import Path; from app import double; assert double(2)==4; p=Path('docs/baseline/modules/app.md'); p.write_text(p.read_text()+'\\nChanged during verification.\\n')"
+        self.configure(p, [{"name": "unit", "argv": ["{python}", "-c", command]}])
+        self.commit()
+        self.write("app.py", "def double(x):\n    return x * 2\n")
+        kit.baseline_inventory(self.root, p)
+        self.review_app(p)
+        self.write("openspec/changes/add-double/proposal.md", "# Add double\nKind: maintenance\n## Impact\nUpdate `app.py`.\n")
+        self.write("openspec/changes/add-double/tasks.md", "- [x] Add double.\n")
+        report = kit.local_check(self.root, p)
+        self.assertEqual(report["status"], "FAIL", report)
+        detail = kit.read_json(self.root / "openspec/changes/add-double/verification.json")
+        self.assertIn("inputs-changed", {item["code"] for item in detail["findings"]})
+        self.assertEqual(kit.knowledge_status(self.root, p)["status"], "PENDING")

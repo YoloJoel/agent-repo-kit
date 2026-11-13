@@ -40,6 +40,9 @@ Check the complete effective-spec verification matrix even when this change has 
 removing a test must not leave a current promise without a test reference or an explicit
 required delivery-check mapping. Proposed deltas can precede tests; current promises retain
 their obligations. Manual/external promises need their own required delivery check mappings.
+Only executable test-source formats count as source references; a README, input fixture or
+coverage table under the test directory cannot replace a deleted test. Map other executable
+test systems to their actual required command explicitly.
 Native OpenSpec validation/synchronization should be reused, not reimplemented as a merger.
 
 ## Baseline and knowledge
@@ -54,6 +57,8 @@ Recheck affected current explanations after implementation. Stale registered mod
 contract or case descriptions keep delivery PENDING until refreshed or explicitly retired
 with a decision. Original snapshots remain immutable; unrelated stale knowledge does not
 block a scoped task. An edited explanation itself also needs its review declaration refreshed.
+Changes to its recorded decision are also an impact. Verification binds current knowledge
+and checks its final state; a command that changes its own verification inputs cannot pass.
 Maintain one question/decision source; link product choices, design work, validation gates
 and ADR to their implementation/specification outcome. Do not duplicate competing statuses.
 

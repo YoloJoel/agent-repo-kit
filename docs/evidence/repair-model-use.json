@@ -1,0 +1,66 @@
+{
+  "runtime_sha256": "f670eee08aed8bed9188207cf7551ae07505d73b8795c1dcdd0153a1e0efed7f",
+  "execution": "Independent model sessions with tools; tasks and source artifacts supplied, no prepared solution/specification supplied",
+  "new": {
+    "start": "empty directory",
+    "initial_commit": "c0cf2d61b01ad3691d91a6260758bc2e516282b7",
+    "scope": "Offline device-record Python API/CLI, SQLite, precise JSON, validation before effects, idempotency/conflicts, ordering and persistence",
+    "tests": 28,
+    "result": "PASS",
+    "entry": "initialize-repo then direct development",
+    "documents": [
+      "docs/usage.md",
+      "docs/verification.md",
+      "docs/adr/0001-json-equality-and-local-transactions.md",
+      "openspec/specs/device-records/spec.md"
+    ]
+  },
+  "existing": {
+    "source": "tkem/cachetools",
+    "source_revision": "1ce79efa552d1bdda70d144d401ef9105d999184",
+    "original_local_commit": "5301c94052466ce958b255752ce2a7b89155d454",
+    "final_model_commit": "75c7f23114b03c78580ab4d02185d5b0445b1149",
+    "entry": "initialize-repo/baseline-repo, then direct development",
+    "scope": "Source-only snapshot; cache/TTL/eviction/decorator/concurrency analysis and Cache.get_many + Iterable type declaration",
+    "original_tests": 416,
+    "new_target_tests": 18,
+    "full_tests": 434,
+    "target_before_implementation": "EXPECTED_FAIL: absent API, 39 subtest errors",
+    "original_tests_preserved": true,
+    "registered_files": 33,
+    "result": "PASS",
+    "parent_final_runtime_recheck": "repair-existing-final.json",
+    "negative_recovery": "repair-existing-mutation.json"
+  },
+  "daily": {
+    "starting_commit": "779668a",
+    "final_model_commit": "2eb9a42d73efb0691f601ffda918771b8e22a865",
+    "entry": "Fresh model session; task request and existing repository rules; native OpenSpec 2.0.0, no toolkit daily Skill",
+    "scope": "list --limit and keyword-only API limit, 1..1000, no DB side effects on invalid limits; old put/default listing behavior preserved",
+    "original_tests_before_change": 28,
+    "new_target_tests": 7,
+    "full_tests": 35,
+    "target_before_implementation": "EXPECTED_FAIL: old CLI/API lack limit",
+    "native_delta_strict_validation": "PASS",
+    "native_archive": "PASS: automatically synchronized three requirements",
+    "current_spec_validation": "PASS with five pre-existing writing warnings retained",
+    "result": "PASS",
+    "parent_final_runtime_recheck": "repair-daily-final.json",
+    "negative_recovery": "repair-daily-mutation.json"
+  },
+  "content_review": {
+    "reviewed": "Actual explanations/requirements/design/decision and case records, not only counts",
+    "observations": [
+      "Cache/TTL/eviction side effects, callbacks and decorator lock/condition failure flows explained with concrete evidence",
+      "New batch method preserves missing/loading, policy updates, first-key order and non-refreshing expiration",
+      "Device JSON uses Decimal tuple digits, validates before opening DB, and uses SQL parameters/transactions",
+      "Direct later task preserved original tests and requirements, added separate target tests, anchored original execution and used native archive"
+    ]
+  },
+  "limits": [
+    "Actual model-task environments are Linux/Python 3.12.14; not every language/project or production flow",
+    "Model task execution is separate from trusted live Claude/Codex/OpenCode lifecycle qualification",
+    "Reference-equivalent semantic depth still requires source review and substantive assertions",
+    "Consumer CI/remotes are unnecessary; final toolkit remote checks await upload authorization"
+  ]
+}

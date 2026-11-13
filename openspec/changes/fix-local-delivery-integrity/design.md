@@ -10,9 +10,14 @@ other test systems; reference text still cannot establish assertion quality.
 
 ## State and failure
 
-Registered knowledge is scoped by source or document impact. Stale current declarations
+Registered knowledge is scoped by source, document or recorded decision impact. Stale current declarations
 produce PENDING, while unrelated records and explicitly retired history do not block.
 Re-review writes a new immutable snapshot without replacing pre-change executed anchors.
+Verification fingerprints bind current scoped knowledge and recheck its final state, so a passing
+command cannot mutate its explanation or review declaration and retain a valid result.
+Only executable test sources count as automatic test references; input fixtures and prose do not.
+Git ignore/attributes/editor rules require scope review, with only the exact initializer ignore append
+recognized as setup. Other changes to those files remain behavior inputs.
 Startup remains navigation-only; checks execute at the existing local verification boundary.
 
 ## Compatibility and migration
