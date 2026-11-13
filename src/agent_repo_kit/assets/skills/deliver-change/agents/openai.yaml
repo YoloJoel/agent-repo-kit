@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deliver Change"
+  short_description: "Implement changes with current specs and real verification"
+  default_prompt: "Use $deliver-change to implement and verify this repository change."

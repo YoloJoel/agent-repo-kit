@@ -1,0 +1,9 @@
+{
+  "name": "agent-repo-kit",
+  "version": "0.1.0",
+  "description": "Initialize repositories, explain source-grounded baselines and deliver verified changes through three reusable Skills.",
+  "author": {"name": "YoloJoel"},
+  "homepage": "https://github.com/YoloJoel/agent-repo-kit",
+  "repository": "https://github.com/YoloJoel/agent-repo-kit",
+  "keywords": ["repository", "engineering", "baseline", "openspec", "verification"]
+}

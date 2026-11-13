@@ -1,0 +1,4 @@
+interface:
+  display_name: "Initialize Repository"
+  short_description: "Initialize reusable AI engineering rules and checks"
+  default_prompt: "Use $initialize-repo to onboard this repository and preserve existing rules."

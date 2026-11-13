@@ -1,0 +1,28 @@
+name: Repository engineering checks
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+permissions:
+  contents: read
+jobs:
+  engineering:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python hack/ai/ark.py verify --phase structure
+      - name: Verify active changes against the actual PR diff
+        env:
+          ARK_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python hack/ai/ark.py ci --base "$ARK_BASE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: engineering-evidence
+          path: .ai/runtime/runs/
+          if-no-files-found: ignore

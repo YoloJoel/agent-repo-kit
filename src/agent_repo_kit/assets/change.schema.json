@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Agent Repo Kit scoped change metadata v1",
+  "type": "object",
+  "required": ["schema_version", "id", "kind", "scope", "requirements", "state"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "kind": {"enum": ["feature", "fix", "refactor", "maintenance", "docs"]},
+    "scope": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "requirements": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*$"}},
+    "removed_requirements": {"type": "array", "items": {"type": "string"}, "description": "Must be a subset of affected requirements; retired IDs must be absent from current specs."},
+    "state": {"enum": ["draft", "ready", "implementing", "verifying", "blocked", "complete"]},
+    "created_at": {"type": "string"}
+  }
+}

@@ -1,0 +1,64 @@
+name: Verify toolkit
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  workflows:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ['3.11', '3.13']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Check native plugin and Skill artifacts match their sources
+        run: python tools/build_native.py --check
+      - name: Build and install the actual distribution
+        run: python -m pip install .
+      - name: Test consumer workflows using installed assets
+        run: python -m unittest discover -s tests -v
+      - name: Smoke-test the installed entry points
+        run: |
+          ark --version
+          python -m agent_repo_kit --help
+  native-installers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate native Claude plugin and marketplace
+        run: |
+          npx --yes --package @anthropic-ai/claude-code@2.1.322 claude plugin validate .claude-plugin/plugin.json --strict
+          npx --yes --package @anthropic-ai/claude-code@2.1.322 claude plugin validate .claude-plugin/marketplace.json --strict
+      - name: Install standard Skills into an isolated project
+        env:
+          DISABLE_TELEMETRY: '1'
+        run: |
+          mkdir -p "$RUNNER_TEMP/ark-native-project"
+          cd "$RUNNER_TEMP/ark-native-project"
+          git init
+          npx --yes skills@1.8.1 add "$GITHUB_WORKSPACE" --skill '*' --agent codex --copy --yes
+          python -I -S .agents/skills/initialize-repo/scripts/initialize.py . --agents codex --no-hooks --ci none
+      - name: Install through the documented remote Git-ref source
+        env:
+          DISABLE_TELEMETRY: '1'
+          SOURCE_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          SOURCE_REF: ${{ github.head_ref || github.ref_name }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/ark-remote-project"
+          cd "$RUNNER_TEMP/ark-remote-project"
+          git init
+          npx --yes skills@1.8.1 add "$SOURCE_REPOSITORY#$SOURCE_REF" --skill '*' --agent codex --copy --yes
+          python -I -S .agents/skills/initialize-repo/scripts/initialize.py . --agents codex --no-hooks --ci none

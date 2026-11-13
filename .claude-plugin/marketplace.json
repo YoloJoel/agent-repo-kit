@@ -1,0 +1,12 @@
+{
+  "name": "agent-repo-kit",
+  "description": "Native Claude plugin and portable Skills for source-grounded repository engineering.",
+  "owner": {"name": "YoloJoel"},
+  "plugins": [
+    {
+      "name": "agent-repo-kit",
+      "source": "./",
+      "description": "Reusable repository initialization, source-grounded baseline and verified-delivery Skills."
+    }
+  ]
+}
