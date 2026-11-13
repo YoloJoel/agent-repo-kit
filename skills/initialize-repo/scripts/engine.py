@@ -128,7 +128,10 @@ def transact(root, writes):
         for relative, data in writes.items():
             content = data.encode("utf-8") if isinstance(data, str) else data
             if before[relative] != content:
-                atomic(paths[relative], content)
+                if content is None:
+                    paths[relative].unlink(missing_ok=True)
+                else:
+                    atomic(paths[relative], content)
                 changed.append(relative)
     except BaseException:
         for relative in reversed(changed):
@@ -191,7 +194,7 @@ def policy_at(root):
         raise KitError("policy.skill_delivery must be repository or installed")
     if not isinstance(p.get("agents", []), list) or any(a not in AGENT_DIRS for a in p.get("agents", [])):
         raise KitError("policy.agents must contain supported adapter IDs")
-    for key in ("baseline", "specs", "changes", "adr", "templates", *[name for name in ("context", "standard", "questions", "decision_view", "decision_details") if name in p["paths"]]):
+    for key in ("baseline", "specs", "changes", "adr", "templates", *[name for name in ("context", "standard", "questions", "decision_view", "decision_details", "evidence") if name in p["paths"]]):
         safe(root, p.get("paths", {}).get(key))
     for key in ("exclude", "test_paths", "checks", "source_paths"):
         if not isinstance(p.get(key), list):
@@ -233,6 +236,13 @@ def policy_at(root):
             raise KitError(f"Invalid requirement verification mapping: {requirement}")
         if not isinstance(mapping.get("checks", []), list) or any(name not in names for name in mapping.get("checks", [])):
             raise KitError(f"Unknown requirement check mapping: {requirement}")
+    associations = p.get("change_associations", {})
+    if not isinstance(associations, dict):
+        raise KitError("policy.change_associations must map concrete path prefixes to change IDs")
+    for prefix, change in associations.items():
+        safe(root, prefix)
+        if not isinstance(change, str) or not ID.fullmatch(change):
+            raise KitError("Change associations must name existing native-format change IDs")
     return p
 
 
@@ -248,7 +258,7 @@ def excluded(relative, p):
         return True
     if parts[-1] == ".env" or parts[-1].endswith((".p12", ".pfx", ".pyc")):
         return True
-    if any(under(relative, p.get("paths", {}).get(key, "@none")) for key in ("baseline", "changes", "templates")):
+    if any(under(relative, p.get("paths", {}).get(key, "@none")) for key in ("baseline", "changes", "templates", "evidence")):
         return True
     return any(fnmatch.fnmatchcase(relative, pattern) or under(relative, pattern.rstrip("/")) for pattern in p.get("exclude", []))
 
@@ -393,7 +403,19 @@ def is_kit_hook(command, action, agent):
     )
 
 
-def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=False, copy_skills=None):
+def parse_paths(values):
+    result = {}
+    for item in values or []:
+        if "=" not in item:
+            raise KitError("Path mappings use KEY=repository-relative-path")
+        key, value = item.split("=", 1)
+        if key in result or not value:
+            raise KitError("Path mappings must have unique keys and nonempty paths")
+        result[key] = value
+    return result
+
+
+def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=False, copy_skills=None, path_overrides=None):
     root.mkdir(parents=True, exist_ok=True)
     if agents is not None and (not agents or any(a not in AGENT_DIRS for a in agents)):
         raise KitError("Supported adapters: codex, claude, opencode")
@@ -418,6 +440,13 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
                 if (root / marker).is_file():
                     candidates.append({"marker": marker, "argv": argv, "confirmed": False})
             p["command_candidates"] = candidates
+        for key, value in (path_overrides or {}).items():
+            if key not in {"baseline", "specs", "changes", "adr", "templates", "context", "standard", "questions", "decision_view", "decision_details", "evidence"}:
+                raise KitError("Unknown managed asset path key: " + key)
+            safe(root, value)
+            if old_manifest and p["paths"].get(key) != value:
+                raise KitError("Set path mappings before first initialization; existing asset relocation requires an explicit migration with preserved history")
+            p["paths"][key] = value
         if copy_skills is None:
             copy_skills = p.get("skill_delivery", "repository") == "repository"
         p["skill_delivery"] = "repository" if copy_skills else "installed"
@@ -425,6 +454,20 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
         if not safe(root, ".ai/established.json").exists():
             writes[".ai/established.json"] = dump({"files": {path: {"sha256": sha, "change": None} for path, sha in scoped_sources(root, p, p["source_paths"]).items()}})
         owned = dict(old_manifest.get("files", {}))
+        retired, preserved_custom = [], []
+        if upgrade:
+            for relative, expected in list(owned.items()):
+                old_skill = any(under(relative, prefix + "/deliver-change") for prefix in [*AGENT_DIRS.values(), "hack/ai/assets/skills"])
+                old_asset_entry = relative.startswith("hack/ai/assets/skills/") and relative.endswith("/SKILL.md")
+                if old_skill or old_asset_entry:
+                    owned.pop(relative)
+                    target = safe(root, relative)
+                    if target.is_file():
+                        if digest(target.read_bytes()) == expected:
+                            writes[relative] = None
+                            retired.append(relative)
+                        else:
+                            preserved_custom.append(relative)
         profile = project_profile(root, p)
         writes[".ai/project.json"] = dump(profile)
 
@@ -489,6 +532,8 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
             p["paths"]["adr"] + "/README.md": "# Architecture decisions\n\nRecord consequential, long-lived choices using docs/templates/adr.md. Preserve accepted history and link superseding decisions.\n",
         }
         for relative, content in defaults.items():
+            if relative == p["paths"]["adr"] + "/README.md" and any(safe(root, p["paths"]["adr"]).glob("[0-9]*.md")):
+                continue
             if not safe(root, relative).exists():
                 writes[relative] = content
         if hooks or old_manifest.get("hooks_requested", False):
@@ -524,6 +569,11 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
         if ci:
             managed(".github/workflows/ark-verify.yml", (ASSETS / "consumer-ci.yml").read_bytes())
         manifest = {"schema_version": 1, "kit_version": VERSION, "files": owned, "agents_block": digest(block_text.encode()), "hooks_requested": hooks or old_manifest.get("hooks_requested", False), "ci_requested": ci or old_manifest.get("ci_requested", False)}
+        migrations = list(old_manifest.get("migrations", []))
+        if retired or preserved_custom:
+            migrations.append({"from": old_manifest.get("kit_version"), "to": VERSION, "retired": retired, "preserved_custom": preserved_custom})
+        if migrations:
+            manifest["migrations"] = migrations
         writes[MANIFEST] = dump(manifest)
         changed = transact(root, writes)
         if p["mode"] == "existing":
@@ -534,11 +584,11 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
         return report
 
 
-def onboard_repo(root, mode="auto", agents=None, hooks=True, ci="none", upgrade=False, copy_skills=None):
+def onboard_repo(root, mode="auto", agents=None, hooks=True, ci="none", upgrade=False, copy_skills=None, path_overrides=None):
     """Shared first-use operation for installed Skills and the compatibility entry."""
     # A GitHub remote says nothing about whether this project wants hosted CI.
     enable_ci = ci == "github"
-    result = init_repo(root, mode, agents, hooks, enable_ci, upgrade, copy_skills)
+    result = init_repo(root, mode, agents, hooks, enable_ci, upgrade, copy_skills, path_overrides)
     p = policy_at(root)
     health = doctor(root, p)
     result["scaffold_status"] = result["status"]
@@ -555,6 +605,10 @@ def onboard_repo(root, mode="auto", agents=None, hooks=True, ci="none", upgrade=
     return result
 
 
+def evidence_root(p):
+    return p["paths"].get("evidence", p["paths"]["baseline"] + "/raw")
+
+
 def baseline_inventory(root, p):
     path = p["paths"]["baseline"] + "/coverage.json"
     old = read_json(safe(root, path), {"files": {}})
@@ -568,7 +622,7 @@ def baseline_inventory(root, p):
         reviewed[relative] = {**details, "status": state, "document": previous.get("document"), "document_sha256": previous.get("document_sha256"), "reviewer": previous.get("reviewer"), "reviewed_at": previous.get("reviewed_at"), "level": previous.get("level"), "module": relative.split("/")[0] if "/" in relative else "root"}
     source = git(root, "rev-parse", "HEAD", optional=True)
     coverage = {"schema_version": 1, "source_ref": source.decode().strip() if source else None, "source_fingerprint": digest(dump(files).encode()), "files": reviewed, "removed": sorted(set(old.get("files", {})) - set(reviewed))}
-    snapshot = p["paths"]["baseline"] + "/raw/inventory-" + coverage["source_fingerprint"][:16] + ".json"
+    snapshot = evidence_root(p) + "/inventory-" + coverage["source_fingerprint"][:16] + ".json"
     writes = {path: dump(coverage)}
     if not safe(root, snapshot).exists():
         writes[snapshot] = dump(coverage)
@@ -656,7 +710,7 @@ def knowledge_record(root, p, kind, document, files, reviewer):
     record = {"kind": kind, "document": document, "document_sha256": digest(path.read_bytes()), "sources": sources,
               "reviewer": reviewer, "level": "static-declared", "state": "reviewed", "cases": cases, "promoted_to": []}
     identity = digest(dump(record).encode())
-    snapshot = base + "/raw/reviews/" + identity
+    snapshot = evidence_root(p) + "/reviews/" + identity
     record.update(snapshot=snapshot, source_ref=(git(root, "rev-parse", "HEAD", optional=True) or b"").decode().strip() or None)
     previous = index["documents"].get(document)
     if previous and previous.get("snapshot") == snapshot:
@@ -709,7 +763,7 @@ def knowledge_transition(root, p, document, reviewer, decision, requirements=Non
     item.update(state="obsolete" if obsolete else "promoted", promoted_to=[] if obsolete else requirements,
                 decision=decision, decision_sha256=digest(artifact.read_bytes()), decision_reviewer=reviewer)
     event = {"document": document, "record": item, "decision_text": artifact.read_text(encoding="utf-8"), "recorded_at": now(), "meaning": "Recorded decision; authority and semantic quality require review"}
-    event_path = base + "/raw/transitions/" + digest(dump(event).encode()) + ".json"
+    event_path = evidence_root(p) + "/transitions/" + digest(dump(event).encode()) + ".json"
     transact(root, {base + "/knowledge.json": dump(index), event_path: dump(event)})
     return {"status": "PASS", "state": item["state"], "document": document, "meaning": event["meaning"]}
 
@@ -948,6 +1002,16 @@ def specification_findings(root, p, paths=None):
     return findings
 
 
+def adr_status(text):
+    match = re.search(r"(?m)^[ \t]*(?:[-*][ \t]+)?(?:\*\*Status:\*\*|(?:\*\*)?Status(?:\*\*)?:)[ \t]*(.+?)[ \t]*$", markdown_structure(text))
+    return (match.group(1).strip().strip("`"), match.start(), match.end()) if match else None
+
+
+def adr_body(text):
+    status = adr_status(text)
+    return text[:status[1]] + "Status:" + text[status[2]:] if status else text
+
+
 def engineering_relations(root, p):
     findings = []
     current = current_requirement_ids(root, p)
@@ -967,11 +1031,11 @@ def engineering_relations(root, p):
         numbers[number] = path.name
         adrs.append((number, path, path.read_text(encoding="utf-8")))
     for number, path, text in adrs:
-        status = re.search(r"(?m)^Status:\s*(.+)$", text)
-        if not status or not re.match(r"(Proposed|Accepted|Rejected|Deprecated|Superseded)\b", status.group(1)):
+        status = adr_status(text)
+        if not status or not re.match(r"(Proposed|Accepted|Rejected|Deprecated|Superseded)\b", status[0]):
             findings.append({"status": "FAIL", "code": "adr-status", "message": f"Declare an ADR lifecycle status: {path.relative_to(root)}"})
-        elif status.group(1).startswith("Superseded"):
-            target = re.search(r"(?:ADR[- ]|by\s+)(\d+)", status.group(1), re.I)
+        elif status[0].startswith("Superseded"):
+            target = re.search(r"(?:ADR[- ]|by\s+)(\d+)", status[0], re.I)
             if not target or int(target.group(1)) not in numbers or int(target.group(1)) == number:
                 findings.append({"status": "FAIL", "code": "adr-supersession", "message": f"Missing/distinct superseding ADR required: {path.relative_to(root)}"})
     index = read_json(safe(root, p["paths"]["baseline"] + "/knowledge.json"), {"documents": {}})
@@ -1440,7 +1504,7 @@ def verify(root, p, phase="structure", change=None, base=None, selected=None, pe
                     record = {"status": report["status"], "source_ref": report["source_ref"], "source_files": scoped_sources(root, p, change_metadata["scope"]),
                               "fingerprint": start_fingerprint, "signature": signature, "checks": checks, "python": report["python"], "platform": report["platform"],
                               "logs": {item["name"]: safe(root, item["log"]).read_text(encoding="utf-8", errors="replace") for item in checks if item.get("log")}}
-                    snapshot = p["paths"]["baseline"] + "/raw/behavior/" + digest(dump(record).encode()) + ".json"
+                    snapshot = evidence_root(p) + "/behavior/" + digest(dump(record).encode()) + ".json"
                     transact(root, {snapshot: dump(record), anchor_path.relative_to(root).as_posix(): dump({"scope": change_metadata["scope"], "source_ref": report["source_ref"],
                         "ready_fingerprint": start_fingerprint, "signature": signature["sha256"], "snapshot": snapshot, "snapshot_sha256": digest(dump(record).encode()),
                         "run_id": run_id, "reviewed_files": {path: item for path, item in coverage["files"].items() if path in record["source_files"]}})})
@@ -1560,6 +1624,10 @@ def work_selection(root, p, changed=None, behavior=None):
     changed = changed_files(root) if changed is None else changed
     behavior = [path for path in changed if is_behavior(path) and not excluded(path, p)] if behavior is None else behavior
     candidates, catalog = [], []
+    associations = p.get("change_associations", {})
+    def owner(path):
+        prefixes = [prefix for prefix in associations if under(path, prefix)]
+        return associations[max(prefixes, key=len)] if prefixes else None
     for directory in change_directories(root, p, archived=True):
         metadata = read_json(directory / "ark.json") if (directory / "ark.json").is_file() else file_change_metadata(root, p, directory)
         relative = directory.relative_to(root).as_posix()
@@ -1567,7 +1635,7 @@ def work_selection(root, p, changed=None, behavior=None):
             catalog.append(metadata["id"])
         elif not any(under(path, relative) for path in changed):
             continue
-        matched = [path for path in behavior if any(under(path, scope) for scope in metadata["scope"])]
+        matched = [path for path in behavior if any(under(path, scope) for scope in metadata["scope"]) and owner(path) in {None, metadata["id"]}]
         if matched or any(under(path, relative) for path in changed):
             candidates.append({"id": metadata["id"], "path": relative, "files": matched, "scope": metadata["scope"], "scope_source": metadata.get("scope_source", "declared")})
     overlaps = {path: [item["id"] for item in candidates if path in item["files"]] for path in behavior}
@@ -1670,14 +1738,16 @@ def ci_verify(root, p, base, local=False):
         new = path.read_bytes() if path.is_file() else b""
         if under(relative, p["paths"]["changes"] + "/archive") and old != new:
             immutable.append({"status": "FAIL", "code": "archive-history", "message": f"Archived history changed; add a supplemental change: {relative}"})
-        if under(relative, p["paths"]["baseline"] + "/raw") and old != new:
+        if (under(relative, p["paths"]["baseline"] + "/raw") or under(relative, evidence_root(p))) and old != new:
             immutable.append({"status": "FAIL", "code": "raw-history", "message": f"Historical raw evidence changed: {relative}"})
-        if under(relative, p["paths"]["adr"]) and re.search(rb"^Status:\s*Accepted\s*$", old, re.MULTILINE):
-            normalized_old = re.sub(rb"^Status:.*$", b"Status:", old, flags=re.MULTILINE)
-            normalized_new = re.sub(rb"^Status:.*$", b"Status:", new, flags=re.MULTILINE)
-            if not re.search(rb"^Status:\s*(Accepted|Superseded\b.*)\s*$", new, re.MULTILINE):
+        old_text = old.decode("utf-8", errors="strict") if under(relative, p["paths"]["adr"]) else ""
+        new_text = new.decode("utf-8", errors="strict") if old_text else ""
+        previous_status = adr_status(old_text)
+        if previous_status and previous_status[0] == "Accepted":
+            current_status = adr_status(new_text)
+            if not current_status or not re.match(r"^(Accepted|Superseded\b.*)$", current_status[0]):
                 immutable.append({"status": "FAIL", "code": "accepted-adr-status", "message": f"Accepted decision can only remain Accepted or name a superseding decision: {relative}"})
-            if normalized_old != normalized_new:
+            if adr_body(old_text) != adr_body(new_text):
                 immutable.append({"status": "FAIL", "code": "accepted-adr", "message": f"Accepted ADR body changed; preserve it and add a superseding decision: {relative}"})
     manifest = read_json(safe(root, MANIFEST))
     owned = set(manifest.get("files", {}))
@@ -1705,7 +1775,7 @@ def ci_verify(root, p, base, local=False):
     if uncovered:
         results.append({"status": "FAIL", "code": "untracked-behavior-change", "message": f"Behavior/configuration changes need a scoped active or newly archived change: {uncovered}"})
     for change in candidates:
-        affects_behavior = any(any(under(relative, scope) for scope in change_at(root, p, change)[1]["scope"]) for relative in behavior)
+        affects_behavior = bool(next(item for item in selection["candidates"] if item["id"] == change)["files"])
         if affects_behavior and change_at(root, p, change)[1]["kind"] == "docs":
             results.append({"status": "FAIL", "code": "classification", "message": f"{change} is marked docs but intersects behavior/configuration changes."})
         else:
@@ -1830,6 +1900,7 @@ def parser():
     init.add_argument("--hooks", action="store_true")
     init.add_argument("--ci", choices=["github"])
     init.add_argument("--upgrade", action="store_true")
+    init.add_argument("--path", action="append", dest="mappings", help="Reuse an existing asset location: KEY=repository-relative-path")
     sub.add_parser("doctor")
     ctx = sub.add_parser("context")
     ctx.add_argument("--session", default="default")
@@ -1944,7 +2015,7 @@ def main(argv=None):
                 raise KitError("Hook input must be a JSON object")
         if args.command == "init":
             root = Path(args.repo or args.path).expanduser().resolve()
-            result = init_repo(root, args.mode, args.agents.split(",") if args.agents else None, args.hooks, bool(args.ci), args.upgrade)
+            result = init_repo(root, args.mode, args.agents.split(",") if args.agents else None, args.hooks, bool(args.ci), args.upgrade, path_overrides=parse_paths(args.mappings))
         else:
             root = root_at(args.repo or payload.get("cwd") or Path.cwd())
             p = policy_at(root)

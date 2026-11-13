@@ -62,3 +62,13 @@ jobs:
           git init
           npx --yes skills@1.8.1 add "$SOURCE_REPOSITORY#$SOURCE_REF" --skill '*' --agent codex --copy --yes
           python -I -S .agents/skills/initialize-repo/scripts/initialize.py . --agents codex --no-hooks --ci none
+      - name: Qualify native OpenSpec lifecycle and local-only new-project evolution
+        env:
+          DISABLE_TELEMETRY: '1'
+        run: python tools/qualify_openspec.py --output "$RUNNER_TEMP/openspec-qualification.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-openspec-qualification
+          path: ${{ runner.temp }}/openspec-qualification.json
+          if-no-files-found: ignore

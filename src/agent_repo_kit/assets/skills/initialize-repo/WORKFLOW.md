@@ -11,7 +11,12 @@ description: Initialize or explicitly upgrade reusable AI engineering rules, ski
    in `.ai/policy.json`; do not recreate specs, rename IDs or overwrite human decisions.
 3. When invoked as an installed plugin/Skill, locate `scripts/initialize.py` relative to
    THIS SKILL.md and run it with an available Python 3.11+ interpreter and the target root.
-   Pass `--agents claude`, `codex` or `opencode` for the runtime you actually use. The helper
+   Pass `--agents claude`, `codex` or `opencode` for the runtime you actually use.
+   Before the first write, pass observed native asset mappings as repeated `--path KEY=path`
+   arguments, for example `--path questions=docs/baseline/open-questions.md` and
+   `--path evidence=docs/agent-evidence` when the native raw-batch schema is restrictive.
+   Reuse existing report/front-matter templates. Do not manufacture a parallel ledger or
+   insert generic material that fails an existing native validator. The helper
    and resources are bundled inside this Skill; do not fetch a repository, ask the user to
    read a URL, install a Python package or run bootstrap.py. Installation is already complete.
    It creates project rules/checks and keeps using the installed Skills without duplicating

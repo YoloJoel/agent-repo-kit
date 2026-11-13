@@ -9,7 +9,7 @@ generated config, a protocol test and a live trusted runtime are different claim
 | Standalone Skills | Standard root `skills/<name>/SKILL.md`; self-contained initialize helper | Actual Skills CLI discovery/installation and copied-folder execution | Host controls installation scope/loading; invoke initialize-repo per repository |
 | Codex instructions/skills | Installed Skills plus generated project AGENTS | Native source/assets and project runtime checks | Confirm actual instruction/skill loading in selected runtime |
 | Codex Hooks | `.codex/hooks.json`, SessionStart and bounded Stop | Real JSON stdin/stdout subprocess protocol | Project/config trust; Python interpreter; live runtime behavior |
-| Claude plugin | Native plugin/marketplace metadata plus root skills/ | Actual Claude CLI strict manifest validation | Install through native marketplace; live model invocation is separate |
+| Claude plugin | Native plugin/marketplace metadata plus root skills/ | Actual 2.1.322 project-scope marketplace add/install and strict manifest validation | Live model invocation remains separate |
 | Claude instructions/skills | Plugin Skills plus project CLAUDE/AGENTS | Merge/import/asset checks | Avoid duplicate project Skill copies after platform installation |
 | Claude Hooks | Merge `.claude/settings.json`, SessionStart/Stop | Claude Code 2.1.322 native --init-only SessionStart executed; Stop subprocess/bounds tested | Full model conversation/live Stop remains unverified; host permissions and Python apply |
 | OpenCode | AGENTS and `.opencode/skills` | Native discovery layout generated | Confirm live skill discovery; lifecycle plugin not implemented |
@@ -43,3 +43,14 @@ global instructions, silently authorize hooks or configure branch protection.
 
 Adapters use the shared runtime; the toolkit does not assume that matching event names
 across products imply identical trust, configuration, loading or blocking behavior.
+
+## Final qualification
+
+The final iteration runs 102 source/installed workflow tests and native artifact checks. The
+toolkit CI executes actual local/remote Skills installation and real OpenSpec 2.0.0 two-change
+qualification in addition to Linux/Windows/macOS × Python 3.11/3.13. Actual final-head job
+results, not this configuration description, establish platform acceptance. A real isolated
+reference snapshot passed its unchanged Java/Maven native verify (226 tests), then a scoped
+refactor with four new old-version characterization tests (230 tests) and a negative mutation.
+Full-repository business semantics, production systems and unavailable old external source
+are not certified. See acceptance.md for evidence and remaining runtime boundaries.

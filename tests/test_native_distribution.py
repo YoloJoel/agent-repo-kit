@@ -89,6 +89,22 @@ class NativeDistributionTests(unittest.TestCase):
         self.assertEqual(json.loads(second.stdout)["changed"], [])
         self.assertEqual(files_hash(installed), before)
 
+    def test_first_use_reuses_native_ledger_and_machine_evidence_paths(self):
+        ledger = self.target / "docs/native/questions.md"
+        ledger.parent.mkdir(parents=True)
+        ledger.write_text("# Human native ledger\nKeep existing identifiers.\n", encoding="utf-8")
+        args = ("--no-hooks", "--path", "questions=docs/native/questions.md", "--path", "evidence=docs/review-evidence")
+        run = self.run_initializer(*args)
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        policy = json.loads((self.target / ".ai/policy.json").read_text(encoding="utf-8"))
+        self.assertEqual(policy["paths"]["questions"], "docs/native/questions.md")
+        self.assertEqual(policy["paths"]["evidence"], "docs/review-evidence")
+        self.assertFalse((self.target / "docs/baseline/questions.json").exists())
+        self.assertEqual(ledger.read_text(encoding="utf-8"), "# Human native ledger\nKeep existing identifiers.\n")
+        repeat = self.run_initializer(*args)
+        self.assertEqual(repeat.returncode, 0, repeat.stdout + repeat.stderr)
+        self.assertEqual(json.loads(repeat.stdout)["changed"], [])
+
     def test_bundle_corruption_fails_before_target_changes(self):
         resource = self.installed / "initialize-repo/scripts/resources.json"
         data = json.loads(resource.read_text(encoding="utf-8"))

@@ -177,6 +177,16 @@
       "additionalProperties": {
         "$ref": "#/$defs/path"
       }
+    },
+    "change_associations": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/path"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      }
     }
   },
   "$defs": {

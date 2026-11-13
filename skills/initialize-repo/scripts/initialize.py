@@ -26,6 +26,7 @@ def main(argv=None):
     parser.add_argument("--no-hooks", action="store_true")
     parser.add_argument("--ci", choices=["auto", "github", "none"], default="none")
     parser.add_argument("--upgrade", action="store_true")
+    parser.add_argument("--path", action="append", dest="mappings", help="Existing asset mapping: KEY=repository-relative-path")
     args = parser.parse_args(argv)
     scripts = Path(__file__).resolve().parent
     try:
@@ -54,7 +55,7 @@ def main(argv=None):
             result = engine.onboard_repo(
                 Path(args.path).expanduser().resolve(), args.mode,
                 args.agents.split(",") if args.agents else None,
-                not args.no_hooks, args.ci, args.upgrade, copy_skills=False,
+                not args.no_hooks, args.ci, args.upgrade, copy_skills=False, path_overrides=engine.parse_paths(args.mappings),
             )
         result["entry"] = "installed-skill"
         result["installation"] = "Use the platform-installed Skills. No repository download, pip, global CLI or duplicate project Skill installation is needed."

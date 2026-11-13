@@ -1,18 +1,18 @@
 # agent-repo-kit：七轮迭代与验收计划
 
-版本：1.0｜日期：2026-11-13｜状态：后续实施计划，本文不代表新增能力已经实现。
+版本：1.1｜日期：2026-11-13｜状态：按七轮执行；实际结果与未实测边界见 [最终验收](acceptance.md)。原计划范围保留下文。
 
 实施补充：业务仓不要求 GitHub 或任何 CI；本地校验是基础，CI/托管平台仅为可选增强。
 
 目标：将参考仓的成熟工程方式提炼为通用、可安装、可持续维护的仓库工程套件。新仓和存量仓首次接入后，可以继续使用 OpenSpec、其他开发 Skills 或直接与大模型对话；工程要求由仓内规则和可执行校验持续生效。
 
-**一、参照与当前起点**
+**一、计划制定时的参照与起点**
 
 - 实现仓：[YoloJoel/agent-repo-kit](https://github.com/YoloJoel/agent-repo-kit)，当前实现位于 [PR #1](https://github.com/YoloJoel/agent-repo-kit/pull/1)，核对版本为 `ab65b710bff6dfa9d6f49806b1030aa16fdf802f`，尚未合入 main。
 - 参考仓：[YoloJoel/linkdevice-data-service](https://github.com/YoloJoel/linkdevice-data-service)，本计划核对 main 版本 `36bdabc1835f331733e436453bb161bcd913a7b5`。
 - 主要参照资产：[工程规范](https://github.com/YoloJoel/linkdevice-data-service/blob/36bdabc1835f331733e436453bb161bcd913a7b5/docs/engineering-standard.md)、[AGENTS.md](https://github.com/YoloJoel/linkdevice-data-service/blob/36bdabc1835f331733e436453bb161bcd913a7b5/AGENTS.md)、[Baseline](https://github.com/YoloJoel/linkdevice-data-service/blob/36bdabc1835f331733e436453bb161bcd913a7b5/docs/baseline/README.md)、[规格校验器](https://github.com/YoloJoel/linkdevice-data-service/blob/36bdabc1835f331733e436453bb161bcd913a7b5/hack/verify_spec.py)和验证报告模板。
 - 已有基础：原生 Claude Plugin、三个标准 Skill、自包含初始化助手、仓内执行内核、基础 Baseline/Change/验证/归档、证据时效、有限 Stop 提醒和 CI。已记录 47 项工具测试与七项跨平台/安装器 CI 通过。
-- 当前不足：日常开发仍绑定 deliver-change 与 ark.json；专业知识资产、决策管理和专项校验不完整；真实复杂业务仓、真实运行器中的完整效果尚未验收。
+- 当时不足：日常开发仍绑定 deliver-change 与 ark.json；专业知识资产、决策管理和专项校验不完整；真实复杂业务仓、真实运行器中的完整效果尚未验收。
 
 本计划保留原完整设计中关于证据、幂等、兼容、风险分级、可恢复与真实验证的要求，并修正其中将 deliver-change 作为日常开发入口的设计。原实现中仍有价值的校验、报告和恢复能力继续复用。
 
