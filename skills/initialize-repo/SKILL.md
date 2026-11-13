@@ -17,7 +17,7 @@ description: Initialize or explicitly upgrade reusable AI engineering rules, ski
    It creates project rules/checks and keeps using the installed Skills without duplicating
    them in the target. For repository-generated workflows without this helper, reuse the
    target's existing `python hack/ai/ark.py` entry. Merge managed conflicts explicitly.
-4. Read generated policy. Confirm actual check commands from project configuration and
+4. Read generated policy and observed project context. Verify project boundaries, versions and roots; fill source-backed context and explicit gaps. Reuse existing human documents. Confirm actual check commands from project configuration and
    execution before adding them to `checks`. Candidates are suggestions, not gates.
    Read `references/onboarding.md` for configuration, discovery and upgrade details.
 5. For existing code, continue with **baseline-repo**: explain behavior, cite evidence,
@@ -29,7 +29,7 @@ description: Initialize or explicitly upgrade reusable AI engineering rules, ski
    same local entry for later examples written as `ark`. No global ark is required.
    Diagnose live skill/hook loading when the corresponding runtime is available.
 8. Report installed assets, semantic coverage, checks executed, runtime loading/trust
-   and remote required-check configuration separately. Configuration-only is not live PASS.
+   and optional remote required-check configuration separately. No CI is required; enable hosted CI only when explicitly requested. Configuration-only is not live PASS.
 
 Keep initialization idempotent. Reuse relevant context on later sessions; do not repeat
 whole-repository analysis at startup. Preserve existing content and accepted history.

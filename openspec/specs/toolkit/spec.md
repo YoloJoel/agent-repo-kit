@@ -139,3 +139,18 @@ current accepted specifications; synchronization SHALL be checked after native a
 - WHEN the selected development tool implements and tests the scoped behavior
 - THEN local verification runs real checks without a toolkit lifecycle or remote service
 - AND ambiguous associations or unsynchronized archived specifications cannot pass
+
+### Requirement: Observe project facts and preserve context (REQ-CONTEXTUAL-001)
+
+Verification: automated and workflow review
+
+Initialization SHALL observe languages, build manifests, declared versions and roots from
+actual repository files. Unknown business architecture SHALL remain unknown. Existing human
+context SHALL be preserved. Risk-appropriate templates and a local engineering standard
+SHALL be available without requiring every task to produce every asset.
+
+#### Scenario: Initialize a mixed-language repository
+
+- GIVEN actual Java/C source, a Maven declaration and human context
+- WHEN initialization observes the repository and repeats
+- THEN source-backed facts are navigable, human context is preserved, and repeated setup is inert
