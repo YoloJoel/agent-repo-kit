@@ -170,3 +170,15 @@ SHALL be reusable; generated decision views SHALL have one authoritative source.
 - GIVEN a registered source-backed explanation and immutable snapshot
 - WHEN source changes and the explanation is refreshed
 - THEN the old snapshot remains, freshness is explicit and a new declaration is recorded
+
+### Requirement: Validate engineering relations without binding the development tool (REQ-RELATIONS-001)
+
+Verification: automated
+
+The toolkit SHALL validate applicable current/delta scenarios, identities, references, ADR and knowledge relations. Native titles/renames and foreign IDs SHALL remain usable. Format exceptions SHALL be explicit, content-bound, expiring and unable to waive required business checks. Human report content and accepted history SHALL be preserved. Specification-stage success SHALL NOT count as delivery success.
+
+#### Scenario: Review native specifications before implementation
+
+- WHEN valid native proposal/tasks/delta files still contain unfinished implementation tasks
+- THEN specification review can pass without running business commands
+- AND delivery remains pending until applicable checks and tasks are complete

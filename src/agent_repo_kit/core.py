@@ -19,7 +19,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import uuid
 import xml.etree.ElementTree as ET
 
@@ -31,6 +31,9 @@ START = "<!-- agent-repo-kit:start -->"
 END = "<!-- agent-repo-kit:end -->"
 FILL = "<!-- ARK:FILL -->"
 REQ = re.compile(r"\bREQ-[A-Z0-9]+(?:-[A-Z0-9]+)*\b")
+DECLARED_ID = re.compile(r"\b[A-Z][A-Z0-9_]*(?:-[A-Z0-9_]+)*-\d+[A-Z0-9_]*\b")
+VERIFY_START = "<!-- agent-repo-kit:verification:start -->"
+VERIFY_END = "<!-- agent-repo-kit:verification:end -->"
 ID = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 SKILLS = ("initialize-repo", "baseline-repo")
 AGENT_DIRS = {"codex": ".agents/skills", "claude": ".claude/skills", "opencode": ".opencode/skills"}
@@ -222,7 +225,7 @@ def policy_at(root):
     if not isinstance(p.get("requirements", {}), dict):
         raise KitError("policy.requirements must be an object")
     for requirement, mapping in p.get("requirements", {}).items():
-        if not REQ.fullmatch(requirement) or not isinstance(mapping, dict) or mapping.get("type") not in {"automated", "manual", "external"}:
+        if not isinstance(requirement, str) or not requirement.strip() or not isinstance(mapping, dict) or mapping.get("type") not in {"automated", "manual", "external"}:
             raise KitError(f"Invalid requirement verification mapping: {requirement}")
         if not isinstance(mapping.get("checks", []), list) or any(name not in names for name in mapping.get("checks", [])):
             raise KitError(f"Unknown requirement check mapping: {requirement}")
@@ -690,10 +693,7 @@ def knowledge_transition(root, p, document, reviewer, decision, requirements=Non
         status = next(item for item in knowledge_status(root, p)["documents"] if item["document"] == document)
         if status["freshness"] != "current":
             raise KitError("Refresh stale source/document evidence before promotion")
-        current = set()
-        for path in safe(root, p["paths"]["specs"]).glob("**/*.md"):
-            for block in requirement_blocks(path.read_text(encoding="utf-8")):
-                current.update(REQ.findall(block.splitlines()[0]))
+        current = current_requirement_ids(root, p)
         if not requirements or not set(requirements).issubset(current):
             raise KitError("Promotion must name real current requirement declarations")
     item = index["documents"][document]
@@ -796,18 +796,14 @@ def file_change_metadata(root, p, directory):
             continue
         if path.exists() and not excluded(candidate, p) and (path.is_dir() or is_behavior(candidate)):
             scope.append(candidate)
-    origin = "proposal" if scope else "diff"
-    if not scope:
-        scope = [path for path in changed_files(root) if is_behavior(path) and not excluded(path, p)]
+    origin = "proposal" if scope else "repository"
     if not scope:
         origin = "repository"
         scope = p.get("source_paths", ["."])
-    removed = []
-    for section in re.split(r"(?m)^## ", text):
-        if section.startswith("REMOVED Requirements"):
-            removed.extend(REQ.findall(section))
+    records = [item for path in deltas for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name)]
+    removed = [item["id"] for item in records if item["section"] == "REMOVED"]
     return {"schema_version": 1, "id": name, "kind": kind_match.group(1) if kind_match else ("feature" if deltas else "maintenance"),
-            "scope": sorted(set(scope)), "scope_source": origin, "requirements": sorted(set(REQ.findall(text))),
+            "scope": sorted(set(scope)), "scope_source": origin, "requirements": sorted({item["id"] for item in records}),
             "removed_requirements": sorted(set(removed)), "state": "complete" if directory.parent.name == "archive" else "draft", "origin": "files"}
 
 
@@ -831,7 +827,7 @@ def change_at(root, p, change):
     for relative in metadata["scope"]:
         if relative != ".":
             safe(root, relative)
-    if not isinstance(metadata.get("requirements", []), list) or any(not isinstance(x, str) or not REQ.fullmatch(x) for x in metadata.get("requirements", [])):
+    if not isinstance(metadata.get("requirements", []), list) or any(not isinstance(x, str) or not x.strip() for x in metadata.get("requirements", [])):
         raise KitError(f"Malformed requirement ID in {change}")
     removed = metadata.get("removed_requirements", [])
     if not isinstance(removed, list) or not set(removed).issubset(metadata.get("requirements", [])):
@@ -900,6 +896,120 @@ def active(root, session="default"):
     return read_json(safe(root, f".ai/runtime/contexts/{context_key(root, session)}.json"), {}).get("change")
 
 
+def specification_findings(root, p, paths=None):
+    findings, seen = [], {}
+    paths = list(paths) if paths is not None else sorted(safe(root, p["paths"]["specs"]).glob("**/*.md"))
+    for path in paths:
+        relative = path.relative_to(root).as_posix()
+        text = safe(root, relative).read_text(encoding="utf-8")
+        records = spec_records(text, path.parent.name)
+        def issue(status, code, message, line=1):
+            findings.append({"status": status, "code": code, "path": relative, "line": line, "message": f"{relative}:{line}: {message}"})
+        if path.name == "spec.md" and not records:
+            issue("PENDING", "spec-empty", "Declare observable requirements or valid native renames.")
+        for item in records:
+            identifier, body, line = item["id"], item["body"], item["line"]
+            if item["section"] != "RENAMED":
+                if identifier in seen:
+                    issue("FAIL", "duplicate-requirement", f"{identifier} also declared in {seen[identifier]}", line)
+                seen[identifier] = relative
+            if item["section"] == "REMOVED":
+                if not re.search(r"(?i)(reason|migration|原因|迁移)", body):
+                    issue("PENDING", "removal-rationale", f"Explain removal and compatibility of {identifier}.", line)
+                continue
+            if item["section"] == "RENAMED":
+                continue
+            if not re.search(r"\b(SHALL|MUST|SHOULD)\b|必须|应当", body):
+                issue("FAIL", "requirement-wording", f"{identifier} needs an observable normative statement.", line)
+            scenarios = re.split(r"(?m)^#### Scenario:[^\n]*\n", body)[1:]
+            if not scenarios or any(not re.search(r"\bWHEN\b|当", scenario, re.I) or not re.search(r"\bTHEN\b|则", scenario, re.I) for scenario in scenarios):
+                issue("FAIL", "scenario-conditions", f"{identifier} needs named scenarios with WHEN and THEN.", line)
+            verification = re.search(r"(?im)^Verification:\s*(.+)$", body)
+            if verification and not re.match(r"(automated|manual|external)\b", verification.group(1), re.I):
+                issue("FAIL", "verification-type", f"{identifier}: use automated, manual or external verification.", line)
+            for match in re.finditer(r"(?im)^(?:Source|Baseline|Decision):\s*\x60?([^\s\x60]+)", body):
+                reference = re.sub(r":L?\d+(?:-L?\d+)?$", "", match.group(1).split("#", 1)[0])
+                if "://" not in reference and not safe(root, reference).is_file():
+                    issue("FAIL", "broken-evidence-link", f"Missing referenced evidence: {reference}", line)
+        for section in re.split(r"(?m)^## ", markdown_structure(text)):
+            if section.startswith("RENAMED Requirements"):
+                tags = re.findall(r"(?m)^\s*-?\s*(FROM|TO):", section)
+                if not tags or len(tags) % 2 or any(tag != ("FROM" if i % 2 == 0 else "TO") for i, tag in enumerate(tags)):
+                    issue("FAIL", "rename-pairs", "Native renames require alternating FROM and TO pairs.")
+    return findings
+
+
+def engineering_relations(root, p):
+    findings = []
+    current = current_requirement_ids(root, p)
+    for directory in change_directories(root, p, archived=True):
+        if directory.parent.name != "archive":
+            continue
+        for path in directory.glob("specs/**/*.md"):
+            for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name):
+                if item["section"] == "REMOVED" and item["id"] in current:
+                    findings.append({"status": "FAIL", "code": "retired-id-reuse", "path": path.relative_to(root).as_posix(),
+                                     "message": f"Retired requirement remains/reappears current: {item['id']}"})
+    numbers, adrs = {}, []
+    for path in sorted(safe(root, p["paths"]["adr"]).glob("[0-9]*.md")):
+        number = int(re.match(r"\d+", path.name).group())
+        if number in numbers:
+            findings.append({"status": "FAIL", "code": "adr-number", "message": f"Duplicate ADR number: {path.name}, {numbers[number]}"})
+        numbers[number] = path.name
+        adrs.append((number, path, path.read_text(encoding="utf-8")))
+    for number, path, text in adrs:
+        status = re.search(r"(?m)^Status:\s*(.+)$", text)
+        if not status or not re.match(r"(Proposed|Accepted|Rejected|Deprecated|Superseded)\b", status.group(1)):
+            findings.append({"status": "FAIL", "code": "adr-status", "message": f"Declare an ADR lifecycle status: {path.relative_to(root)}"})
+        elif status.group(1).startswith("Superseded"):
+            target = re.search(r"(?:ADR[- ]|by\s+)(\d+)", status.group(1), re.I)
+            if not target or int(target.group(1)) not in numbers or int(target.group(1)) == number:
+                findings.append({"status": "FAIL", "code": "adr-supersession", "message": f"Missing/distinct superseding ADR required: {path.relative_to(root)}"})
+    index = read_json(safe(root, p["paths"]["baseline"] + "/knowledge.json"), {"documents": {}})
+    for document, item in index["documents"].items():
+        if item.get("state") == "promoted" and not set(item.get("promoted_to", [])).issubset(current):
+            findings.append({"status": "FAIL", "code": "knowledge-promotion", "message": f"Promotion refers to missing current requirements: {document}"})
+    return findings
+
+
+def apply_format_exceptions(root, p, findings):
+    """Only explicit, content-bound, expiring format debt can become WARN."""
+    allowed = {"requirement-wording", "scenario-conditions", "verification-type"}
+    rules = p.get("format_exceptions", [])
+    if not isinstance(rules, list):
+        raise KitError("policy.format_exceptions must be an array")
+    result = []
+    for finding in findings:
+        entry = dict(finding)
+        for rule in rules:
+            if not isinstance(rule, dict):
+                raise KitError("Format exceptions must be objects")
+            if rule.get("code") != entry.get("code") or rule.get("path") != entry.get("path"):
+                continue
+            valid = rule.get("code") in allowed and all(isinstance(rule.get(key), str) and rule[key].strip() for key in ("owner", "reason", "expires", "decision", "sha256", "decision_sha256"))
+            try:
+                valid = valid and date.fromisoformat(rule["expires"]) >= datetime.now(timezone.utc).date()
+                source, decision = safe(root, rule["path"]), safe(root, rule["decision"])
+                valid = valid and source.is_file() and decision.is_file() and digest(source.read_bytes()) == rule["sha256"] and digest(decision.read_bytes()) == rule["decision_sha256"]
+            except (KitError, ValueError, KeyError):
+                valid = False
+            if valid:
+                entry.update(status="WARN", exception={key: rule[key] for key in ("owner", "reason", "expires", "decision")})
+            else:
+                entry["exception_rejected"] = "Expired, unsafe, unsupported, incomplete or changed content/decision."
+        result.append(entry)
+    return result
+
+
+def verification_document(existing, generated):
+    managed = VERIFY_START + "\n" + generated.rstrip() + "\n" + VERIFY_END
+    if VERIFY_START not in existing and VERIFY_END not in existing:
+        return existing + ("\n\n" if existing else "") + managed + "\n"
+    if existing.count(VERIFY_START) != 1 or existing.count(VERIFY_END) != 1 or existing.index(VERIFY_END) < existing.index(VERIFY_START):
+        return existing
+    return existing[:existing.index(VERIFY_START)] + managed + existing[existing.index(VERIFY_END) + len(VERIFY_END):]
+
+
 def structure_findings(root, p):
     findings = []
     manifest = read_json(safe(root, MANIFEST))
@@ -918,31 +1028,24 @@ def structure_findings(root, p):
         claude = safe(root, "CLAUDE.md")
         if not claude.is_file() or "@AGENTS.md" not in claude.read_text(encoding="utf-8").splitlines():
             findings.append({"status": "FAIL", "code": "claude-entry", "message": "CLAUDE.md compatibility import is missing."})
-    seen = {}
-    for path in sorted(safe(root, p["paths"]["specs"]).glob("**/*.md")):
-        text = safe(root, path.relative_to(root).as_posix()).read_text(encoding="utf-8")
-        if FILL in text:
-            findings.append({"status": "FAIL", "code": "spec-placeholder", "message": f"Unfilled current specification: {path.relative_to(root)}"})
-        declarations = set()
-        for line in text.splitlines():
-            if re.match(r"^#{2,4}\s+Requirement:", line):
-                declarations.update(REQ.findall(line))
-        for requirement in declarations:
-            if requirement in seen:
-                findings.append({"status": "FAIL", "code": "duplicate-requirement", "message": f"{requirement} appears in multiple current specs: {seen[requirement]}, {path.relative_to(root)}"})
-            seen[requirement] = path.relative_to(root).as_posix()
     for path in sorted(safe(root, p["paths"]["adr"]).glob("[0-9]*.md")):
         text = safe(root, path.relative_to(root).as_posix()).read_text(encoding="utf-8")
         if any(heading not in text for heading in ("## Context", "## Decision", "## Alternatives", "## Consequences")):
             findings.append({"status": "FAIL", "code": "adr-structure", "message": f"ADR missing required sections: {path.relative_to(root)}"})
-    return findings
+    return apply_format_exceptions(root, p, findings + specification_findings(root, p) + engineering_relations(root, p))
 
 
 def change_findings(root, p, change, phase):
     directory, metadata = change_at(root, p, change)
     findings = []
+    report_path = directory / "verify-report.md"
+    if report_path.is_file():
+        report_text = report_path.read_text(encoding="utf-8")
+        if VERIFY_START in report_text or VERIFY_END in report_text:
+            if report_text.count(VERIFY_START) != 1 or report_text.count(VERIFY_END) != 1 or report_text.index(VERIFY_END) < report_text.index(VERIFY_START):
+                findings.append({"status": "FAIL", "code": "verification-block", "message": "Repair malformed verification markers; human report has been preserved."})
     names = ["proposal.md", "tasks.md"]
-    if metadata.get("origin") != "files" or (directory / "design.md").exists():
+    if metadata.get("origin") != "files" or (directory / "design.md").exists() or metadata["kind"] == "refactor" or any(Path(scope).name in {"pom.xml", "package.json", "go.mod", "build.gradle", "Cargo.toml"} for scope in metadata["scope"]):
         names.append("design.md")
     for name in names:
         path = directory / name
@@ -952,11 +1055,13 @@ def change_findings(root, p, change, phase):
             findings.append({"status": "PENDING", "code": "draft-artifact", "message": f"Fill {change}/{name} or explain why its sections do not apply."})
     deltas = list(directory.glob("specs/**/*.md"))
     if phase != "structure":
+        findings += apply_format_exceptions(root, p, specification_findings(root, p, deltas))
         if metadata["kind"] in {"feature", "fix", "refactor"} and not metadata.get("requirements"):
-            findings.append({"status": "PENDING", "code": "missing-requirements", "message": "Declare the affected stable requirement IDs in ark.json before implementation."})
+            findings.append({"status": "PENDING", "code": "missing-requirements", "message": "Declare affected requirements in current/delta specifications before implementation."})
         for path in deltas:
             text = path.read_text(encoding="utf-8")
-            if FILL in text or "#### Scenario:" not in text:
+            needs_scenarios = any(item["section"] not in {"REMOVED", "RENAMED"} for item in spec_records(text, path.parent.name))
+            if FILL in text or needs_scenarios and "#### Scenario:" not in text:
                 findings.append({"status": "PENDING", "code": "delta-scenarios", "message": f"Fill observable scenarios in {path.relative_to(root)}"})
         if metadata["kind"] == "docs" and any(is_behavior(x) and not x.startswith("docs/") for x in metadata["scope"] if x != "."):
             findings.append({"status": "FAIL", "code": "task-classification", "message": "A docs change cannot declare source/configuration file scope."})
@@ -973,12 +1078,19 @@ def change_findings(root, p, change, phase):
         tests = "\n".join(safe(root, path).read_text(encoding="utf-8", errors="replace") for path in inventory_files(root, p) if any(under(path, prefix) for prefix in p["test_paths"]))
         spec_text = "\n".join(path.read_text(encoding="utf-8") for path in deltas)
         current_text = "\n".join(path.read_text(encoding="utf-8") for path in safe(root, p["paths"]["specs"]).glob("**/*.md"))
+        records = [item for path in deltas for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name)]
+        declared = current_requirement_ids(root, p) | {item["id"] for item in records}
         for requirement in metadata.get("requirements", []):
-            if requirement not in set(REQ.findall(spec_text + current_text)):
+            if requirement not in declared:
                 findings.append({"status": "FAIL", "code": "requirement-spec", "message": f"{requirement} has no specification reference."})
-            mapping = p.get("requirements", {}).get(requirement, {"type": "automated"})
+            declaration = next((item for item in records if item["id"] == requirement), {})
+            declared_type = re.search(r"(?im)^Verification:\s*(automated|manual|external)\b", declaration.get("body", ""))
+            mapping = p.get("requirements", {}).get(requirement, {"type": declared_type.group(1).lower() if declared_type else "automated"})
             verification_type = mapping.get("type", "automated")
-            if verification_type == "automated" and requirement not in set(REQ.findall(tests)):
+            configured_automated = {check["name"] for check in p["checks"] if check.get("type", "command") == "command" and check.get("required", True)}
+            mapped = bool(mapping.get("checks")) and set(mapping["checks"]).issubset(configured_automated)
+            referenced = bool(re.search(r"(?<![\w-])" + re.escape(requirement) + r"(?![\w-])", tests))
+            if verification_type == "automated" and not (mapped or referenced):
                 findings.append({"status": "PENDING", "code": "requirement-test", "message": f"{requirement} has no test-source reference; a reference still does not prove assertion quality."})
             elif verification_type in {"manual", "external"}:
                 configured = {check["name"] for check in p["checks"] if check.get("type") == verification_type and check.get("required", True)}
@@ -996,8 +1108,13 @@ def change_findings(root, p, change, phase):
                         for block in requirement_blocks(part):
                             if re.sub(r"\s+", " ", block).strip() not in current_blocks:
                                 findings.append({"status": "PENDING", "code": "spec-sync", "message": f"Synchronize and review current specifications using the selected workflow: {path.relative_to(root)}"})
+            current_labels = {(path.parent.name, item["label"]) for path in safe(root, p["paths"]["specs"]).glob("**/*.md") for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name)}
+            for path in deltas:
+                for old, new in rename_pairs(path.read_text(encoding="utf-8")):
+                    if (path.parent.name, new) not in current_labels or old != new and (path.parent.name, old) in current_labels:
+                        findings.append({"status": "PENDING", "code": "spec-sync", "message": f"Native rename not reflected in current specifications: {old} -> {new}"})
             for requirement in metadata.get("removed_requirements", []):
-                if requirement in set(REQ.findall(current_text)):
+                if requirement in current_requirement_ids(root, p):
                     findings.append({"status": "PENDING", "code": "spec-sync", "message": f"Retired requirement remains current: {requirement}"})
         elif deltas and metadata.get("origin") != "files":
             sync = read_json(directory / "spec-sync.json", {})
@@ -1008,8 +1125,68 @@ def change_findings(root, p, change, phase):
     return findings
 
 
+def markdown_structure(text):
+    """Mask fenced examples without moving source locations."""
+    lines, fence = [], None
+    for line in text.splitlines(keepends=True):
+        match = re.match(r"^\s*(\x60{3,}|~{3,})", line)
+        if match:
+            marker = match.group(1)[0]
+            if fence is None:
+                fence = marker
+            elif fence == marker:
+                fence = None
+            lines.append("".join("\n" if char == "\n" else " " for char in line))
+        elif fence:
+            lines.append("".join("\n" if char == "\n" else " " for char in line))
+        else:
+            lines.append(line)
+    return "".join(lines)
+
+
 def requirement_blocks(text):
-    return [match.group(0).strip() for match in re.finditer(r"(?ms)^### Requirement:.*?(?=^### Requirement:|^## |\Z)", text)]
+    return [text[m.start():m.end()] for m in re.finditer(r"(?ms)^### Requirement:.*?(?=^### Requirement:|^## |\Z)", markdown_structure(text))]
+
+
+def requirement_identity(label, capability):
+    identifier = DECLARED_ID.search(label) or REQ.search(label)
+    return identifier.group() if identifier else capability + "::" + label.strip()
+
+
+def rename_pairs(text):
+    result = []
+    for section in re.split(r"(?m)^## ", markdown_structure(text)):
+        if not section.startswith("RENAMED Requirements"):
+            continue
+        pending = None
+        for match in re.finditer(r"(?m)^\s*-?\s*(FROM|TO):\s*(.+)$", section):
+            label = match.group(2).strip().strip("\x60").removeprefix("### Requirement:").strip()
+            if match.group(1) == "FROM":
+                pending = label
+            elif pending:
+                result.append((pending, label))
+                pending = None
+    return result
+
+
+def spec_records(text, capability):
+    masked = markdown_structure(text)
+    result = []
+    for match in re.finditer(r"(?ms)^### Requirement:[ \t]*([^\n]+).*?(?=^### Requirement:|^## |\Z)", masked):
+        previous = list(re.finditer(r"(?m)^## (ADDED|MODIFIED|REMOVED|RENAMED) Requirements\s*$", masked[:match.start()]))
+        section = previous[-1].group(1) if previous else "CURRENT"
+        label = match.group(1).strip()
+        result.append({"id": requirement_identity(label, capability), "label": label,
+                       "body": masked[match.start():match.end()], "raw": text[match.start():match.end()],
+                       "section": section, "line": text.count("\n", 0, match.start()) + 1})
+    for _, label in rename_pairs(text):
+        result.append({"id": requirement_identity(label, capability), "label": label, "body": "", "raw": "", "section": "RENAMED", "line": 1})
+    return result
+
+
+def current_requirement_ids(root, p):
+    return {item["id"] for path in safe(root, p["paths"]["specs"]).glob("**/*.md")
+            for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name)}
 
 
 def spec_hashes(root, p):
@@ -1128,7 +1305,9 @@ def verify(root, p, phase="structure", change=None, base=None, selected=None):
         lines += [f"- {x['status']}: {x['message']}" for x in findings] or ["- No structural findings. This does not establish semantic completeness."]
         lines += ["", "## Checks", ""] + [f"- {x['name']}: {x['status']} — {x.get('reason', x.get('log', ''))}" for x in checks]
         lines += ["", "## Evidence", "", f"Runtime evidence: `.ai/runtime/runs/{run_id}/result.json`. Verify the candidate locally; optional CI can independently run the same checks.", ""]
-        atomic(directory / "verify-report.md", "\n".join(lines))
+        report_path = directory / "verify-report.md"
+        existing = report_path.read_text(encoding="utf-8") if report_path.is_file() else ""
+        atomic(report_path, verification_document(existing, "\n".join(lines)))
     return report
 
 
@@ -1156,7 +1335,7 @@ def close_change(root, p, change):
     runtime = read_json(safe(root, f".ai/runtime/runs/{run_id}/result.json"), {})
     if result != runtime or result.get("phase") != "delivery" or result.get("status") != "PASS" or result.get("fingerprint") != fingerprint(root, p, change):
         raise KitError("Fresh PASS delivery evidence is required; stale/partial/committed reports cannot close a change")
-    findings = change_findings(root, p, change, "delivery")
+    findings = [item for item in structure_findings(root, p) + change_findings(root, p, change, "delivery") if item["status"] in {"FAIL", "PENDING", "NOT_RUN"}]
     if findings:
         raise KitError("Change completion conditions no longer hold: " + findings[0]["message"])
     archive = safe(root, p["paths"]["changes"] + "/archive/" + datetime.now(timezone.utc).strftime("%Y-%m-%d-") + change)
@@ -1246,11 +1425,15 @@ def ci_verify(root, p, base, local=False):
             continue
         path = safe(root, relative)
         new = path.read_bytes() if path.is_file() else b""
+        if under(relative, p["paths"]["changes"] + "/archive") and old != new:
+            immutable.append({"status": "FAIL", "code": "archive-history", "message": f"Archived history changed; add a supplemental change: {relative}"})
         if under(relative, p["paths"]["baseline"] + "/raw") and old != new:
             immutable.append({"status": "FAIL", "code": "raw-history", "message": f"Historical raw evidence changed: {relative}"})
         if under(relative, p["paths"]["adr"]) and re.search(rb"^Status:\s*Accepted\s*$", old, re.MULTILINE):
             normalized_old = re.sub(rb"^Status:.*$", b"Status:", old, flags=re.MULTILINE)
             normalized_new = re.sub(rb"^Status:.*$", b"Status:", new, flags=re.MULTILINE)
+            if not re.search(rb"^Status:\s*(Accepted|Superseded\b.*)\s*$", new, re.MULTILINE):
+                immutable.append({"status": "FAIL", "code": "accepted-adr-status", "message": f"Accepted decision can only remain Accepted or name a superseding decision: {relative}"})
             if normalized_old != normalized_new:
                 immutable.append({"status": "FAIL", "code": "accepted-adr", "message": f"Accepted ADR body changed; preserve it and add a superseding decision: {relative}"})
     manifest = read_json(safe(root, MANIFEST))
@@ -1278,7 +1461,7 @@ def ci_verify(root, p, base, local=False):
         if path.parent.name == "archive" and not any(under(relative, relative_directory) for relative in changed):
             continue
         scopes = item.get("scope", [])
-        if any(any(under(relative, scope) for scope in scopes) for relative in behavior):
+        if any(any(under(relative, scope) for scope in scopes) for relative in behavior) or any(under(relative, relative_directory) for relative in changed):
             candidates.append(item["id"])
             if item.get("origin") == "files" and item.get("scope_source") != "proposal":
                 inferred.append(item["id"])
@@ -1292,10 +1475,11 @@ def ci_verify(root, p, base, local=False):
     if uncovered:
         results.append({"status": "FAIL", "code": "untracked-behavior-change", "message": f"Behavior/configuration changes need a scoped active or newly archived change: {uncovered}"})
     for change in candidates:
-        if change_at(root, p, change)[1]["kind"] == "docs":
+        affects_behavior = any(any(under(relative, scope) for scope in change_at(root, p, change)[1]["scope"]) for relative in behavior)
+        if affects_behavior and change_at(root, p, change)[1]["kind"] == "docs":
             results.append({"status": "FAIL", "code": "classification", "message": f"{change} is marked docs but intersects behavior/configuration changes."})
         else:
-            report = verify(root, p, "delivery", change)
+            report = verify(root, p, "delivery" if affects_behavior else "specification", change, base)
             results.append({"status": report["status"], "change": change, "run_id": report["run_id"]})
     light_checks = []
     if lightweight:
@@ -1430,10 +1614,13 @@ def parser():
             item.add_argument("--reviewer", required=True)
             item.add_argument("--method", choices=["native", "reviewed"], default="reviewed")
     verify_parser = sub.add_parser("verify")
-    verify_parser.add_argument("--phase", choices=["structure", "ready", "delivery"], default="structure")
+    verify_parser.add_argument("--phase", choices=["structure", "specification", "ready", "delivery"], default="structure")
     verify_parser.add_argument("--change")
     verify_parser.add_argument("--base")
     verify_parser.add_argument("--check", action="append", dest="selected")
+    spec = sub.add_parser("spec").add_subparsers(dest="operation", required=True)
+    validate = spec.add_parser("validate")
+    validate.add_argument("--change")
     ci = sub.add_parser("ci")
     ci.add_argument("--base", required=True)
     check = sub.add_parser("check", help="Run repository checks locally; no hosted service or CI is needed")
@@ -1488,10 +1675,16 @@ def main(argv=None):
             elif args.command == "verify":
                 with lock(root, "verification"):
                     result = verify(root, p, args.phase, args.change, args.base, args.selected)
+            elif args.command == "spec":
+                findings = structure_findings(root, p)
+                if args.change:
+                    findings += change_findings(root, p, args.change, "specification")
+                result = {"status": overall(findings, []), "stage": "specification-structure", "findings": findings, "business_checks_executed": False}
             elif args.command in {"ci", "check"}:
                 with lock(root, "verification"):
                     findings = structure_findings(root, p)
-                    result = {"status": overall(findings, []), "findings": findings} if findings else ci_verify(root, p, args.base, local=args.command == "check")
+                    result = {"status": overall(findings, []), "findings": findings} if any(item["status"] in {"FAIL", "PENDING", "NOT_RUN"} for item in findings) else ci_verify(root, p, args.base, local=args.command == "check")
+                    result.setdefault("findings", findings)
             elif args.command == "note":
                 with lock(root):
                     result = note_change(root, p, args.scope, args.kind, args.reason, args.reviewer, args.base)

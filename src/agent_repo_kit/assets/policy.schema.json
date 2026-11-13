@@ -2,53 +2,244 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Agent Repo Kit policy v1",
   "type": "object",
-  "required": ["schema_version", "kit_version", "mode", "paths", "source_paths", "test_paths", "exclude", "checks"],
+  "required": [
+    "schema_version",
+    "kit_version",
+    "mode",
+    "paths",
+    "source_paths",
+    "test_paths",
+    "exclude",
+    "checks"
+  ],
   "properties": {
-    "schema_version": {"const": 1},
-    "kit_version": {"type": "string"},
-    "mode": {"enum": ["new", "existing"]},
-    "agents": {"type": "array", "uniqueItems": true, "items": {"enum": ["codex", "claude", "opencode"]}},
-    "hook_mode": {"enum": ["advisory", "enforce"]},
-    "skill_delivery": {"enum": ["repository", "installed"]},
+    "schema_version": {
+      "const": 1
+    },
+    "kit_version": {
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "new",
+        "existing"
+      ]
+    },
+    "agents": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "codex",
+          "claude",
+          "opencode"
+        ]
+      }
+    },
+    "hook_mode": {
+      "enum": [
+        "advisory",
+        "enforce"
+      ]
+    },
+    "skill_delivery": {
+      "enum": [
+        "repository",
+        "installed"
+      ]
+    },
     "paths": {
       "type": "object",
-      "required": ["baseline", "specs", "changes", "adr", "templates"],
-      "additionalProperties": {"$ref": "#/$defs/path"}
+      "required": [
+        "baseline",
+        "specs",
+        "changes",
+        "adr",
+        "templates"
+      ],
+      "additionalProperties": {
+        "$ref": "#/$defs/path"
+      }
     },
-    "source_paths": {"type": "array", "items": {"type": "string", "minLength": 1}},
-    "test_paths": {"type": "array", "items": {"$ref": "#/$defs/path"}},
-    "exclude": {"type": "array", "items": {"type": "string", "minLength": 1}},
-    "checks": {"type": "array", "items": {"$ref": "#/$defs/check"}},
+    "source_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "test_paths": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/path"
+      }
+    },
+    "exclude": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/check"
+      }
+    },
     "requirements": {
       "type": "object",
-      "patternProperties": {
-        "^REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*$": {
-          "type": "object",
-          "required": ["type"],
-          "properties": {
-            "type": {"enum": ["automated", "manual", "external"]},
-            "checks": {"type": "array", "items": {"type": "string"}}
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "automated",
+              "manual",
+              "external"
+            ]
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
-      },
-      "additionalProperties": false
+      }
     },
-    "command_candidates": {"type": "array", "items": {"type": "object"}}
+    "command_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "format_exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "path",
+          "sha256",
+          "owner",
+          "reason",
+          "expires",
+          "decision",
+          "decision_sha256"
+        ],
+        "properties": {
+          "code": {
+            "enum": [
+              "requirement-wording",
+              "scenario-conditions",
+              "verification-type"
+            ]
+          },
+          "path": {
+            "$ref": "#/$defs/path"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "owner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expires": {
+            "type": "string",
+            "format": "date"
+          },
+          "decision": {
+            "$ref": "#/$defs/path"
+          },
+          "decision_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    }
   },
   "$defs": {
-    "path": {"type": "string", "minLength": 1, "description": "Repository-relative POSIX path; runtime also rejects traversal, absolute paths and symlinks."},
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repository-relative POSIX path; runtime also rejects traversal, absolute paths and symlinks."
+    },
     "check": {
       "type": "object",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
-        "type": {"enum": ["command", "manual", "external"]},
-        "argv": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
-        "cwd": {"type": "string", "minLength": 1},
-        "required": {"type": "boolean"},
-        "timeout": {"type": "number", "exclusiveMinimum": 0, "maximum": 3600}
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "type": {
+          "enum": [
+            "command",
+            "manual",
+            "external"
+          ]
+        },
+        "argv": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "cwd": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "timeout": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 3600
+        }
       },
-      "allOf": [{"if": {"properties": {"type": {"enum": ["manual", "external"]}}, "required": ["type"]}, "then": {}, "else": {"required": ["argv"]}}]
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "manual",
+                  "external"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {},
+          "else": {
+            "required": [
+              "argv"
+            ]
+          }
+        }
+      ]
     }
   }
 }

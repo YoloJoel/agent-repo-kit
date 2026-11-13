@@ -51,14 +51,14 @@ runtime/production verification or semantic completeness certification has occur
 ## Change metadata and requirements
 
 Kinds: feature, fix, refactor, maintenance, docs. Use feature/fix/refactor for behavior work;
-they require affected REQ IDs before ready. Native or mapped proposal/tasks/delta files are read directly. No ark.json, explicit activation or toolkit lifecycle is required. Legacy metadata remains supported. Concrete repository paths in proposal Impact sections provide scope; ambiguous inferred associations stay PENDING.
+they require affected observable requirements before ready. Native or mapped proposal/tasks/delta files are read directly. No ark.json, explicit activation or toolkit lifecycle is required. Legacy metadata remains supported. Concrete repository paths in proposal Impact sections provide scope; ambiguous inferred associations stay PENDING.
 
 New IDs use `REQ-UPPERCASE-001`; existing native artifacts/IDs are preserved during install.
 Use `--requirements` for affected toolkit-tracked IDs and `--remove-requirements` for its
 retired subset. Record verification for removals and preserve their compatibility decision.
 The toolkit checks references and freshness, while agents/native tooling inspect semantics.
 
-Automated requirements need real test-source references. For manual/external requirements,
+Automated requirements need real test-source references or an explicit mapping to required automated checks. Native title keys use capability::title; existing IDs are preserved. For manual/external requirements,
 configure explicit policy mapping instead:
 
 ```json
@@ -105,3 +105,9 @@ tries to intercept all shell writes. Lifecycle/adapters must be verified per run
 - `ark decision add/resolve/list` maintains one questions source and derived views. Existing native Markdown ledgers can be mapped with paths.questions; the JSON writer will not replace them.
 
 Use knowledge_sections.<kind>.<role> to reuse existing manual sections. Case plans and static declarations are distinct from real execution evidence.
+
+## Structural specification validation
+
+`ark spec validate [--change <id>]` validates current/selected delta structure and relations without executing business checks. `verify --phase specification --change <id>` creates phase evidence while permitting unfinished implementation tasks; it cannot satisfy delivery/close.
+
+Format exceptions in policy.format_exceptions are limited to requirement-wording, scenario-conditions and verification-type. Each requires code, path, sha256, owner, reason, expires (ISO date), decision and decision_sha256. Exact source/decision changes or expiry restore the blocking finding. A valid exception is WARN; actual required check failures remain FAIL. Existing assets are never silently rewritten to fit the format.
