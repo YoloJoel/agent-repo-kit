@@ -36,8 +36,8 @@ class NativeDistributionTests(unittest.TestCase):
                               cwd=self.workspace, capture_output=True, encoding="utf-8")
 
     def test_claude_manifest_marketplace_and_standard_skill_layout(self):
-        plugin = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())
-        market = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
+        plugin = json.loads((ROOT / ".claude-plugin/plugin.json").read_text(encoding="utf-8"))
+        market = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text(encoding="utf-8"))
         self.assertEqual(plugin["name"], "agent-repo-kit")
         self.assertEqual(market["plugins"][0]["name"], plugin["name"])
         self.assertEqual(market["plugins"][0]["source"], "./")
@@ -61,7 +61,7 @@ class NativeDistributionTests(unittest.TestCase):
         self.assertEqual(data["mode"], "existing")
         self.assertEqual(data["baseline"], "PENDING")
         self.assertTrue((self.target / "AGENTS.md").read_bytes().startswith(original))
-        self.assertEqual((self.target / "README.md").read_text(), "Uncommitted user note\n")
+        self.assertEqual((self.target / "README.md").read_text(encoding="utf-8"), "Uncommitted user note\n")
         self.assertFalse((self.target / ".agents/skills").exists())
         self.assertFalse((self.target / ".claude/skills").exists())
         self.assertTrue(all(item["skill_files"] is None for item in data["diagnostics"]["adapters"]))
@@ -91,7 +91,7 @@ class NativeDistributionTests(unittest.TestCase):
 
     def test_bundle_corruption_fails_before_target_changes(self):
         resource = self.installed / "initialize-repo/scripts/resources.json"
-        data = json.loads(resource.read_text())
+        data = json.loads(resource.read_text(encoding="utf-8"))
         data["files"]["agents.md"] += "\nUnexpected change\n"
         resource.write_text(json.dumps(data))
         result = self.run_initializer()
@@ -101,7 +101,7 @@ class NativeDistributionTests(unittest.TestCase):
 
     def test_resource_traversal_is_rejected_even_with_updated_checksum(self):
         resource = self.installed / "initialize-repo/scripts/resources.json"
-        data = json.loads(resource.read_text())
+        data = json.loads(resource.read_text(encoding="utf-8"))
         data["files"]["../escape.py"] = "raise RuntimeError('outside')\n"
         canonical = json.dumps(data["files"], ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
         data["resources_sha256"] = hashlib.sha256(canonical).hexdigest()
@@ -119,7 +119,7 @@ class NativeDistributionTests(unittest.TestCase):
         good = subprocess.run(command, capture_output=True, encoding="utf-8")
         self.assertEqual(good.returncode, 0, good.stdout + good.stderr)
         path = clone / "skills/initialize-repo/scripts/engine.py"
-        path.write_text(path.read_text() + "\n# stale emitted artifact\n")
+        path.write_text(path.read_text(encoding="utf-8") + "\n# stale emitted artifact\n", encoding="utf-8")
         bad = subprocess.run(command, capture_output=True, encoding="utf-8")
         self.assertEqual(bad.returncode, 1)
         self.assertIn("skills/initialize-repo/scripts/engine.py", json.loads(bad.stdout)["stale"])

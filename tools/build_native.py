@@ -24,7 +24,7 @@ def native_files():
                 relative = relative[:-len("WORKFLOW.md")] + "SKILL.md"
             files["skills/" + relative] = path.read_text(encoding="utf-8").encode("utf-8")
     engine = (PACKAGE / "core.py").read_text(encoding="utf-8").encode("utf-8")
-    version = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())["version"]
+    version = json.loads((ROOT / ".claude-plugin/plugin.json").read_text(encoding="utf-8"))["version"]
     assets = {path.relative_to(ASSETS).as_posix(): path.read_text(encoding="utf-8") for path in sorted(ASSETS.rglob("*")) if path.is_file() and "__pycache__" not in path.parts}
     bundle = {
         "schema_version": 1, "version": version,

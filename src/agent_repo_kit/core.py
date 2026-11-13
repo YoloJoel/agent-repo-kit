@@ -1463,6 +1463,8 @@ def parser():
 
 
 def main(argv=None):
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     args = parser().parse_args(argv)
     payload = {}
     try:

@@ -1,5 +1,11 @@
 """REQ-KNOWLEDGE-001: evidence lifecycle, behavior cases and a single decision ledger."""
 
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
 from agent_repo_kit import core as kit
 from test_workflows import RepositoryCase
 
@@ -94,6 +100,14 @@ class KnowledgeTests(RepositoryCase):
         with self.assertRaisesRegex(kit.KitError, 'native file format'):
             kit.decision_record(self.root, p, 'BQ-008', 'fact', 'Inspect input.', ['app.py'])
         self.assertEqual((self.root / 'manual/open-questions.md').read_text(), '# Existing choices\nBQ-007: retain public format.\n')
+
+    def test_cli_json_is_utf8_even_with_ascii_process_defaults(self):
+        p = self.setup_app()
+        document = 'manual/契约.md'
+        self.write(document, '# Contract\n## Source version and evidence\napp.py:L1-L2\n## Inputs and outputs\nNumeric doubling.\n## Timing and failure\nSynchronous multiplication.\n## Compatibility and promotion\nObserved; not yet promoted.\n')
+        result = subprocess.run([sys.executable, str(Path(kit.__file__)), '--repo', str(self.root), 'baseline', 'register', '--kind', 'contract', '--document', document, '--files', 'app.py', '--reviewer', 'agent'], env=dict(os.environ, PYTHONIOENCODING='ascii'), capture_output=True, encoding='utf-8')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(json.loads(result.stdout)['document'], document)
 
 
 if __name__ == '__main__':
