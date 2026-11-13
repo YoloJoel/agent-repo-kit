@@ -261,7 +261,7 @@ class DeliveryTests(RepositoryCase):
         base = self.commit()
         directory = self.change(p, scope=["app.py"])
         self.write("app.py", "value = 2\n")
-        spec = "### Requirement: Current output REQ-OUTPUT-001\nVerification: automated\n#### Scenario: Output\nValue is two.\n"
+        spec = "### Requirement: Current output REQ-OUTPUT-001\nThe system SHALL output two.\nVerification: automated\n#### Scenario: Output\n- WHEN read\n- THEN value is two.\n"
         self.write("openspec/changes/example/specs/output/spec.md", "## MODIFIED Requirements\n" + spec)
         self.write("openspec/specs/output/spec.md", spec)
         artifact = "openspec/changes/example/sync-review.md"
@@ -300,7 +300,7 @@ class DeliveryTests(RepositoryCase):
         self.write("tests/test_app.py", "import unittest\nfrom app import clamp\nclass ClampTests(unittest.TestCase):\n    def test_bounds(self):\n        # REQ-CLAMP-001\n        self.assertEqual(clamp(-1, 0, 10), 0)\n        self.assertEqual(clamp(11, 0, 10), 10)\n        self.assertEqual(clamp(4, 0, 10), 4)\n    def test_invalid(self):\n        with self.assertRaises(ValueError): clamp(1, 10, 0)\n")
         self.configure(p, [{"name": "unit", "argv": ["{python}", "-m", "unittest", "discover", "-s", "tests"], "required": True}])
         directory = self.change(p, kind="feature", requirements=["REQ-CLAMP-001"])
-        spec = "### Requirement: Clamp REQ-CLAMP-001\nVerification: automated\n#### Scenario: Out of range\nReturn closest bound; reject inverted bounds.\n"
+        spec = "### Requirement: Clamp REQ-CLAMP-001\nThe system SHALL clamp input and reject inverted bounds.\nVerification: automated\n#### Scenario: Out of range\n- WHEN input is outside bounds\n- THEN return closest bound; reject inverted bounds.\n"
         self.write("openspec/changes/example/specs/change/spec.md", "## ADDED Requirements\n" + spec)
         self.write("openspec/specs/clamp/spec.md", spec)
         self.write("docs/sync-review.md", "Reviewed actual current spec against the delta: bounded output and inverted-bound rejection are preserved.\n")
@@ -357,7 +357,7 @@ class DeliveryTests(RepositoryCase):
     def test_manual_requirement_uses_real_external_record_without_fake_test(self):
         p = self.initialize()
         directory = self.change(p, kind="maintenance", requirements=["REQ-OPS-001"])
-        self.write("openspec/specs/ops/spec.md", "### Requirement: REQ-OPS-001\nVerification: manual\n#### Scenario: Operator can recover.\n")
+        self.write("openspec/specs/ops/spec.md", "### Requirement: REQ-OPS-001\nThe system SHALL support operator recovery.\nVerification: manual\n#### Scenario: Operator can recover\n- WHEN recovery is requested\n- THEN the service resumes.\n")
         p["requirements"] = {"REQ-OPS-001": {"type": "manual", "checks": ["inspection"]}}
         self.configure(p, [{"name": "inspection", "type": "manual", "required": True}])
         self.assertEqual(kit.verify(self.root, p, "delivery", "example")["status"], "PENDING")
