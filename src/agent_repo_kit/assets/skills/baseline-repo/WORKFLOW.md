@@ -1,33 +1,40 @@
 ---
 name: baseline-repo
-description: Establish or refresh a source-grounded explanation of an existing repository or affected module. Use for legacy onboarding, missing or stale evidence, refactor preparation, contract discovery or validating manuals against actual code; explain behavior and track coverage and gaps.
+description: Establish or refresh source-grounded repository knowledge, contracts, behavior cases and evidence gaps. Use for existing-code onboarding, stale knowledge, refactor preparation or checking manuals against actual source; preserve existing documents, identifiers and history.
 ---
 
-# Explain and verify current behavior
+# Explain current behavior with evidence
 
-If the target lacks `.ai/policy.json` or `hack/ai/ark.py`, invoke the installed
-initialize-repo Skill first. Its bundled helper requires no source checkout or package
-installation. After that, run `python hack/ai/ark.py` for examples written as `ark`.
+Use the supplied initialize-repo helper if project rules/runtime are absent. Run the target's
+`python hack/ai/ark.py` for command examples written as `ark`. No package or global CLI is needed.
 
-1. Read policy, baseline index and relevant manuals as navigation/candidate evidence.
-   Inspect actual source/config/tests for important claims and contradictory information.
-2. Run `ark baseline inventory`. Inspect coverage.json and classify source, generated/
-   vendor code, build/deployment/config and exclusions. Path/hash counts are not approval.
-3. Read `references/analysis.md`. Trace implementations and callers. Explain full normal
-   and failure flows, branches, state, transformations, side effects and compatibility.
-   Function names and signatures alone do not fulfill the analysis.
-4. Write module documents with Purpose, Flow, State and failure, Evidence and Gaps headings.
-   Cite valid `path:L1-LN` source locations. Replace scaffolding before removing ARK:FILL.
-5. Record static review with `ark baseline review --document <module.md> --files <paths>
-   --reviewer <identity>`. Identify the actual reviewer; do not imply a nonexistent human review.
-6. Extract observed external contracts and distinguish implementation details/defects from
-   intended promises. Resolve compatibility questions before promoting behavior into specs.
-7. Maintain questions.json: fact, behavior-decision, design-task or validation-gate. Resolve
-   accessible facts independently and continue work around unrelated real blockers.
-8. Run `ark baseline validate`. Report scope, revision/worktree evidence, unreviewed/stale
-   ranges, actual runtime checks and gaps. Preserve raw snapshots and accepted IDs.
+1. Read applicable repository rules and path/section mappings. Reuse current manuals,
+   contracts, decisions and tests as navigation; verify important claims against actual
+   source/configuration/callers. Do not silently treat design targets as current facts.
+2. Run `ark baseline inventory`. Establish included modules, generated/vendor exclusions,
+   unavailable external sources and actual revision/workspace. Inventory is not understanding.
+3. Read `references/analysis.md`. Trace full normal/error paths, branch conditions, state,
+   side effects, concurrency/recovery and compatibility. Explain what happens and why;
+   function signatures alone are insufficient. Preserve useful existing prose and IDs.
+4. Write or supplement module explanations with purpose, flows, state/failure, evidence
+   and gaps. Existing localized/manual sections can be reused through policy mappings.
+   Record with `ark baseline review --document <path> --files <paths> --reviewer <identity>`.
+5. Extract observable contracts and precondition/input/expected-output/error cases into
+   existing or scoped documents. Record them using `ark baseline register --kind contract`
+   or `--kind cases`, with --document, --files and --reviewer. Case plans are not executed
+   tests. Contract review does not claim every source behavior has been understood.
+6. Separate facts, inferences, known defects, intended behavior and material choices.
+   Resolve accessible facts yourself. Keep questions in the single ledger with
+   `ark decision add/resolve/list` for its JSON format, or preserve/update an existing mapped native ledger through its original workflow; generated views are not separately maintained truth.
+   Prepare concrete options/recommendations only for real unresolved owner decisions.
+7. Promote selected promises only after an actual compatibility decision and current Spec
+   exist: `ark baseline promote --document <path> --requirements <IDs> --decision <artifact>
+   --reviewer <identity>`. Do not promote every implementation detail or defect. Retire
+   obsolete knowledge explicitly with --decision; retain immutable raw snapshots.
+8. Run `ark baseline status` and `ark baseline validate`; execute real project checks.
+   Report source/module/contract/case coverage separately from executed tests. Explain
+   uninspected, uncertain and unavailable ranges. Save progress for large scopes.
 
-Before risky implementation, run ready verification on the scoped Change to anchor reviewed
-pre-change evidence. Keep this as history instead of rewriting it to match the new behavior.
-
-After onboarding, use OpenSpec, another development Skill or direct conversation. Follow repository engineering requirements and run local checks; no toolkit development Skill or CI is required.
+During later development, refresh affected knowledge only. New repositories acquire existing
+behavior as code lands; later changes also need evidence and regression safeguards. Native
+OpenSpec/other tools remain free to organize development. No daily toolkit Skill or CI is required.

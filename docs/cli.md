@@ -95,3 +95,13 @@ Current checks cannot prove complete source understanding, semantic spec equival
 meaningful assertions or immunity to intentionally weakened repository policy. Protect
 toolkit/manifest/policy/CI edits through independent review and remote controls. No Hook
 tries to intercept all shell writes. Lifecycle/adapters must be verified per runtime version.
+
+## Knowledge and decisions
+
+- `ark baseline register --kind contract|cases --document <path> --files <paths...> --reviewer <id>` records current scoped static evidence and immutable snapshots. Module review keeps its existing command.
+- `ark baseline status` computes current/stale/historical evidence without certifying semantic completeness or case execution.
+- `ark baseline promote --document <path> --requirements <IDs...> --decision <artifact> --reviewer <id>` links selected promises to real current requirements and a decision.
+- `ark baseline retire --document <path> --decision <artifact> --reviewer <id>` retains obsolete history explicitly.
+- `ark decision add/resolve/list` maintains one questions source and derived views. Existing native Markdown ledgers can be mapped with paths.questions; the JSON writer will not replace them.
+
+Use knowledge_sections.<kind>.<role> to reuse existing manual sections. Case plans and static declarations are distinct from real execution evidence.

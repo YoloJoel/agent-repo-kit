@@ -154,3 +154,19 @@ SHALL be available without requiring every task to produce every asset.
 - GIVEN actual Java/C source, a Maven declaration and human context
 - WHEN initialization observes the repository and repeats
 - THEN source-backed facts are navigable, human context is preserved, and repeated setup is inert
+
+### Requirement: Maintain source-backed knowledge and decisions (REQ-KNOWLEDGE-001)
+
+Verification: automated and workflow review
+
+The toolkit SHALL retain immutable static-review snapshots, source/document freshness,
+separate module/contract/case coverage and explicit promotion/retirement records. Written
+cases SHALL NOT be reported as executed tests. Promotion SHALL require current evidence,
+real current requirements and an actual decision artifact. Existing section/ledger formats
+SHALL be reusable; generated decision views SHALL have one authoritative source.
+
+#### Scenario: Refresh explained source after a change
+
+- GIVEN a registered source-backed explanation and immutable snapshot
+- WHEN source changes and the explanation is refreshed
+- THEN the old snapshot remains, freshness is explicit and a new declaration is recorded
