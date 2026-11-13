@@ -1,0 +1,19 @@
+{
+  "cases": [
+    {
+      "id": "DT-PRESERVE-001",
+      "effect": "preserve",
+      "source": "Replace with reviewed source/contract/case reference",
+      "expected": "Replace with precise preserved outcome including relevant failure/boundary behavior",
+      "checks": ["regression"],
+      "fixtures": ["tests/replace-with-real-fixture.py"]
+    },
+    {
+      "id": "DT-TARGET-001",
+      "effect": "target",
+      "source": "Replace with target requirement/scenario",
+      "expected": "Replace with precise intended outcome",
+      "checks": ["acceptance"]
+    }
+  ]
+}

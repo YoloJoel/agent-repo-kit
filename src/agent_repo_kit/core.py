@@ -215,6 +215,9 @@ def policy_at(root):
             raise KitError(f"Invalid check timeout: {check['name']}")
         if not isinstance(check.get("required", True), bool):
             raise KitError(f"check.required must be a boolean: {check['name']}")
+        phases = check.get("phases", ["ready", "delivery"])
+        if not isinstance(phases, list) or not phases or any(phase not in {"ready", "delivery"} for phase in phases):
+            raise KitError("check.phases must select ready and/or delivery")
     for relative in p["test_paths"]:
         safe(root, relative)
     for relative in p.get("source_paths", ["."]):
@@ -355,6 +358,9 @@ def fingerprint(root, p, change=None):
         for path in directory.glob("specs/**/*.md"):
             data = safe(root, path.relative_to(root).as_posix()).read_bytes()
             files["@change/" + path.relative_to(directory).as_posix()] = {"sha256": digest(data), "bytes": len(data)}
+        plan = behavior_plan(root, p, change)
+        files["@behavior-plan"] = plan
+        files["@behavior-fixtures"] = behavior_signature(root, p, change)["fixtures"]
         files["@change"] = {k: metadata.get(k) for k in ("id", "kind", "scope", "requirements", "removed_requirements")}
     for relative in required:
         path = safe(root, relative)
@@ -415,6 +421,8 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
             copy_skills = p.get("skill_delivery", "repository") == "repository"
         p["skill_delivery"] = "repository" if copy_skills else "installed"
         writes = {POLICY: dump(p)}
+        if not safe(root, ".ai/established.json").exists():
+            writes[".ai/established.json"] = dump({"files": {path: {"sha256": sha, "change": None} for path, sha in scoped_sources(root, p, p["source_paths"]).items()}})
         owned = dict(old_manifest.get("files", {}))
         profile = project_profile(root, p)
         writes[".ai/project.json"] = dump(profile)
@@ -748,7 +756,7 @@ def decision_record(root, p, identity, category=None, question=None, scope=None,
 
 
 def baseline_findings(root, p, scope=None):
-    if p["mode"] == "new":
+    if p["mode"] == "new" and not safe(root, p["paths"]["baseline"] + "/coverage.json").exists():
         return []
     coverage = read_json(safe(root, p["paths"]["baseline"] + "/coverage.json"), {"files": {}})
     findings = []
@@ -1035,6 +1043,120 @@ def structure_findings(root, p):
     return apply_format_exceptions(root, p, findings + specification_findings(root, p) + engineering_relations(root, p))
 
 
+def scoped_sources(root, p, scope):
+    return {path: item["sha256"] for path, item in inventory_files(root, p).items()
+            if is_behavior(path) and any(under(path, prefix) for prefix in scope)
+            and not any(under(path, prefix) for prefix in p["test_paths"])}
+
+
+def established_behavior(root, p, metadata, change):
+    """Observe retained behavior, including code delivered after an empty initialization."""
+    records = read_json(safe(root, ".ai/established.json"), {"files": {}})["files"]
+    result = {}
+    for path, item in records.items():
+        original = item.get("previous") if item.get("change") == change else item
+        if original and any(under(path, prefix) for prefix in metadata["scope"]):
+            result[path] = original["sha256"]
+    listed = git(root, "ls-tree", "-r", "--name-only", "-z", "HEAD", optional=True)
+    for raw in (listed or b"").split(b"\0"):
+        path = raw.decode("utf-8")
+        if not path or excluded(path, p) or not is_behavior(path) or any(under(path, prefix) for prefix in p["test_paths"]):
+            continue
+        if any(under(path, prefix) for prefix in metadata["scope"]) and records.get(path, {}).get("change") != change:
+            content = git(root, "show", "HEAD:" + path, optional=True)
+            if content is not None:
+                result.setdefault(path, digest(content))
+    return result
+
+
+def behavior_plan(root, p, change):
+    directory, _ = change_at(root, p, change)
+    relative = p.get("behavior_plans", {}).get(change, (directory / "behavior-plan.json").relative_to(root).as_posix())
+    path = safe(root, relative)
+    plan = read_json(path, {"cases": []})
+    if not isinstance(plan, dict) or not isinstance(plan.get("cases"), list):
+        raise KitError("Behavior plan must contain a cases array")
+    names = {item["name"] for item in p["checks"] if item.get("required", True)}
+    seen = set()
+    for case in plan["cases"]:
+        if not isinstance(case, dict) or any(not isinstance(case.get(key), str) or not case[key].strip() for key in ("id", "effect", "source", "expected")):
+            raise KitError("Every behavior case needs id, effect, source and expected outcome")
+        if case["id"] in seen or case["effect"] not in {"preserve", "target"}:
+            raise KitError("Behavior case IDs must be unique; effect is preserve or target")
+        seen.add(case["id"])
+        for key in ("checks", "before_checks"):
+            values = case.get(key, [])
+            if not isinstance(values, list) or any(name not in names for name in values):
+                raise KitError("Behavior cases must reference configured required checks")
+        if not case.get("checks"):
+            raise KitError("Behavior cases need actual required verification checks")
+        if case["effect"] == "preserve":
+            if not isinstance(case.get("fixtures"), list) or not case["fixtures"]:
+                raise KitError("Preserved behavior needs actual fixture/test source paths")
+            for relative in case["fixtures"]:
+                if not safe(root, relative).is_file():
+                    raise KitError("Missing preserved behavior fixture: " + relative)
+        if case.get("replaces"):
+            if not case.get("before_checks") or not case.get("before_expected") or not safe(root, case.get("decision")).is_file():
+                raise KitError("Intentional replacement needs before checks/outcome and an actual compatibility decision")
+    return plan
+
+
+def behavior_signature(root, p, change):
+    plan = behavior_plan(root, p, change)
+    before = {name for case in plan["cases"] for name in (case["checks"] if case["effect"] == "preserve" else case.get("before_checks", []))}
+    fixtures = {relative: digest(safe(root, relative).read_bytes()) for case in plan["cases"] for relative in case.get("fixtures", [])}
+    definitions = [item for item in p["checks"] if item["name"] in before]
+    return {"plan": plan, "before_checks": sorted(before), "definitions": definitions, "fixtures": fixtures,
+            "sha256": digest(dump({"plan": plan, "definitions": definitions, "fixtures": fixtures}).encode())}
+
+
+def behavior_findings(root, p, change, phase):
+    directory, metadata = change_at(root, p, change)
+    if metadata["kind"] == "docs" or phase not in {"ready", "delivery"}:
+        return []
+    prior = established_behavior(root, p, metadata, change)
+    signature = behavior_signature(root, p, change)
+    findings = []
+    if prior and not signature["before_checks"]:
+        findings.append({"status": "PENDING", "code": "behavior-plan", "message": "Map retained behavior or deliberate replacements to real pre-change checks and fixture sources before implementation."})
+    if phase == "ready":
+        previous = read_json(directory / "baseline-anchor.json", {})
+        if previous and previous.get("ready_fingerprint") != fingerprint(root, p, change):
+            findings.append({"status": "PENDING", "code": "baseline-anchored", "message": "Original executed evidence is already anchored; preserve it and verify delivery instead of replacing it."})
+        if prior and not safe(root, p["paths"]["baseline"] + "/coverage.json").is_file():
+            findings.append({"status": "PENDING", "code": "baseline-static", "message": "Inventory and explain affected original behavior before recording characterization."})
+        current = scoped_sources(root, p, metadata["scope"])
+        late = [path for path, sha in prior.items() if current.get(path) != sha]
+        if late:
+            findings.append({"status": "PENDING", "code": "baseline-late", "message": f"Affected original inputs already differ: {late}. Run pre-change characterization on the original version; do not relabel modified code as a baseline."})
+    elif prior or (directory / "baseline-anchor.json").is_file():
+        anchor = read_json(directory / "baseline-anchor.json", {})
+        snapshot = anchor.get("snapshot")
+        raw = safe(root, snapshot) if snapshot else None
+        record = read_json(raw, {}) if raw and raw.is_file() else {}
+        valid = (anchor.get("scope") == metadata["scope"] and anchor.get("signature") == signature["sha256"]
+                 and raw and raw.is_file() and digest(raw.read_bytes()) == anchor.get("snapshot_sha256")
+                 and record.get("status") == "PASS" and record.get("source_files")
+                 and set(record.get("source_files", {})).issuperset(prior)
+                 and {item["name"] for item in record.get("checks", []) if item["status"] == "PASS"}.issuperset(signature["before_checks"]))
+        if not valid:
+            findings.append({"status": "PENDING", "code": "baseline-anchor", "message": "Fresh, executed pre-change characterization is missing or its plan/fixtures/checks changed. Preserve the original evidence and re-establish it on original inputs."})
+    return findings
+
+
+def behavior_results(root, p, change, checks):
+    directory, _ = change_at(root, p, change)
+    anchor = read_json(directory / "baseline-anchor.json", {})
+    original = read_json(safe(root, anchor["snapshot"]), {}) if anchor.get("snapshot") else {}
+    before = {item["name"]: item["status"] for item in original.get("checks", [])}
+    current = {item["name"]: item["status"] for item in checks}
+    return [{"id": case["id"], "effect": case["effect"], "source": case["source"], "expected": case["expected"],
+             "before": {name: before.get(name, "NOT_RUN") for name in (case["checks"] if case["effect"] == "preserve" else case.get("before_checks", []))},
+             "current": {name: current.get(name, "NOT_RUN") for name in case["checks"]}}
+            for case in behavior_plan(root, p, change)["cases"]]
+
+
 def change_findings(root, p, change, phase):
     directory, metadata = change_at(root, p, change)
     findings = []
@@ -1066,12 +1188,9 @@ def change_findings(root, p, change, phase):
         if metadata["kind"] == "docs" and any(is_behavior(x) and not x.startswith("docs/") for x in metadata["scope"] if x != "."):
             findings.append({"status": "FAIL", "code": "task-classification", "message": "A docs change cannot declare source/configuration file scope."})
     if phase == "ready" and metadata["kind"] != "docs":
-        findings += baseline_findings(root, p, metadata["scope"])
+        findings += baseline_findings(root, p, list(established_behavior(root, p, metadata, change))) if established_behavior(root, p, metadata, change) else []
+    findings += behavior_findings(root, p, change, phase)
     if phase == "delivery":
-        if p["mode"] == "existing" and metadata["kind"] != "docs":
-            anchor = read_json(directory / "baseline-anchor.json", {})
-            if anchor.get("scope") != metadata["scope"] or not anchor.get("ready_fingerprint") or not anchor.get("reviewed_files"):
-                findings.append({"status": "PENDING", "code": "baseline-anchor", "message": "Establish reviewed pre-change baseline and run ready verification before implementation."})
         tasks = directory / "tasks.md"
         if tasks.is_file() and re.search(r"^\s*- \[ \]", tasks.read_text(encoding="utf-8"), re.MULTILINE):
             findings.append({"status": "PENDING", "code": "unfinished-tasks", "message": "Change tasks still contain unchecked items."})
@@ -1265,13 +1384,18 @@ def verify(root, p, phase="structure", change=None, base=None, selected=None):
     run_dir = safe(root, ".ai/runtime/runs/" + run_id)
     run_dir.mkdir(parents=True)
     checks = []
-    if phase == "delivery":
+    if phase in {"ready", "delivery"}:
         if os.environ.get("ARK_VERIFY_ACTIVE"):
             raise KitError("Recursive verification detected; a check cannot run its own delivery verifier.")
         if selected and set(selected) - {x["name"] for x in p["checks"]}:
             raise KitError("Unknown --check selection")
         external = read_json(change_at(root, p, change)[0] / "evidence.json", {"checks": {}})
+        before_names = set(behavior_signature(root, p, change)["before_checks"]) if phase == "ready" else None
         for check in p["checks"]:
+            if phase not in check.get("phases", ["ready", "delivery"]):
+                continue
+            if before_names is not None and check["name"] not in before_names:
+                continue
             if selected and check["name"] not in selected:
                 checks.append({"name": check["name"], "required": check.get("required", True), "status": "NOT_RUN", "reason": "Not selected; partial execution cannot satisfy required delivery checks."})
             elif check.get("type", "command") == "command":
@@ -1280,26 +1404,48 @@ def verify(root, p, phase="structure", change=None, base=None, selected=None):
                 evidence = external.get("checks", {}).get(check["name"], {})
                 valid = evidence.get("fingerprint") == start_fingerprint and artifact_valid(root, evidence)
                 checks.append({"name": check["name"], "type": check["type"], "required": check.get("required", True), "status": evidence.get("status", "NOT_RUN") if valid else "NOT_RUN", "reason": evidence.get("summary", "No current external/manual evidence")})
-        if not any(x.get("required", True) for x in p["checks"]) and metadata["kind"] != "docs":
+        if phase == "delivery" and not any(x.get("required", True) for x in checks) and metadata["kind"] != "docs":
             checks.append({"name": "behavioral-verification", "required": True, "status": "NOT_RUN", "reason": "Confirm real project checks in policy.checks; command candidates are not executed automatically."})
+    if phase in {"ready", "delivery"}:
+        required_names = (set(behavior_signature(root, p, change)["before_checks"]) if phase == "ready"
+                          else {name for case in behavior_plan(root, p, change)["cases"] for name in case["checks"]})
+        for name in sorted(required_names - {item["name"] for item in checks}):
+            checks.append({"name": name, "required": True, "status": "NOT_RUN", "reason": "The behavior plan requires this check at this phase; check.phases excluded it."})
     if fingerprint(root, p, change) != start_fingerprint:
         findings.append({"status": "FAIL", "code": "inputs-changed", "message": "Verification inputs changed while checks were running; inspect generated files and rerun."})
     report = {"schema_version": 1, "run_id": run_id, "phase": phase, "change": change, "created_at": now(), "kit_version": VERSION, "python": sys.version.split()[0], "platform": sys.platform, "source_ref": (git(root, "rev-parse", "HEAD", optional=True) or b"").decode().strip() or None, "fingerprint": start_fingerprint, "base": base, "findings": findings, "checks": checks, "status": overall(findings, checks)}
     if change and metadata.get("origin") == "files":
         report["specification_state"] = "current-after-archive" if change_at(root, p, change)[0].parent.name == "archive" else "proposed; native tool owns synchronization and archive"
+    if change:
+        report["behavior"] = behavior_results(root, p, change, checks)
     atomic(run_dir / "result.json", dump(report))
     if change:
         directory, change_metadata = change_at(root, p, change)
-        if phase == "ready" and report["status"] == "PASS" and p["mode"] == "existing" and change_metadata["kind"] != "docs":
-            coverage = read_json(safe(root, p["paths"]["baseline"] + "/coverage.json"), {"files": {}})
-            reviewed_files = {relative: record for relative, record in coverage["files"].items() if record.get("status") == "reviewed" and any(under(relative, prefix) for prefix in change_metadata["scope"]) and is_behavior(relative)}
-            anchor_path = directory / "baseline-anchor.json"
-            if anchor_path.exists():
-                previous = read_json(anchor_path)
-                if previous.get("ready_fingerprint") != start_fingerprint:
-                    raise KitError("A different pre-change baseline is already anchored; retain history and create a new change rather than replacing it.")
-            else:
-                atomic(anchor_path, dump({"scope": change_metadata["scope"], "source_ref": report["source_ref"], "ready_fingerprint": start_fingerprint, "run_id": run_id, "reviewed_files": reviewed_files}))
+        if phase == "ready" and report["status"] == "PASS" and change_metadata["kind"] != "docs":
+            signature = behavior_signature(root, p, change)
+            if signature["before_checks"]:
+                anchor_path = directory / "baseline-anchor.json"
+                previous = read_json(anchor_path, {})
+                if previous and previous.get("ready_fingerprint") != start_fingerprint:
+                    raise KitError("A different pre-change baseline is already anchored; preserve history and characterize the original version.")
+                if not previous:
+                    coverage = read_json(safe(root, p["paths"]["baseline"] + "/coverage.json"), {"files": {}})
+                    record = {"status": report["status"], "source_ref": report["source_ref"], "source_files": scoped_sources(root, p, change_metadata["scope"]),
+                              "fingerprint": start_fingerprint, "signature": signature, "checks": checks, "python": report["python"], "platform": report["platform"],
+                              "logs": {item["name"]: safe(root, item["log"]).read_text(encoding="utf-8", errors="replace") for item in checks if item.get("log")}}
+                    snapshot = p["paths"]["baseline"] + "/raw/behavior/" + digest(dump(record).encode()) + ".json"
+                    transact(root, {snapshot: dump(record), anchor_path.relative_to(root).as_posix(): dump({"scope": change_metadata["scope"], "source_ref": report["source_ref"],
+                        "ready_fingerprint": start_fingerprint, "signature": signature["sha256"], "snapshot": snapshot, "snapshot_sha256": digest(dump(record).encode()),
+                        "run_id": run_id, "reviewed_files": {path: item for path, item in coverage["files"].items() if path in record["source_files"]}})})
+        if phase == "delivery" and report["status"] == "PASS" and change_metadata["kind"] != "docs":
+            established_path = safe(root, ".ai/established.json")
+            established = read_json(established_path, {"files": {}})
+            original = established_behavior(root, p, change_metadata, change)
+            for relative, sha in scoped_sources(root, p, change_metadata["scope"]).items():
+                previous = established["files"].get(relative, {})
+                prior = previous.get("previous") if previous.get("change") == change else ({"sha256": original[relative]} if relative in original else None)
+                established["files"][relative] = {"sha256": sha, "change": change, "previous": prior}
+            atomic(established_path, dump(established))
         atomic(directory / "verification.json", dump(report))
         lines = [f"# Verification: {change}", "", f"Conclusion: {report['status']}", f"Phase: {phase}", f"Fingerprint: {start_fingerprint}", f"Run: {run_id}", "", "## Findings", ""]
         lines += [f"- {x['status']}: {x['message']}" for x in findings] or ["- No structural findings. This does not establish semantic completeness."]
@@ -1546,6 +1692,38 @@ def hook(root, p, action, agent, payload):
     return {"decision": "block", "reason": reason}
 
 
+def replay_compare(root, before, after, ignored=None, reason=None):
+    """Compare recorded JSON results; normalization is explicit and never edits inputs."""
+    left, right = read_json(safe(root, before)), read_json(safe(root, after))
+    raw_equal = left == right
+    ignored = ignored or []
+    if ignored and (not isinstance(reason, str) or not reason.strip()):
+        raise KitError("Normalization requires a concrete nonbusiness-field reason")
+    for pointer in ignored:
+        parts = pointer.split("/")[1:] if pointer.startswith("/") else []
+        if len(parts) < 2 or any(part in {"", "id", "input"} for part in parts):
+            raise KitError("Normalize specific output leaf fields using JSON pointers; never IDs, inputs or the whole result")
+        for value in (left, right):
+            parent = value
+            try:
+                for encoded in parts[:-1]:
+                    part = encoded.replace("~1", "/").replace("~0", "~")
+                    parent = parent[int(part)] if isinstance(parent, list) else parent[part]
+                key = parts[-1].replace("~1", "/").replace("~0", "~")
+                item = parent[int(key)] if isinstance(parent, list) else parent[key]
+                if isinstance(item, (list, dict)):
+                    raise KitError("Normalization cannot remove a container")
+                if isinstance(parent, list):
+                    parent[int(key)] = "<explicitly-normalized>"
+                else:
+                    parent[key] = "<explicitly-normalized>"
+            except (KeyError, IndexError, ValueError, TypeError) as exc:
+                raise KitError("Normalization pointer must exist in both results: " + pointer) from exc
+    return {"status": "PASS" if left == right else "FAIL", "raw_equal": raw_equal, "normalization": {"pointers": ignored, "reason": reason},
+            "before_sha256": digest(safe(root, before).read_bytes()), "after_sha256": digest(safe(root, after).read_bytes()),
+            "meaning": "JSON result equality under the declared normalization; not proof of complete behavioral coverage"}
+
+
 def parser():
     ap = argparse.ArgumentParser(prog="ark", description="Agent Repo Kit: initialize once, keep evidence and checks current.")
     ap.add_argument("--version", action="version", version=VERSION)
@@ -1621,6 +1799,11 @@ def parser():
     spec = sub.add_parser("spec").add_subparsers(dest="operation", required=True)
     validate = spec.add_parser("validate")
     validate.add_argument("--change")
+    replay = sub.add_parser("replay")
+    replay.add_argument("--before", required=True)
+    replay.add_argument("--after", required=True)
+    replay.add_argument("--ignore-pointer", action="append", dest="ignored")
+    replay.add_argument("--normalization-reason", dest="reason")
     ci = sub.add_parser("ci")
     ci.add_argument("--base", required=True)
     check = sub.add_parser("check", help="Run repository checks locally; no hosted service or CI is needed")
@@ -1675,6 +1858,8 @@ def main(argv=None):
             elif args.command == "verify":
                 with lock(root, "verification"):
                     result = verify(root, p, args.phase, args.change, args.base, args.selected)
+            elif args.command == "replay":
+                result = replay_compare(root, args.before, args.after, args.ignored, args.reason)
             elif args.command == "spec":
                 findings = structure_findings(root, p)
                 if args.change:

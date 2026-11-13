@@ -171,6 +171,12 @@
           }
         }
       }
+    },
+    "behavior_plans": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/path"
+      }
     }
   },
   "$defs": {
@@ -215,6 +221,17 @@
           "type": "number",
           "exclusiveMinimum": 0,
           "maximum": 3600
+        },
+        "phases": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "ready",
+              "delivery"
+            ]
+          }
         }
       },
       "allOf": [
