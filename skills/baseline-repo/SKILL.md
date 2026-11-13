@@ -29,3 +29,5 @@ installation. After that, run `python hack/ai/ark.py` for examples written as `a
 
 Before risky implementation, run ready verification on the scoped Change to anchor reviewed
 pre-change evidence. Keep this as history instead of rewriting it to match the new behavior.
+
+After onboarding, use OpenSpec, another development Skill or direct conversation. Follow repository engineering requirements and run local checks; no toolkit development Skill or CI is required.

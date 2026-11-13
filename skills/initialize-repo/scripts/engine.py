@@ -22,7 +22,7 @@ import time
 from datetime import datetime, timezone
 import uuid
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 ASSETS = Path(__file__).parent / "assets"
 POLICY = ".ai/policy.json"
 MANIFEST = ".ai/manifest.json"
@@ -31,7 +31,7 @@ END = "<!-- agent-repo-kit:end -->"
 FILL = "<!-- ARK:FILL -->"
 REQ = re.compile(r"\bREQ-[A-Z0-9]+(?:-[A-Z0-9]+)*\b")
 ID = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
-SKILLS = ("initialize-repo", "baseline-repo", "deliver-change")
+SKILLS = ("initialize-repo", "baseline-repo")
 AGENT_DIRS = {"codex": ".agents/skills", "claude": ".claude/skills", "opencode": ".opencode/skills"}
 IGNORED_DIRS = {".git", ".hg", ".svn", "node_modules", ".venv", "venv", "__pycache__", ".pytest_cache", "target", "build", "dist"}
 SOURCE_SUFFIXES = {".py", ".java", ".kt", ".go", ".rs", ".c", ".h", ".cpp", ".hpp", ".js", ".ts", ".tsx", ".jsx", ".cs", ".rb", ".php", ".sh", ".sql", ".yaml", ".yml", ".toml", ".xml", ".json"}
@@ -279,7 +279,7 @@ def default_policy(mode, agents):
         "$schema": "../hack/ai/assets/policy.schema.json", "schema_version": 1, "kit_version": VERSION, "mode": mode,
         "agents": sorted(set(agents)), "source_paths": ["."], "test_paths": ["tests", "src/test"],
         "paths": {"baseline": "docs/baseline", "specs": "openspec/specs", "changes": "openspec/changes", "adr": "docs/adr", "templates": "docs/templates"},
-        "exclude": [".ai", "hack/ai", ".agents/skills", ".claude/skills", ".opencode/skills", "skills-lock.json", "docs/baseline", "docs/templates", "openspec/changes"],
+        "exclude": [".ai", "hack/ai", ".agents/skills", ".claude/skills", ".opencode/skills", "skills-lock.json", "openspec/config.yaml", "docs/baseline", "docs/templates", "openspec/changes"],
         "checks": [], "requirements": {}, "command_candidates": [], "hook_mode": "advisory",
     }
 
@@ -465,9 +465,8 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
 
 def onboard_repo(root, mode="auto", agents=None, hooks=True, ci="auto", upgrade=False, copy_skills=None):
     """Shared first-use operation for installed Skills and the compatibility entry."""
-    origin = git(root, "remote", "get-url", "origin", optional=True)
-    github = bool(origin and re.search(r"(?:^|[@/:])github\.com[:/]", origin.decode("utf-8"), re.IGNORECASE))
-    enable_ci = ci == "github" or (ci == "auto" and github)
+    # A GitHub remote says nothing about whether this project wants hosted CI.
+    enable_ci = ci == "github"
     result = init_repo(root, mode, agents, hooks, enable_ci, upgrade, copy_skills)
     p = policy_at(root)
     health = doctor(root, p)
@@ -558,19 +557,58 @@ def baseline_findings(root, p, scope=None):
     return findings
 
 
+def change_directories(root, p, archived=False):
+    base = safe(root, p["paths"]["changes"])
+    parents = [base] + ([base / "archive"] if archived else [])
+    return sorted(path for parent in parents if parent.is_dir() for path in parent.iterdir()
+                  if path.is_dir() and path.name != "archive" and
+                  ((path / "ark.json").is_file() or (path / "proposal.md").is_file()))
+
+
+def file_change_metadata(root, p, directory):
+    """Read ordinary change documents; no toolkit-owned lifecycle or sidecar is needed."""
+    name = re.sub(r"^\d{4}-\d{2}-\d{2}-", "", directory.name) if directory.parent.name == "archive" else directory.name
+    proposal = (directory / "proposal.md").read_text(encoding="utf-8")
+    deltas = list(directory.glob("specs/**/*.md"))
+    text = "\n".join(path.read_text(encoding="utf-8") for path in deltas)
+    kind_match = re.search(r"^Kind:\s*(feature|fix|refactor|maintenance|docs)\s*$", proposal, re.MULTILINE)
+    scope = []
+    for candidate in re.findall(r"`([^`\n]+)`", proposal):
+        candidate = candidate.rstrip("/")
+        try:
+            path = safe(root, candidate)
+        except KitError:
+            continue
+        if path.exists() and not excluded(candidate, p) and (path.is_dir() or is_behavior(candidate)):
+            scope.append(candidate)
+    origin = "proposal" if scope else "diff"
+    if not scope:
+        scope = [path for path in changed_files(root) if is_behavior(path) and not excluded(path, p)]
+    if not scope:
+        origin = "repository"
+        scope = p.get("source_paths", ["."])
+    removed = []
+    for section in re.split(r"(?m)^## ", text):
+        if section.startswith("REMOVED Requirements"):
+            removed.extend(REQ.findall(section))
+    return {"schema_version": 1, "id": name, "kind": kind_match.group(1) if kind_match else ("feature" if deltas else "maintenance"),
+            "scope": sorted(set(scope)), "scope_source": origin, "requirements": sorted(set(REQ.findall(text))),
+            "removed_requirements": sorted(set(removed)), "state": "complete" if directory.parent.name == "archive" else "draft", "origin": "files"}
+
+
 def change_at(root, p, change):
     if not ID.fullmatch(change or ""):
         raise KitError("Change ID must be lowercase words separated by hyphens")
     directory = safe(root, p["paths"]["changes"] + "/" + change)
     if not directory.exists():
         matches = []
-        for path in safe(root, p["paths"]["changes"] + "/archive").glob("*/ark.json"):
-            if read_json(path).get("id") == change:
-                matches.append(path.parent)
+        for path in change_directories(root, p, archived=True):
+            if path.parent.name == "archive" and re.sub(r"^\d{4}-\d{2}-\d{2}-", "", path.name) == change:
+                matches.append(path)
         if len(matches) != 1:
             raise KitError(f"Expected one active/archived change with ID {change}; found {len(matches)}")
         directory = matches[0]
-    metadata = read_json(directory / "ark.json")
+    metadata = read_json(directory / "ark.json") if (directory / "ark.json").is_file() else file_change_metadata(root, p, directory)
     if metadata.get("id") != change or metadata.get("kind") not in {"feature", "fix", "refactor", "maintenance", "docs"}:
         raise KitError(f"Invalid change metadata: {change}")
     if not isinstance(metadata.get("scope"), list) or not metadata["scope"]:
@@ -688,7 +726,10 @@ def structure_findings(root, p):
 def change_findings(root, p, change, phase):
     directory, metadata = change_at(root, p, change)
     findings = []
-    for name in ("proposal.md", "tasks.md", "design.md"):
+    names = ["proposal.md", "tasks.md"]
+    if metadata.get("origin") != "files" or (directory / "design.md").exists():
+        names.append("design.md")
+    for name in names:
         path = directory / name
         if not path.is_file():
             findings.append({"status": "FAIL", "code": "missing-artifact", "message": f"Missing {change}/{name}"})
@@ -728,13 +769,32 @@ def change_findings(root, p, change, phase):
                 configured = {check["name"] for check in p["checks"] if check.get("type") == verification_type and check.get("required", True)}
                 if not mapping.get("checks") or not set(mapping["checks"]).issubset(configured):
                     findings.append({"status": "PENDING", "code": "requirement-check", "message": f"{requirement} needs an explicit required {verification_type} check mapping."})
-        if deltas:
+        if deltas and metadata.get("origin") == "files" and directory.parent.name == "archive":
+            current_blocks = {re.sub(r"\s+", " ", block).strip() for path in safe(root, p["paths"]["specs"]).glob("**/*.md")
+                              for block in requirement_blocks(path.read_text(encoding="utf-8"))}
+            for path in deltas:
+                section = ""
+                for part in re.split(r"(?m)(?=^## )", path.read_text(encoding="utf-8")):
+                    if part.startswith("## "):
+                        section = part.splitlines()[0]
+                    if section in {"## ADDED Requirements", "## MODIFIED Requirements"}:
+                        for block in requirement_blocks(part):
+                            if re.sub(r"\s+", " ", block).strip() not in current_blocks:
+                                findings.append({"status": "PENDING", "code": "spec-sync", "message": f"Synchronize and review current specifications using the selected workflow: {path.relative_to(root)}"})
+            for requirement in metadata.get("removed_requirements", []):
+                if requirement in set(REQ.findall(current_text)):
+                    findings.append({"status": "PENDING", "code": "spec-sync", "message": f"Retired requirement remains current: {requirement}"})
+        elif deltas and metadata.get("origin") != "files":
             sync = read_json(directory / "spec-sync.json", {})
             actual_deltas = {path.relative_to(directory).as_posix(): digest(path.read_bytes()) for path in deltas}
             actual_specs = spec_hashes(root, p)
             if sync.get("deltas") != actual_deltas or sync.get("specs") != actual_specs or not artifact_valid(root, sync):
                 findings.append({"status": "PENDING", "code": "spec-sync", "message": "Synchronize deltas using the native OpenSpec workflow, review the result, and record-sync before delivery verification."})
     return findings
+
+
+def requirement_blocks(text):
+    return [match.group(0).strip() for match in re.finditer(r"(?ms)^### Requirement:.*?(?=^### Requirement:|^## |\Z)", text)]
 
 
 def spec_hashes(root, p):
@@ -833,6 +893,8 @@ def verify(root, p, phase="structure", change=None, base=None, selected=None):
     if fingerprint(root, p, change) != start_fingerprint:
         findings.append({"status": "FAIL", "code": "inputs-changed", "message": "Verification inputs changed while checks were running; inspect generated files and rerun."})
     report = {"schema_version": 1, "run_id": run_id, "phase": phase, "change": change, "created_at": now(), "kit_version": VERSION, "python": sys.version.split()[0], "platform": sys.platform, "source_ref": (git(root, "rev-parse", "HEAD", optional=True) or b"").decode().strip() or None, "fingerprint": start_fingerprint, "base": base, "findings": findings, "checks": checks, "status": overall(findings, checks)}
+    if change and metadata.get("origin") == "files":
+        report["specification_state"] = "current-after-archive" if change_at(root, p, change)[0].parent.name == "archive" else "proposed; native tool owns synchronization and archive"
     atomic(run_dir / "result.json", dump(report))
     if change:
         directory, change_metadata = change_at(root, p, change)
@@ -850,7 +912,7 @@ def verify(root, p, phase="structure", change=None, base=None, selected=None):
         lines = [f"# Verification: {change}", "", f"Conclusion: {report['status']}", f"Phase: {phase}", f"Fingerprint: {start_fingerprint}", f"Run: {run_id}", "", "## Findings", ""]
         lines += [f"- {x['status']}: {x['message']}" for x in findings] or ["- No structural findings. This does not establish semantic completeness."]
         lines += ["", "## Checks", ""] + [f"- {x['name']}: {x['status']} — {x.get('reason', x.get('log', ''))}" for x in checks]
-        lines += ["", "## Evidence", "", f"Runtime evidence: `.ai/runtime/runs/{run_id}/result.json`. CI must independently verify the candidate commit.", ""]
+        lines += ["", "## Evidence", "", f"Runtime evidence: `.ai/runtime/runs/{run_id}/result.json`. Verify the candidate locally; optional CI can independently run the same checks.", ""]
         atomic(directory / "verify-report.md", "\n".join(lines))
     return report
 
@@ -955,11 +1017,13 @@ def context(root, p, session="default"):
     return {"project": str(root), "mode": p["mode"], "active_change": change, "routing": {"facts": p["paths"]["baseline"], "behavior": p["paths"]["specs"], "decisions": p["paths"]["adr"], "work": p["paths"]["changes"]}, "workflow": "Use initialize-repo for onboarding, baseline-repo for evidence gaps, deliver-change for changes. Read only relevant context. Never report NOT_RUN as PASS.", "resume": f"Read {p['paths']['changes']}/{change}/checkpoint.md and actual diff." if change else "Choose an explicit related change; do not infer it from modification time."}
 
 
-def ci_verify(root, p, base):
+def ci_verify(root, p, base, local=False):
     """Re-execute candidate changes; never trust committed verification reports."""
-    if not base or set(base) == {"0"}:
+    if (not base or set(base) == {"0"}) and not local:
         raise KitError("CI requires a real comparison base; configure the main-branch base for an initial push.")
     changed = changed_files(root, base)
+    if local and git(root, "rev-parse", "--is-inside-work-tree", optional=True) is None:
+        changed = sorted(inventory_files(root, p))
     immutable = []
     for relative in changed:
         old = git(root, "show", f"{base}:{relative}", optional=True)
@@ -992,20 +1056,24 @@ def ci_verify(root, p, base):
     behavior = [relative for relative in behavior if relative not in lightweight]
     candidates = []
     directory = safe(root, p["paths"]["changes"])
-    metadata_paths = sorted(directory.glob("*/ark.json")) + sorted(directory.glob("archive/*/ark.json"))
-    for path in metadata_paths:
-        item = read_json(path)
-        relative_directory = path.parent.relative_to(root).as_posix()
-        if path.parent.parent.name == "archive" and not any(under(relative, relative_directory) for relative in changed):
+    inferred = []
+    for path in change_directories(root, p, archived=True):
+        item = read_json(path / "ark.json") if (path / "ark.json").exists() else file_change_metadata(root, p, path)
+        relative_directory = path.relative_to(root).as_posix()
+        if path.parent.name == "archive" and not any(under(relative, relative_directory) for relative in changed):
             continue
         scopes = item.get("scope", [])
         if any(any(under(relative, scope) for scope in scopes) for relative in behavior):
             candidates.append(item["id"])
+            if item.get("origin") == "files" and item.get("scope_source") != "proposal":
+                inferred.append(item["id"])
     uncovered = []
     for relative in behavior:
         if not any(any(under(relative, scope) for scope in change_at(root, p, change)[1]["scope"]) for change in candidates):
             uncovered.append(relative)
     results = list(immutable)
+    if len(candidates) > 1 and inferred:
+        return {"status": "PENDING", "code": "ambiguous-change", "message": "Several changes intersect this diff. Add concrete repository path references to their proposals or configure an explicit association; no activity pointer is required.", "candidates": candidates}
     if uncovered:
         results.append({"status": "FAIL", "code": "untracked-behavior-change", "message": f"Behavior/configuration changes need a scoped active or newly archived change: {uncovered}"})
     for change in candidates:
@@ -1024,7 +1092,7 @@ def ci_verify(root, p, base):
             elif check.get("required", True):
                 light_checks.append({"name": check["name"], "required": True, "status": "NOT_RUN", "reason": "Required outside verification needs a scoped change/evidence record."})
         atomic(run_dir / "result.json", dump({"checks": light_checks, "status": overall([], light_checks)}))
-    return {"status": overall(results, light_checks), "base": base, "behavior_files": behavior, "lightweight_files": sorted(lightweight), "lightweight_checks": light_checks, "changes": results, "control_review": "Review lightweight declarations and policy/runtime/CI/manifest changes independently; repository-controlled checks are not a security boundary."}
+    return {"status": overall(results, light_checks), "execution": "local" if local else "ci", "base": base, "behavior_files": behavior, "lightweight_files": sorted(lightweight), "lightweight_checks": light_checks, "changes": results, "control_review": "Review lightweight declarations and policy/runtime/CI/manifest changes independently; repository-controlled checks are not a security boundary."}
 
 
 def note_change(root, p, scope, kind, reason, reviewer, base=None):
@@ -1067,7 +1135,7 @@ def hook(root, p, action, agent, payload):
     fresh = verification.get("phase") == "delivery" and verification.get("status") == "PASS" and verification.get("fingerprint") == fingerprint(root, p, change)
     if fresh:
         return {}
-    reason = f"Change {change} has no fresh PASS delivery verification. Run deliver-change checks or save a blocked/pending checkpoint; do not declare the whole change complete."
+    reason = f"Change {change} has no fresh PASS delivery verification. Run repository checks using the selected development workflow or save a blocked/pending checkpoint; do not declare the whole change complete."
     if p.get("hook_mode") != "enforce":
         return {"systemMessage": reason}
     # At most one continuation for a session+turn, even if the model changes files.
@@ -1126,6 +1194,8 @@ def parser():
     verify_parser.add_argument("--check", action="append", dest="selected")
     ci = sub.add_parser("ci")
     ci.add_argument("--base", required=True)
+    check = sub.add_parser("check", help="Run repository checks locally; no hosted service or CI is needed")
+    check.add_argument("--base", help="Optional Git comparison base; defaults to the current worktree diff")
     note = sub.add_parser("note")
     note.add_argument("--scope", nargs="+", required=True)
     note.add_argument("--kind", choices=["docs", "mechanical", "test-only"], required=True)
@@ -1174,10 +1244,10 @@ def main(argv=None):
             elif args.command == "verify":
                 with lock(root, "verification"):
                     result = verify(root, p, args.phase, args.change, args.base, args.selected)
-            elif args.command == "ci":
+            elif args.command in {"ci", "check"}:
                 with lock(root, "verification"):
                     findings = structure_findings(root, p)
-                    result = {"status": overall(findings, []), "findings": findings} if findings else ci_verify(root, p, args.base)
+                    result = {"status": overall(findings, []), "findings": findings} if findings else ci_verify(root, p, args.base, local=args.command == "check")
             elif args.command == "note":
                 with lock(root):
                     result = note_change(root, p, args.scope, args.kind, args.reason, args.reviewer, args.base)
@@ -1220,7 +1290,7 @@ def main(argv=None):
         return {"FAIL": 1, "PENDING": 2}.get(result.get("status"), 0)
     except (KitError, OSError, UnicodeError, ValueError, TypeError, KeyError) as exc:
         if args.command == "hook":
-            print(dump({"systemMessage": f"Agent Repo Kit hook unavailable: {exc}. Run ark doctor; required CI remains independent."}), end="")
+            print(dump({"systemMessage": f"Agent Repo Kit hook unavailable: {exc}. Run ark doctor; local checks remain available and CI is optional."}), end="")
             return 0
         print(dump({"status": "FAIL", "error": str(exc)}), end="")
         return 1

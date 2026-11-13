@@ -13,7 +13,7 @@ Read-only work, documentation corrections and demonstrably mechanical edits use 
 path: record impact/results and run relevant checks. Do not create ceremonial tests or
 duplicate documents. Small configuration/dependency diffs can still affect behavior.
 Features, observable fixes, compatibility changes and risky refactors need scoped changes.
-Reuse existing OpenSpec artifacts and IDs; add ark metadata without overwriting content.
+Reuse existing OpenSpec or other mapped artifacts and IDs. No ark.json, toolkit lifecycle or development Skill is required. Native tools retain ownership of synchronization and archive.
 
 ## Delivery
 
@@ -29,7 +29,7 @@ Reuse existing OpenSpec artifacts and IDs; add ark metadata without overwriting 
 7. Complete tasks and run fresh delivery verification. Required checks must actually run
    and pass; manual/external checks need current evidence. Partial runs remain PENDING.
 8. Archive only with fresh local execution evidence and synchronized current specs.
-   CI independently verifies the candidate revision.
+   Run `python hack/ai/ark.py check --base <revision>` locally before delivery. CI may run the same checker, but is optional and never a prerequisite for using the toolkit.
 
 ## Baseline and decisions
 

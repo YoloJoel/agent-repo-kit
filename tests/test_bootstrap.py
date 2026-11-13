@@ -82,12 +82,14 @@ class BootstrapTests(unittest.TestCase):
             self.assertEqual(event["hookEventName"], "SessionStart")
             self.assertEqual(json.loads(event["additionalContext"])["project"], str(self.target))
 
-    def test_github_ci_is_detected_without_manual_option_selection(self):
+    def test_ci_is_opt_in_even_for_github_repositories(self):
         if not shutil.which("git"):
             self.skipTest("Git unavailable")
         subprocess.run(["git", "init", str(self.target)], check=True, capture_output=True)
         subprocess.run(["git", "-C", str(self.target), "remote", "add", "origin", "git@github.com:example/project.git"], check=True)
         self.bootstrap()
+        self.assertFalse((self.target / ".github/workflows/ark-verify.yml").exists())
+        self.bootstrap("--ci", "github")
         self.assertTrue((self.target / ".github/workflows/ark-verify.yml").is_file())
         self.assertEqual(self.bootstrap()["changed"], [])
 

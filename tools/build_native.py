@@ -55,7 +55,7 @@ def main(argv=None):
         path = ROOT / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
-    print(json.dumps({"status": "PASS", "files": len(expected), "skills": 3}))
+    print(json.dumps({"status": "PASS", "files": len(expected), "skills": len(list((ASSETS / "skills").glob("*/WORKFLOW.md")))}))
     return 0
 
 

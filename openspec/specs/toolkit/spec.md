@@ -9,7 +9,7 @@ semantic work; the CLI owns deterministic scaffolding, references, checks and ev
 
 Verification: automated and native-tool checks
 
-Claude Code SHALL receive a native plugin and marketplace manifest with three Skills.
+Claude Code SHALL receive a native plugin and marketplace manifest with two onboarding Skills.
 Other hosts SHALL be able to install standard root skills/<name>/SKILL.md folders.
 The initialize-repo folder SHALL contain all initialization code/resources and work when
 copied alone without the repository, installed Python packages or a source bootstrap.
@@ -122,3 +122,20 @@ protocol validation and live-runtime verification.
 - GIVEN a declaration bound to the former contents
 - WHEN a further source change changes its digest
 - THEN the stale declaration no longer covers the new candidate change
+
+### Requirement: Support tool-independent and local-only development (REQ-PORTABLE-001)
+
+Verification: automated and native-tool checks
+
+The toolkit SHALL read native OpenSpec or mapped ordinary change files without requiring
+ark.json, a development Skill, a session activation or the toolkit archive command.
+Local checks SHALL work without a remote or hosted CI. GitHub Actions generation SHALL be opt-in.
+Native tools SHALL own synchronization and archive. Proposed deltas SHALL remain distinct from
+current accepted specifications; synchronization SHALL be checked after native archive.
+
+#### Scenario: Develop using ordinary native assets
+
+- GIVEN a locally initialized repository and proposal/tasks/delta files
+- WHEN the selected development tool implements and tests the scoped behavior
+- THEN local verification runs real checks without a toolkit lifecycle or remote service
+- AND ambiguous associations or unsynchronized archived specifications cannot pass

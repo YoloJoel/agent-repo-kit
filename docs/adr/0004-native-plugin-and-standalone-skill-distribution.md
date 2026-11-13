@@ -1,6 +1,6 @@
 # 0004: Native plugin and standalone Skill distribution
 
-Status: Accepted
+Status: Superseded by ADR-0005
 
 ## Context
 

@@ -1,3 +1,5 @@
+Current execution records are under docs/iterations/. The following is the historical 0.1 verification record.
+
 # Verification record — 0.1.0
 
 Date: 2026-11-12. Local execution: Linux, CPython 3.12.14. This is a concise record of

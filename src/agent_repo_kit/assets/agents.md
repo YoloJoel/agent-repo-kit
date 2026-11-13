@@ -9,7 +9,7 @@ is optional. Use the available Python 3.11+ interpreter (`python3` or `py -3` if
 - For current behavior, consult `{{BASELINE}}` and verify relevant source/configuration;
   use **baseline-repo** when evidence is missing or stale.
 - For promised behavior, read relevant specs under `{{SPECS}}`; for planned changes,
-  read the related change under `{{CHANGES}}`. Use **deliver-change** for implementation.
+  read the related change under `{{CHANGES}}`. Use OpenSpec, another development tool or direct conversation; no development Skill is required.
 - Consult effective ADRs for consequential architecture choices. Record discrepancies
   between observed behavior and specs; do not silently rewrite either side.
 - Read only task-relevant context. A typo/mechanical edit needs neither a full Change,
@@ -26,4 +26,5 @@ is optional. Use the available Python 3.11+ interpreter (`python3` or `py -3` if
   material scope/compatibility decisions or required permissions not already resolved.
 
 Commands: `ark doctor`, `ark context`, `ark baseline inventory`, `ark change inspect`,
-`ark verify --phase structure`, `ark verify --phase delivery --change <id>`.
+`ark check`, `ark verify --phase structure`, `ark verify --phase delivery --change <id>`.
+All checks run locally. Hosted CI is optional; use the existing project workflow and native change lifecycle.
