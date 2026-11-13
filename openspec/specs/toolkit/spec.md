@@ -199,3 +199,20 @@ JSON replay normalization SHALL be explicit and preserve visible business differ
 - WHEN the refactor returns the intended normal result but loses a preserved error/boundary case
 - THEN the actual regression command fails and delivery is FAIL
 - AND the original executed evidence remains unchanged
+
+### Requirement: Maintain daily local feedback without a required development entry (REQ-MAINTENANCE-001)
+
+Verification: automated and native startup exercise
+
+Context SHALL associate actual diffs with native work without requiring activation, keep
+overlap ambiguous and avoid full builds/inventory on startup. Local checks SHALL persist
+honest phase/command execution results and protect history against HEAD without CI. Native
+paused checkpoints SHALL preserve the selected workflow. Optional Git checks SHALL preserve
+custom hooks and work without hosted services. Runtime support SHALL distinguish actual
+startup execution, protocol tests, native trust and unverified model-conversation behavior.
+
+#### Scenario: Pause directly developed native work
+
+- WHEN native work is selected by its actual diff and a paused checkpoint is saved
+- THEN context can resume it without a toolkit activity pointer or sidecar
+- AND Stop allows the handoff without forcing a development Skill or infinite continuation

@@ -1,6 +1,6 @@
 # Compatibility and deployment status
 
-Documentation checked: 2026-11-12. Product version: 0.1.0. A declared API shape,
+Documentation checked: 2026-11-13. Product version: 0.2.0. A declared API shape,
 generated config, a protocol test and a live trusted runtime are different claims.
 
 | Surface | Shipped behavior | Local validation | Environment-specific follow-through |
@@ -11,8 +11,10 @@ generated config, a protocol test and a live trusted runtime are different claim
 | Codex Hooks | `.codex/hooks.json`, SessionStart and bounded Stop | Real JSON stdin/stdout subprocess protocol | Project/config trust; Python interpreter; live runtime behavior |
 | Claude plugin | Native plugin/marketplace metadata plus root skills/ | Actual Claude CLI strict manifest validation | Install through native marketplace; live model invocation is separate |
 | Claude instructions/skills | Plugin Skills plus project CLAUDE/AGENTS | Merge/import/asset checks | Avoid duplicate project Skill copies after platform installation |
-| Claude Hooks | Merge `.claude/settings.json`, SessionStart/Stop | Settings-preservation and subprocess protocol tests | Actual runtime/config permission and Python interpreter |
+| Claude Hooks | Merge `.claude/settings.json`, SessionStart/Stop | Claude Code 2.1.322 native --init-only SessionStart executed; Stop subprocess/bounds tested | Full model conversation/live Stop remains unverified; host permissions and Python apply |
 | OpenCode | AGENTS and `.opencode/skills` | Native discovery layout generated | Confirm live skill discovery; lifecycle plugin not implemented |
+| Local Git check | Optional pre-commit command, custom-hook preservation | Actual rejecting commit exercise; no remote required | Opt-in, bypassable local check; no server protection claim |
+| Other pipelines | Same CLI with actual comparison base | Generic documented command protocol | Native runner/toolchain/artifact setup remains project-owned |
 | GitHub Actions | Consumer workflow plus toolkit OS/Python matrix | Local check/CI command exercises | Remote Actions execution and separately required check rules |
 | Other runtimes | Human-readable rules and vendored CLI | No native adapter claim | Implement and validate a thin adapter before declaring support |
 

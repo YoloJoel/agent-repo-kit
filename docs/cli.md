@@ -133,3 +133,14 @@ actual required delivery checks. External unavailable conditions remain NOT_RUN/
 Optional --ignore-pointer /output/timestamp requires --normalization-reason; only specific
 existing output leaves can be normalized, not IDs, inputs, containers or the whole result.
 It records raw digests and the normalization; fixture coverage still requires review.
+
+## Daily local maintenance
+
+`context` now discovers native work from real diff/scope associations without an active
+pointer. Overlaps stay ambiguous; disjoint work remains independently verifiable.
+`impact [--base <revision>]` records affected explanations and freshness without rewriting
+history. `check` persists `.ai/runtime/last-check.json`, including stage and an explicit
+business_checks_executed flag. Document-only PASS is not a business-test claim.
+`checkpoint ... --paused` supports normal handoff without adding ark.json to native work.
+`install-git-hook` optionally installs a real local pre-commit check, preserving custom hooks.
+See local-operation.md for no-CI use, other hosts, review and runtime/trust boundaries.
