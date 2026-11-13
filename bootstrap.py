@@ -28,7 +28,7 @@ def main(argv=None):
     parser.add_argument("--agents", help="The Agent can select its own adapter; omit to preserve existing selection/defaults.")
     parser.add_argument("--mode", choices=["auto", "new", "existing"], default="auto")
     parser.add_argument("--no-hooks", action="store_true", help="Skip new hook setup; existing requested hooks are preserved/repaired.")
-    parser.add_argument("--ci", choices=["auto", "github", "none"], default="auto")
+    parser.add_argument("--ci", choices=["auto", "github", "none"], default="none")
     parser.add_argument("--upgrade", action="store_true")
     args = parser.parse_args(argv)
     root = Path(args.path).expanduser().resolve()

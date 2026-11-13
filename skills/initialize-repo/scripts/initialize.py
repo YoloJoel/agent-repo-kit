@@ -24,7 +24,7 @@ def main(argv=None):
     parser.add_argument("--agents", help="Current runtime; select automatically, not as a user setup question.")
     parser.add_argument("--mode", choices=["auto", "new", "existing"], default="auto")
     parser.add_argument("--no-hooks", action="store_true")
-    parser.add_argument("--ci", choices=["auto", "github", "none"], default="auto")
+    parser.add_argument("--ci", choices=["auto", "github", "none"], default="none")
     parser.add_argument("--upgrade", action="store_true")
     args = parser.parse_args(argv)
     scripts = Path(__file__).resolve().parent

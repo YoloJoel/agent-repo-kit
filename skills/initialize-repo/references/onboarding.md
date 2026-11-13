@@ -5,8 +5,7 @@ vendors the Python 3.11+ stdlib runtime to `hack/ai`, copies selected skill disc
 and appends a managed AGENTS block. It does not approve a baseline or enable branch protection.
 
 Map existing baseline/spec/changes/ADR/template roots in policy. Leave native OpenSpec
-configuration intact. Adopt existing changes by adding schema-compatible ark.json metadata
-without overwriting their artifacts.
+configuration intact. Read native or mapped proposal/tasks/delta artifacts directly; do not add ark.json or introduce a second lifecycle.
 
 Configure confirmed checks using argv arrays, for example:
 `{"name":"unit","argv":["{python}","-m","unittest","discover","-s","tests"],"required":true}`.
@@ -23,10 +22,16 @@ bootstrap.py remains a source-development compatibility entry only.
 Hook commands find the target's vendored runtime from cwd/parents and use Python,
 so neither a global ark nor the original toolkit checkout is required. Codex/Claude Hook
 JSON is merged and trust is runtime-owned. Existing global-ark hook entries are migrated
-without deleting user hooks. On another OS/environment, the Agent can rerun bootstrap to
+without deleting user hooks. On another OS/environment, the Agent can rerun the installed initialization helper to
 repair its Python command; this does not require repeating semantic analysis.
 OpenCode uses its installed Skills; lifecycle hooks are not implemented. Update through the
 same plugin/Skills installer, then invoke initialize-repo for an explicit upgrade using
 its bundled helper with --upgrade. An updated source/global CLI is optional for developers.
 Edited managed files cause conflicts. Keep custom AGENTS content
 outside managed blocks. Inspect the recorded PID before removing a stale runtime lock.
+
+## Project facts and local operation
+
+Read .ai/project.json and the context document mapped by policy.paths.context (default docs/project-context.md). Verify observed languages, build manifests, declared versions and test roots against actual files. Fill real project boundaries and command knowledge; retain explicit unknowns. Existing human context is preserved. The engineering standard defines risk-appropriate assets and stage completion.
+
+All checks operate locally. Hosted CI generation is opt-in with --ci github, including for GitHub origins. No CI or remote is required. Report asset setup, semantic coverage, real check execution, runtime trust and optional remote settings separately.

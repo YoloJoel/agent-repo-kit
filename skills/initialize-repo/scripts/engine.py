@@ -21,6 +21,7 @@ import tempfile
 import time
 from datetime import datetime, timezone
 import uuid
+import xml.etree.ElementTree as ET
 
 VERSION = "0.2.0"
 ASSETS = Path(__file__).parent / "assets"
@@ -186,7 +187,7 @@ def policy_at(root):
         raise KitError("policy.skill_delivery must be repository or installed")
     if not isinstance(p.get("agents", []), list) or any(a not in AGENT_DIRS for a in p.get("agents", [])):
         raise KitError("policy.agents must contain supported adapter IDs")
-    for key in ("baseline", "specs", "changes", "adr", "templates"):
+    for key in ("baseline", "specs", "changes", "adr", "templates", *[name for name in ("context", "standard") if name in p["paths"]]):
         safe(root, p.get("paths", {}).get(key))
     for key in ("exclude", "test_paths", "checks", "source_paths"):
         if not isinstance(p.get(key), list):
@@ -278,10 +279,61 @@ def default_policy(mode, agents):
     return {
         "$schema": "../hack/ai/assets/policy.schema.json", "schema_version": 1, "kit_version": VERSION, "mode": mode,
         "agents": sorted(set(agents)), "source_paths": ["."], "test_paths": ["tests", "src/test"],
-        "paths": {"baseline": "docs/baseline", "specs": "openspec/specs", "changes": "openspec/changes", "adr": "docs/adr", "templates": "docs/templates"},
+        "paths": {"baseline": "docs/baseline", "specs": "openspec/specs", "changes": "openspec/changes", "adr": "docs/adr", "templates": "docs/templates", "context": "docs/project-context.md", "standard": "docs/engineering-standard.md"},
         "exclude": [".ai", "hack/ai", ".agents/skills", ".claude/skills", ".opencode/skills", "skills-lock.json", "openspec/config.yaml", "docs/baseline", "docs/templates", "openspec/changes"],
         "checks": [], "requirements": {}, "command_candidates": [], "hook_mode": "advisory",
     }
+
+
+def project_profile(root, p):
+    """Observed project facts only. Build markers are not executed or treated as proof."""
+    inventory = inventory_files(root, p)
+    owned = set(read_json(safe(root, MANIFEST), {}).get("files", {}))
+    inventory = {name: record for name, record in inventory.items() if name not in owned and name not in {".codex/hooks.json", ".claude/settings.json"}}
+    suffixes = {".java": "Java", ".kt": "Kotlin", ".py": "Python", ".c": "C", ".h": "C/C++ headers", ".cpp": "C++", ".go": "Go", ".rs": "Rust", ".js": "JavaScript", ".ts": "TypeScript", ".tsx": "TypeScript"}
+    languages = sorted({suffixes[Path(name).suffix] for name in inventory if Path(name).suffix in suffixes})
+    markers = {"pom.xml", "build.gradle", "build.gradle.kts", "package.json", "pyproject.toml", "go.mod", "Cargo.toml", "CMakeLists.txt", "Makefile"}
+    manifests = [name for name in inventory if Path(name).name in markers]
+    versions, unknown = {}, []
+    for name in manifests:
+        path = safe(root, name)
+        if path.stat().st_size > 1024 * 1024:
+            unknown.append(f"Inspect oversized build manifest: {name}")
+            continue
+        if path.name == "pom.xml":
+            try:
+                node = ET.fromstring(path.read_text(encoding="utf-8"))
+                def child(parent, label):
+                    return next((x for x in parent if x.tag.rsplit('}', 1)[-1] == label), None) if parent is not None else None
+                properties = child(node, "properties")
+                for label in ("java.version", "maven.compiler.release", "maven.compiler.source"):
+                    value = child(properties, label)
+                    if value is not None and value.text:
+                        versions[name + ":" + label] = value.text.strip()
+                parent = child(node, "parent")
+                artifact, version = child(parent, "artifactId"), child(parent, "version")
+                if artifact is not None and version is not None and version.text:
+                    versions[name + ":parent:" + (artifact.text or "unknown")] = version.text.strip()
+            except (ET.ParseError, UnicodeError):
+                unknown.append(f"Could not parse build facts: {name}")
+    source_roots = [name for name in ("src/main", "src", "app", "lib", "source") if (root / name).is_dir()]
+    test_roots = [name for name in p["test_paths"] if (root / name).is_dir()]
+    behavior = {name: item["sha256"] for name, item in inventory.items() if is_behavior(name)}
+    return {"schema_version": 1, "languages": languages, "build_manifests": manifests,
+            "source_roots": source_roots, "test_roots": test_roots, "declared_versions": versions,
+            "source_fingerprint": digest(dump(behavior).encode()),
+            "unknowns": unknown + ["Runtime topology, external contracts and semantic boundaries require source-grounded analysis.", "Candidate build/test commands require actual confirmation; no business check has been assumed to pass."]}
+
+
+def project_context(profile):
+    lines = ["# Project context", "", "Observed facts; maintain this explanation with source evidence. Unknown dimensions remain explicit.", "",
+             "## Languages", ", ".join(profile["languages"]) or "Not established; no product stack is assumed.", "", "## Build evidence"]
+    lines += [f"- `{name}`" for name in profile["build_manifests"]] or ["- No supported build manifest observed."]
+    lines += ["", "## Declared versions"] + [f"- `{name}`: `{value}` (declared, not executed)" for name, value in profile["declared_versions"].items()]
+    lines += ["", "## Source and test roots", f"Source candidates: {', '.join(profile['source_roots']) or 'not established'}.", f"Observed tests: {', '.join(profile['test_roots']) or 'not established'}.", "", "## Unknowns"]
+    lines += ["- " + item for item in profile["unknowns"]]
+    lines += ["", "## Evidence", "Current observed build/source fingerprint: `" + profile["source_fingerprint"] + "`.", "Machine observations: `.ai/project.json`. Confirm runtime facts and architecture separately.", ""]
+    return "\n".join(lines)
 
 
 def fingerprint(root, p, change=None):
@@ -361,6 +413,8 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
         p["skill_delivery"] = "repository" if copy_skills else "installed"
         writes = {POLICY: dump(p)}
         owned = dict(old_manifest.get("files", {}))
+        profile = project_profile(root, p)
+        writes[".ai/project.json"] = dump(profile)
 
         def managed(relative, content):
             path = safe(root, relative)
@@ -377,7 +431,11 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
         for path in sorted(ASSETS.rglob("*")):
             if path.is_file():
                 managed("hack/ai/assets/" + path.relative_to(ASSETS).as_posix(), path.read_bytes())
-        routing = (ASSETS / "agents.md").read_text(encoding="utf-8").replace("{{BASELINE}}", p["paths"]["baseline"]).replace("{{SPECS}}", p["paths"]["specs"]).replace("{{CHANGES}}", p["paths"]["changes"])
+        context_path = p["paths"].get("context", "docs/project-context.md")
+        standard_path = p["paths"].get("standard", "docs/engineering-standard.md")
+        routing = (ASSETS / "agents.md").read_text(encoding="utf-8").replace("{{BASELINE}}", p["paths"]["baseline"]).replace("{{SPECS}}", p["paths"]["specs"]).replace("{{CHANGES}}", p["paths"]["changes"]).replace("docs/engineering-standard.md", standard_path)
+        routing += "\nProject observations: " + (", ".join(profile["languages"]) or "stack not established") + ". "
+        routing += "Build evidence: " + (", ".join(profile["build_manifests"]) or "not established") + f".\nRead {context_path} for observed roots, declared versions and unresolved facts.\n"
         agent_path = safe(root, "AGENTS.md")
         existing = agent_path.read_bytes().decode("utf-8") if agent_path.exists() else ""
         previous_block = old_manifest.get("agents_block")
@@ -412,7 +470,8 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
                 if not safe(root, destination).exists() or destination in owned:
                     managed(destination, path.read_bytes())
         defaults = {
-            "docs/engineering-standard.md": (ASSETS / "engineering-standard.md").read_text(encoding="utf-8"),
+            context_path: project_context(profile),
+            standard_path: (ASSETS / "engineering-standard.md").read_text(encoding="utf-8").replace("docs/project-context.md", context_path),
             p["paths"]["baseline"] + "/README.md": "# Baseline\n\n" + ("Existing repository: inventory is pending review. Use baseline-repo; inventory alone is not an approved baseline.\n" if p["mode"] == "existing" else "New repository: no historical system is asserted. Build specifications from real requirements.\n"),
             p["paths"]["baseline"] + "/questions.json": dump({"schema_version": 1, "questions": []}),
             p["paths"]["adr"] + "/README.md": "# Architecture decisions\n\nRecord consequential, long-lived choices using docs/templates/adr.md. Preserve accepted history and link superseding decisions.\n",
@@ -463,7 +522,7 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
         return report
 
 
-def onboard_repo(root, mode="auto", agents=None, hooks=True, ci="auto", upgrade=False, copy_skills=None):
+def onboard_repo(root, mode="auto", agents=None, hooks=True, ci="none", upgrade=False, copy_skills=None):
     """Shared first-use operation for installed Skills and the compatibility entry."""
     # A GitHub remote says nothing about whether this project wants hosted CI.
     enable_ci = ci == "github"
