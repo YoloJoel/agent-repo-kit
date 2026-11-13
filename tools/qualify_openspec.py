@@ -81,6 +81,8 @@ def qualify(root):
     write("tests/test_listing.py", "import tempfile,unittest\nfrom pathlib import Path\nfrom journal import Journal\nclass Listing(unittest.TestCase):\n    def test_replay_order_and_duplicate(self):\n        with tempfile.TemporaryDirectory() as directory:\n            path=Path(directory)/'events'\n            journal=Journal(path)\n            self.assertEqual(journal.ids(), ())\n            journal.append('a', 1); journal.append('b', 2); journal.append('a', 1)\n            self.assertEqual(Journal(path).ids(), ('a','b'))\n")
     candidate = (root / "journal.py").read_text() + "\n    def ids(self):\n        return tuple(self.events)\n"
     write("journal.py", candidate)
+    kit.baseline_inventory(root, p)
+    explanation("ids returns an insertion-ordered immutable tuple; replay and duplicate handling preserve ID order.")
     target = require(kit.verify(root, p, "delivery", "list-event-identities"))
     write("journal.py", candidate.replace("return False", "return True"))
     mutation = require(kit.verify(root, p, "delivery", "list-event-identities"), "FAIL")

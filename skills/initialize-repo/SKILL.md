@@ -35,6 +35,8 @@ description: Initialize or explicitly upgrade reusable AI engineering rules, ski
    Diagnose live skill/hook loading when the corresponding runtime is available.
 8. Report installed assets, semantic coverage, checks executed, runtime loading/trust
    and optional remote required-check configuration separately. No CI is required; enable hosted CI only when explicitly requested. Configuration-only is not live PASS.
+   Before claiming onboarding complete, use `references/completion.md` to assess actual
+   content and executable checks. An initialized scaffold alone is only setup complete.
 
 Keep initialization idempotent. Reuse relevant context on later sessions; do not repeat
 whole-repository analysis at startup. Preserve existing content and accepted history.

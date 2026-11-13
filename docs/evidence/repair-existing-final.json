@@ -1,0 +1,271 @@
+{
+  "base": "5301c94",
+  "behavior_files": [
+    ".gitignore",
+    "src/cachetools/__init__.py",
+    "src/cachetools/__init__.pyi",
+    "tests/test_get_many.py"
+  ],
+  "business_checks_executed": true,
+  "changes": [
+    {
+      "change": "cache-get-many",
+      "checks": [
+        {
+          "argv": [
+            "env",
+            "PYTHONPATH=src",
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+            "-m",
+            "unittest",
+            "tests.test_cache",
+            "tests.test_cached",
+            "tests.test_cachedmethod",
+            "tests.test_fifo",
+            "tests.test_func",
+            "tests.test_keys",
+            "tests.test_lfu",
+            "tests.test_lru",
+            "tests.test_rr",
+            "tests.test_threading",
+            "tests.test_tlru",
+            "tests.test_ttl"
+          ],
+          "cwd": "/workspace/scratch/f2ad980ad476/repair-final-existing",
+          "duration_seconds": 0.516,
+          "exit_code": 0,
+          "finished_at": "2026-11-13T11:53:09+00:00",
+          "log": ".ai/runtime/runs/20261113T115309-7a23e958/regression.log",
+          "name": "regression",
+          "required": true,
+          "started_at": "2026-11-13T11:53:09+00:00",
+          "status": "PASS",
+          "type": "command"
+        },
+        {
+          "argv": [
+            "env",
+            "PYTHONPATH=src",
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+            "-m",
+            "unittest",
+            "tests.test_get_many"
+          ],
+          "cwd": "/workspace/scratch/f2ad980ad476/repair-final-existing",
+          "duration_seconds": 0.064,
+          "exit_code": 0,
+          "finished_at": "2026-11-13T11:53:09+00:00",
+          "log": ".ai/runtime/runs/20261113T115309-7a23e958/acceptance.log",
+          "name": "acceptance",
+          "required": true,
+          "started_at": "2026-11-13T11:53:09+00:00",
+          "status": "PASS",
+          "type": "command"
+        },
+        {
+          "argv": [
+            "env",
+            "PYTHONPATH=src",
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-t",
+            "."
+          ],
+          "cwd": "/workspace/scratch/f2ad980ad476/repair-final-existing",
+          "duration_seconds": 0.164,
+          "exit_code": 0,
+          "finished_at": "2026-11-13T11:53:09+00:00",
+          "log": ".ai/runtime/runs/20261113T115309-7a23e958/full-suite.log",
+          "name": "full-suite",
+          "required": true,
+          "started_at": "2026-11-13T11:53:09+00:00",
+          "status": "PASS",
+          "type": "command"
+        },
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+            "-m",
+            "compileall",
+            "-q",
+            "src",
+            "tests"
+          ],
+          "cwd": "/workspace/scratch/f2ad980ad476/repair-final-existing",
+          "duration_seconds": 0.064,
+          "exit_code": 0,
+          "finished_at": "2026-11-13T11:53:10+00:00",
+          "log": ".ai/runtime/runs/20261113T115309-7a23e958/syntax.log",
+          "name": "syntax",
+          "required": true,
+          "started_at": "2026-11-13T11:53:09+00:00",
+          "status": "PASS",
+          "type": "command"
+        },
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+            "-c",
+            "import ast,pathlib; [ast.parse(p.read_text(),filename=str(p)) for p in pathlib.Path('src').rglob('*.pyi')]; print('Parsed all 3 stub files')"
+          ],
+          "cwd": "/workspace/scratch/f2ad980ad476/repair-final-existing",
+          "duration_seconds": 0.064,
+          "exit_code": 0,
+          "finished_at": "2026-11-13T11:53:10+00:00",
+          "log": ".ai/runtime/runs/20261113T115309-7a23e958/stub-syntax.log",
+          "name": "stub-syntax",
+          "required": true,
+          "started_at": "2026-11-13T11:53:10+00:00",
+          "status": "PASS",
+          "type": "command"
+        }
+      ],
+      "phase": "delivery",
+      "run_id": "20261113T115309-7a23e958",
+      "status": "PASS"
+    },
+    {
+      "change": "review-onboarding-boundaries",
+      "checks": [
+        {
+          "argv": [
+            "env",
+            "PYTHONPATH=src",
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+            "-m",
+            "unittest",
+            "tests.test_cache",
+            "tests.test_cached",
+            "tests.test_cachedmethod",
+            "tests.test_fifo",
+            "tests.test_func",
+            "tests.test_keys",
+            "tests.test_lfu",
+            "tests.test_lru",
+            "tests.test_rr",
+            "tests.test_threading",
+            "tests.test_tlru",
+            "tests.test_ttl"
+          ],
+          "cwd": "/workspace/scratch/f2ad980ad476/repair-final-existing",
+          "duration_seconds": 0.465,
+          "exit_code": 0,
+          "finished_at": "2026-11-13T11:53:10+00:00",
+          "log": ".ai/runtime/runs/20261113T115310-aabf07cc/regression.log",
+          "name": "regression",
+          "required": true,
+          "started_at": "2026-11-13T11:53:10+00:00",
+          "status": "PASS",
+          "type": "command"
+        },
+        {
+          "argv": [
+            "env",
+            "PYTHONPATH=src",
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+            "-m",
+            "unittest",
+            "tests.test_get_many"
+          ],
+          "cwd": "/workspace/scratch/f2ad980ad476/repair-final-existing",
+          "duration_seconds": 0.064,
+          "exit_code": 0,
+          "finished_at": "2026-11-13T11:53:10+00:00",
+          "log": ".ai/runtime/runs/20261113T115310-aabf07cc/acceptance.log",
+          "name": "acceptance",
+          "required": true,
+          "started_at": "2026-11-13T11:53:10+00:00",
+          "status": "PASS",
+          "type": "command"
+        },
+        {
+          "argv": [
+            "env",
+            "PYTHONPATH=src",
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-t",
+            "."
+          ],
+          "cwd": "/workspace/scratch/f2ad980ad476/repair-final-existing",
+          "duration_seconds": 0.164,
+          "exit_code": 0,
+          "finished_at": "2026-11-13T11:53:10+00:00",
+          "log": ".ai/runtime/runs/20261113T115310-aabf07cc/full-suite.log",
+          "name": "full-suite",
+          "required": true,
+          "started_at": "2026-11-13T11:53:10+00:00",
+          "status": "PASS",
+          "type": "command"
+        },
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+            "-m",
+            "compileall",
+            "-q",
+            "src",
+            "tests"
+          ],
+          "cwd": "/workspace/scratch/f2ad980ad476/repair-final-existing",
+          "duration_seconds": 0.064,
+          "exit_code": 0,
+          "finished_at": "2026-11-13T11:53:10+00:00",
+          "log": ".ai/runtime/runs/20261113T115310-aabf07cc/syntax.log",
+          "name": "syntax",
+          "required": true,
+          "started_at": "2026-11-13T11:53:10+00:00",
+          "status": "PASS",
+          "type": "command"
+        },
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+            "-c",
+            "import ast,pathlib; [ast.parse(p.read_text(),filename=str(p)) for p in pathlib.Path('src').rglob('*.pyi')]; print('Parsed all 3 stub files')"
+          ],
+          "cwd": "/workspace/scratch/f2ad980ad476/repair-final-existing",
+          "duration_seconds": 0.033,
+          "exit_code": 0,
+          "finished_at": "2026-11-13T11:53:11+00:00",
+          "log": ".ai/runtime/runs/20261113T115310-aabf07cc/stub-syntax.log",
+          "name": "stub-syntax",
+          "required": true,
+          "started_at": "2026-11-13T11:53:10+00:00",
+          "status": "PASS",
+          "type": "command"
+        }
+      ],
+      "phase": "delivery",
+      "run_id": "20261113T115310-aabf07cc",
+      "status": "PASS"
+    }
+  ],
+  "control_review": "Review lightweight declarations and policy/runtime/CI/manifest changes independently; repository-controlled checks are not a security boundary.",
+  "created_at": "2026-11-13T11:53:11+00:00",
+  "executed_check_count": 10,
+  "execution": "local",
+  "findings": [],
+  "knowledge_review_candidates": [
+    "docs/baseline/cache-runtime.md",
+    "docs/baseline/cases.md",
+    "docs/baseline/contracts.md",
+    "docs/baseline/decorators.md",
+    "docs/baseline/governance.md",
+    "docs/baseline/test-harness.md",
+    "docs/baseline/types-and-build.md"
+  ],
+  "lightweight_checks": [],
+  "lightweight_files": [],
+  "stage": "candidate-delivery",
+  "status": "PASS",
+  "release_runtime_sha256": "f670eee08aed8bed9188207cf7551ae07505d73b8795c1dcdd0153a1e0efed7f"
+}

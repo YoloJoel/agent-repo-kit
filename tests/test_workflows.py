@@ -43,8 +43,8 @@ class RepositoryCase(unittest.TestCase):
         self.write(base + "/tasks.md", "# Tasks\n- [x] Inspect actual behavior and complete the scoped work.\n")
         return self.root / base
 
-    def review_app(self, p):
-        self.write("docs/baseline/modules/app.md", "# App\n\n## Purpose\nDouble a number.\n\n## Flow\nReturn x * 2.\n\n## State and failure\nNo persistent state. Python multiplication errors propagate.\n\n## Evidence\napp.py:L1-L2\n\n## Gaps\nStatic review; tests are separate execution evidence.\n")
+    def review_app(self, p, flow="Return x * 2."):
+        self.write("docs/baseline/modules/app.md", "# App\n\n## Purpose\nDouble a number.\n\n## Flow\n" + flow + "\n\n## State and failure\nNo persistent state. Python arithmetic errors propagate.\n\n## Evidence\napp.py:L1-L2\n\n## Gaps\nStatic review; tests are separate execution evidence.\n")
         return kit.baseline_review(self.root, p, "docs/baseline/modules/app.md", ["app.py"], "test-reviewer")
 
     def preserve_double(self, p):
@@ -62,6 +62,11 @@ class RepositoryCase(unittest.TestCase):
         kit.baseline_review(self.root, p, "docs/baseline/modules/value.md", ["app.py"], "fixture")
         result = kit.verify(self.root, p, "ready", "example")
         self.assertEqual(result["status"], "PASS", result)
+
+    def review_current_value(self, p):
+        kit.baseline_inventory(self.root, p)
+        self.write("docs/baseline/modules/value.md", "# Value\n## Purpose\nProvide initial value.\n## Flow\nRead the constant two after the accepted change.\n## State and failure\nImport-time state; no external failure.\n## Evidence\napp.py:L1\n## Gaps\nOnly this constant is reviewed.\n")
+        kit.baseline_review(self.root, p, "docs/baseline/modules/value.md", ["app.py"], "fixture")
 
     def git_start(self):
         if not shutil.which("git"):
@@ -250,6 +255,8 @@ class BaselineTests(RepositoryCase):
         anchor = self.root / "openspec/changes/example/baseline-anchor.json"
         before = anchor.read_bytes()
         self.write("app.py", "def double(x):\n    return x + x\n")
+        kit.baseline_inventory(self.root, p)
+        self.review_app(p, "Return x + x; observed integer results are preserved.")
         delivery = kit.verify(self.root, p, "delivery", "example")
         self.assertEqual(delivery["status"], "PASS", delivery)
         self.assertEqual(anchor.read_bytes(), before)
@@ -275,6 +282,8 @@ class DeliveryTests(RepositoryCase):
         p = self.initialize()
         self.write("app.py", "value = 1\n")
         self.configure(p, [{"name": "unit", "argv": ["{python}", "-c", "from app import value; assert value == 2"]}])
+        p["requirements"] = {"REQ-OUTPUT-001": {"type": "automated", "checks": ["unit"]}}
+        self.configure(p, p["checks"])
         base = self.commit()
         directory = self.change(p, scope=["app.py", "tests"])
         self.characterize_value_change(p)
@@ -285,6 +294,7 @@ class DeliveryTests(RepositoryCase):
         artifact = "openspec/changes/example/sync-review.md"
         self.write(artifact, "Reviewed actual delta and current spec: output is now two; explicit reviewed synchronization, native CLI not invoked.\n")
         kit.record_sync(self.root, p, "example", artifact, "agent")
+        self.review_current_value(p)
         kit.activate(self.root, "example", "session-a")
         self.assertEqual(kit.verify(self.root, p, "delivery", "example")["status"], "PASS")
         before = kit.fingerprint(self.root, p, "example")
@@ -472,6 +482,7 @@ class HookAndCITests(RepositoryCase):
         self.change(p, scope=["app.py", "tests"])
         self.characterize_value_change(p)
         self.write("app.py", "value = 2\n")
+        self.review_current_value(p)
         self.assertEqual(kit.verify(self.root, p, "delivery", "example")["status"], "PASS")
         kit.close_change(self.root, p, "example")
         result = kit.ci_verify(self.root, p, base)

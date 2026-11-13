@@ -36,6 +36,13 @@ Identify requirements consistently with the repository's existing scheme. Give o
 scenarios with conditions/inputs and expected outcomes. Identify automated, manual or
 external verification. Keep references from affected requirements to actual tests/evidence.
 Textual references establish navigation; reviewers still assess assertion quality.
+Check the complete effective-spec verification matrix even when this change has no delta;
+removing a test must not leave a current promise without a test reference or an explicit
+required delivery-check mapping. Proposed deltas can precede tests; current promises retain
+their obligations. Manual/external promises need their own required delivery check mappings.
+Only executable test-source formats count as source references; a README, input fixture or
+coverage table under the test directory cannot replace a deleted test. Map other executable
+test systems to their actual required command explicitly.
 Native OpenSpec validation/synchronization should be reused, not reimplemented as a merger.
 
 ## Baseline and knowledge
@@ -46,6 +53,12 @@ Record uninspected/uncertain dimensions and unavailable runtime conditions. Inve
 not prove understanding. Distinguish facts, inferences, accepted choices and planned design.
 Promote only selected behavior promises; defects and implementation details are not
 implicitly permanent contracts. Preserve raw evidence and accepted history.
+Recheck affected current explanations after implementation. Stale registered module,
+contract or case descriptions keep delivery PENDING until refreshed or explicitly retired
+with a decision. Original snapshots remain immutable; unrelated stale knowledge does not
+block a scoped task. An edited explanation itself also needs its review declaration refreshed.
+Changes to its recorded decision are also an impact. Verification binds current knowledge
+and checks its final state; a command that changes its own verification inputs cannot pass.
 Maintain one question/decision source; link product choices, design work, validation gates
 and ADR to their implementation/specification outcome. Do not duplicate competing statuses.
 
@@ -81,6 +94,10 @@ raw/archive history; use superseding or supplemental records to correct accepted
 All core checks operate locally without GitHub, a remote or CI. Optional Git hooks and CI
 reuse the same checker; their presence or configuration is not proof of effective execution.
 Diagnose hosted required checks only when applicable. Preserve existing pipelines/settings.
+Unknown non-document files are treated as behavior candidates, including configuration,
+build inputs, lockfiles and resources. Add runtime-consumed Markdown/document paths or
+patterns to policy.behavior_paths. Content-bound lightweight declarations remain available
+for reviewed nonbehavior changes; do not globally exclude runtime inputs to avoid a gate.
 
 Record existing debt separately from new/worsened problems. Exceptions need scope, reason,
 owner, review/expiry condition and alternative evidence, under an applicable accepted policy.

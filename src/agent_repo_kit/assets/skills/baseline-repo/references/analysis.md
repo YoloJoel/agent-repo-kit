@@ -26,6 +26,9 @@ Special compatibility branches need trigger and effect, not just a function name
 A reader should understand the scoped behavior without reading source, while evidence
 citations let them locate details. Headings, line references and file counts alone cannot
 prove that this goal is met. Review the actual explanation and expected important branches.
+Use file:L1-LN for text sources. Empty marker files and opaque binary inputs have no usable
+code lines; cite file@sha256:<actual digest> and explain their caller/contract and unresolved
+semantics. A byte fingerprint records identity, not understanding of the data format.
 
 ## Contracts and behavior cases
 

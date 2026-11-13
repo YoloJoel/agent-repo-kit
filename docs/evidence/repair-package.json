@@ -1,0 +1,16 @@
+{
+  "kit_version": "0.2.1",
+  "runtime_sha256": "f670eee08aed8bed9188207cf7551ae07505d73b8795c1dcdd0153a1e0efed7f",
+  "runtime_matches_source": true,
+  "wheel_matches_source": true,
+  "wheel_sha256": "c0b23a02564de9b3de8fe0c80332106e16552a89d21c366f4227a073ac2850b6",
+  "source_test_output": "----------------------------------------------------------------------\nRan 118 tests in 16.088s\n\nOK\n",
+  "wheel_test_output": "----------------------------------------------------------------------\nRan 118 tests in 15.818s\n\nOK\n",
+  "native_artifacts": "build_native.py --check PASS; no stale/unexpected files",
+  "native_skill_validation": "Both root Skills passed quick_validate.py",
+  "remote_ci": {
+    "head": "23278054ee897d510954ba32ccd044c9aafec31f",
+    "all_7_jobs": "success",
+    "scope": "Earlier PR head before supplemental boundary fixes; final candidate is not uploaded and does not have final-head CI evidence"
+  }
+}

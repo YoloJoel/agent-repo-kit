@@ -31,6 +31,14 @@ class BehaviorVerificationTests(RepositoryCase):
         anchor = self.root / "openspec/changes/refactor/baseline-anchor.json"
         original = anchor.read_bytes()
         self.write("app.py", "def double(x):\n    if x is None: raise ValueError('missing')\n    return x + x\n")
+        stale = kit.verify(self.root, p, "delivery", "refactor")
+        self.assertEqual(stale["status"], "PENDING", stale)
+        self.assertIn("knowledge-stale", {item["code"] for item in stale["findings"]})
+        snapshots = {path: path.read_bytes() for path in (self.root / "docs/baseline/raw").rglob("*") if path.is_file()}
+        kit.baseline_inventory(self.root, p)
+        self.write("docs/baseline/modules/app.md", "# App\n## Purpose\nDouble values.\n## Flow\nReject None, then add the value to itself.\n## State and failure\nStateless; missing raises ValueError.\n## Evidence\napp.py:L1-L3\n## Gaps\nNo concurrency claim.\n")
+        kit.baseline_review(self.root, p, "docs/baseline/modules/app.md", ["app.py"], "fixture")
+        self.assertTrue(all(path.read_bytes() == content for path, content in snapshots.items()))
         good = kit.verify(self.root, p, "delivery", "refactor")
         self.assertEqual(good["status"], "PASS", good)
         self.assertEqual(good["behavior"][0]["before"], {"regression": "PASS"})
