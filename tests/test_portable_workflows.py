@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 
 from agent_repo_kit import core as kit
 from test_workflows import RepositoryCase
@@ -79,7 +80,9 @@ class PortableWorkflowTests(RepositoryCase):
 
     def test_local_directory_without_git_still_executes_business_checks(self):
         p, base, directory = self.native()
-        shutil.rmtree(self.root / '.git')
+        detached = tempfile.TemporaryDirectory()
+        self.addCleanup(detached.cleanup)
+        (self.root / '.git').rename(Path(detached.name) / 'detached-git')
         report = kit.ci_verify(self.root, p, None, local=True)
         self.assertEqual(report['status'], 'PASS', report)
         details = kit.read_json(self.root / directory / 'verification.json')
