@@ -43,13 +43,12 @@ class NativeDistributionTests(unittest.TestCase):
         self.assertEqual(market["plugins"][0]["source"], "./")
         self.assertFalse((ROOT / "CLAUDE.md").exists(), "Claude does not load root CLAUDE as plugin instructions")
         names = sorted(p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md"))
-        self.assertEqual(names, ["baseline-repo", "deliver-change", "initialize-repo"])
+        self.assertEqual(names, ["baseline-repo", "initialize-repo"])
         for path in (ROOT / "skills").rglob("*"):
             self.assertFalse(path.is_symlink(), str(path))
 
     def test_copied_skill_only_initializes_without_repository_or_packages(self):
         shutil.rmtree(self.installed / "baseline-repo")
-        shutil.rmtree(self.installed / "deliver-change")
         (self.target / "app.py").write_text("def double(x):\n    return x * 2\n")
         (self.target / "README.md").write_text("Uncommitted user note\n")
         original = b"# Existing human rule\r\nPreserve API.  \r\n"

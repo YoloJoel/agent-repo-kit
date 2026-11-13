@@ -33,3 +33,5 @@ description: Initialize or explicitly upgrade reusable AI engineering rules, ski
 
 Keep initialization idempotent. Reuse relevant context on later sessions; do not repeat
 whole-repository analysis at startup. Preserve existing content and accepted history.
+
+After onboarding, use OpenSpec, another development Skill or direct conversation. Follow repository engineering requirements and run local checks; no toolkit development Skill or CI is required.

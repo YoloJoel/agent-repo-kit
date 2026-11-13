@@ -13,11 +13,11 @@ tests exercise boundaries through disposable repositories and actual subprocesse
 | Policy/templates | Machine configuration and delivery structure | Correctness merely by filling headings |
 | Runtime | Inventory, references, scope, freshness, real check execution and archive conditions | Complete semantic equivalence |
 | Hook adapters | Runtime-specific event JSON and bounded feedback | Every shell write or a security boundary |
-| CI | Independent execution on a candidate diff | Remote branch protection merely by existing |
+| Local checks / optional CI | Execution on a candidate diff | Remote branch protection merely by existing |
 
 ## Installation
 
-The host installs the plugin or three Skill folders once. The installed initialize-repo
+The host installs the plugin or two Skill folders once. The installed initialize-repo
 Skill resolves its own scripts/initialize.py and uses its bundled engine/resources, without
 another checkout, URL guide, package installation or bootstrap. It initializes the target
 and leaves Skill lifecycle to the host rather than copying duplicates into each project.
@@ -41,15 +41,14 @@ evidence; delivery keeps the anchor while source changes. Historical raw batches
 
 ## Change and verification
 
-Native OpenSpec layout is retained with an additional ark.json, verification/evidence,
-sync review and checkpoint. There is no second delta-merging implementation. Prefer the
+Native OpenSpec and mapped ordinary document layouts are read directly. Legacy ark.json remains readable, but is not required. Verification, evidence and checkpoints are generated results rather than a development entry. There is no second delta-merging implementation. Prefer the
 native workflow; reviewed file synchronization is supported and named honestly when no
 native tool exists. Sync hashes establish freshness, not semantic equivalence.
 
 Verification records code/config/spec fingerprints, real argv/cwd/exit/log, failed/unrun
 checks and environment. Required checks aggregate conservatively; optional failures stay
 visible. Input mutation invalidates a run. Closure requires fresh workspace execution and
-valid completion conditions. CI re-executes rather than trusting committed PASS JSON.
+valid completion conditions. Local check re-executes rather than trusting committed PASS JSON. Optional CI can run the same checker independently.
 
 ## Context and runtime adapters
 

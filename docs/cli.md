@@ -31,7 +31,8 @@ Deterministic commands never invoke a model automatically.
 | `ark note --scope <paths...> --kind mechanical --reason <text> --reviewer <id>` | Hash-bound lightweight nonbehavior declaration |
 | `ark evidence --change <id> --check <name> --artifact <path> --reviewer <id> --status PASS --summary <text>` | Record actual manual/external evidence, not an independent certification |
 | `ark checkpoint --change <id> --summary <text> --next <text> [--blocked]` | Save recoverable progress; allow real handoff |
-| `ark ci --base <real-base-ref>` | Candidate-diff coverage and independent check execution |
+| `ark check [--base <ref>]` | Local candidate checks; works without a remote or CI |
+| `ark ci --base <real-base-ref>` | Optional hosted invocation of the same checker |
 | `ark hook session/stop --agent codex/claude` | Consume runtime event JSON on stdin |
 
 ## Initialization
@@ -50,8 +51,7 @@ runtime/production verification or semantic completeness certification has occur
 ## Change metadata and requirements
 
 Kinds: feature, fix, refactor, maintenance, docs. Use feature/fix/refactor for behavior work;
-they require declared affected REQ IDs before ready. Adopt an existing native change by
-adding ark.json conforming to the shipped change schema, retaining its existing artifacts.
+they require affected REQ IDs before ready. Native or mapped proposal/tasks/delta files are read directly. No ark.json, explicit activation or toolkit lifecycle is required. Legacy metadata remains supported. Concrete repository paths in proposal Impact sections provide scope; ambiguous inferred associations stay PENDING.
 
 New IDs use `REQ-UPPERCASE-001`; existing native artifacts/IDs are preserved during install.
 Use `--requirements` for affected toolkit-tracked IDs and `--remove-requirements` for its
@@ -87,7 +87,7 @@ requires local execution; CI re-executes against the candidate rather than trust
 Exit codes for doctor/validation/verification/CI: 0 PASS, 1 FAIL/input error, 2 PENDING.
 Inventory uses 2 when work remains by design. Successful mutation commands return 0 even
 if the resulting work item is draft/PENDING. Hook errors emit diagnostic JSON and return 0
-to avoid trapping a session; required CI is independent. The JSON status remains authoritative.
+to avoid trapping a session; local checks remain available and hosted CI is optional. The JSON status remains authoritative.
 
 ## Scope of enforcement
 

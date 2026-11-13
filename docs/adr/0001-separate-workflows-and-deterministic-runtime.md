@@ -1,6 +1,6 @@
 # 0001: Separate semantic workflows from deterministic checks
 
-Status: Accepted
+Status: Superseded by ADR-0005
 
 ## Context
 
