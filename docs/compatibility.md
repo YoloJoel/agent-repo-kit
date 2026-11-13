@@ -1,6 +1,6 @@
 # Compatibility and deployment status
 
-Documentation checked: 2026-11-13. Product version: 0.2.0. A declared API shape,
+Documentation checked: 2026-11-13. Product version: 0.2.1. A declared API shape,
 generated config, a protocol test and a live trusted runtime are different claims.
 
 | Surface | Shipped behavior | Local validation | Environment-specific follow-through |
@@ -46,7 +46,7 @@ across products imply identical trust, configuration, loading or blocking behavi
 
 ## Final qualification
 
-The final iteration runs 102 source/installed workflow tests and native artifact checks. The
+The 0.2.0 final iteration ran 102 source/installed workflow tests and native artifact checks. The
 toolkit CI executes actual local/remote Skills installation and real OpenSpec 2.0.0 two-change
 qualification in addition to Linux/Windows/macOS × Python 3.11/3.13. Actual final-head job
 results, not this configuration description, establish platform acceptance. A real isolated

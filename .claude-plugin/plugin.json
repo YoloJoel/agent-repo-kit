@@ -1,6 +1,6 @@
 {
   "name": "agent-repo-kit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Initialize and analyze repositories; persistent engineering rules and local checks work with any development entry.",
   "author": {
     "name": "YoloJoel"

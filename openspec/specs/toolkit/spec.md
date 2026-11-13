@@ -233,3 +233,31 @@ real-repository and platform evidence.
 - WHEN initialization maps machine evidence and the existing native ledger before writing
 - THEN original raw batches, IDs, native formats and human work remain valid
 - AND mapped execution evidence is still immutable and distinct from business source
+
+### Requirement: Reject incomplete local delivery evidence (REQ-INTEGRITY-001)
+
+Verification: automated
+
+Local verification SHALL conservatively include unknown non-document inputs, configuration,
+build files and resources. Runtime-read document paths SHALL be configurable. All effective
+requirements SHALL retain applicable test references or required delivery-check mappings,
+including during changes with no delta. A mapping SHALL NOT downgrade a declared manual or
+external verification type. Affected current knowledge SHALL be rechecked after source or
+document changes before full delivery; explicit retirement SHALL preserve historical evidence.
+
+#### Scenario: Modify a configuration file outside the former suffix list
+
+- WHEN application.properties or an unknown runtime input changes without scoped work
+- THEN local verification fails rather than returning document-only PASS
+
+#### Scenario: Remove a test while unrelated tests still pass
+
+- GIVEN a current automated requirement whose only reference is the removed test
+- WHEN the remaining test suite passes
+- THEN local verification remains PENDING until the effective requirement has valid coverage
+
+#### Scenario: Deliver with a stale current explanation
+
+- WHEN affected registered source or explanation changes
+- THEN delivery stays PENDING until re-review or explicit retirement
+- AND unrelated stale knowledge does not block a scoped task and original snapshots remain

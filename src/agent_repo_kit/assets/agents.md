@@ -20,6 +20,10 @@ is optional. Use the available Python 3.11+ interpreter (`python3` or `py -3` if
   Never report NOT_RUN as PASS or an inventory as an approved semantic baseline.
 - Update affected specs, decisions, evidence and tasks. Preserve original evidence and
   accepted history; link superseding records. Do not renumber existing requirement IDs.
+- Refresh affected current explanations after implementation, or retire them explicitly
+  with a decision; retain original snapshots. Unrelated stale knowledge is not a task blocker.
+- Treat unknown configuration/build/resource inputs as requiring impact review. Add runtime
+  document paths to policy.behavior_paths; do not classify them as harmless prose.
 - Read diff-based `ark context`/`ark impact` for affected work and knowledge; no activation is required.
 - Before declaring delivery complete, run fresh delivery verification. During work and
   interruption, save a checkpoint and next step; use --paused for normal handoff and --blocked for genuine blockers.

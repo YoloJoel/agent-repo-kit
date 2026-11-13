@@ -163,3 +163,28 @@ Explicit 0.1 upgrade retires only unmodified manifest-owned deliver-change copie
 asset entry points. Customized copies remain and are recorded as user-maintained in manifest
 migration history. Managed runtime/entry conflicts abort before mutation; failed deletion/write
 transactions restore only their own touched files. Old raw and accepted history remain.
+
+## Local integrity in 0.2.1
+
+Unknown non-document files are behavior candidates. This includes properties, Gradle/Go/CMake
+inputs, lockfiles, protocol definitions, arbitrary formats and runtime resources. Recognized
+prose stays light. Set policy.behavior_paths to additional repository paths/patterns when an
+application consumes document-like inputs (for example prompts/*.md). Reviewed mechanical
+changes can still use content-bound notes rather than adding broad exclusions.
+
+The complete current-spec verification matrix is checked even if a task has no delta.
+Automated promises need an exact test-source identity or an explicit required delivery-check
+mapping. Manual/external promises need matching required delivery checks. Ready-only, optional
+or wrong-type checks do not satisfy this relation. Test references are navigation, not proof
+of assertion quality; actual commands and substantive review remain necessary.
+
+Delivery checks gate affected registered explanations on source/document/decision freshness.
+Refresh inventory and re-review current modules/contracts/cases after implementation. Use
+baseline retire with --document, --decision and --reviewer for an actual historical retirement;
+raw snapshots and executed pre-change anchors remain immutable. Unrelated stale documents
+do not block scoped work. Empty or binary sources use file@sha256:<actual digest> in evidence
+because they have no valid source line ranges; explain the reader contract and semantic gaps.
+
+Upgrade existing consumers explicitly with the updated initialize-repo helper --upgrade.
+Run local checks again; previous false PASS results may now be FAIL or PENDING. This adds no
+daily development Skill, remote dependency or hosted CI requirement.

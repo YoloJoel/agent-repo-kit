@@ -24,7 +24,7 @@ from datetime import date, datetime, timezone
 import uuid
 import xml.etree.ElementTree as ET
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 ASSETS = Path(__file__).parent / "assets"
 POLICY = ".ai/policy.json"
 MANIFEST = ".ai/manifest.json"
@@ -227,6 +227,11 @@ def policy_at(root):
     for relative in p.get("source_paths", ["."]):
         if relative != ".":
             safe(root, relative)
+    if not isinstance(p.get("behavior_paths", []), list):
+        raise KitError("policy.behavior_paths must be an array of repository paths or glob patterns")
+    for relative in p.get("behavior_paths", []):
+        if relative != ".":
+            safe(root, relative)
     if any(not isinstance(x, str) or not x for x in p["exclude"]):
         raise KitError("policy.exclude must contain nonempty glob strings")
     if not isinstance(p.get("requirements", {}), dict):
@@ -288,8 +293,19 @@ def inventory_files(root, p):
     return answer
 
 
-def is_behavior(relative):
-    return Path(relative).suffix.lower() in SOURCE_SUFFIXES or Path(relative).name in {"Dockerfile", "Makefile", "Jenkinsfile"}
+def is_behavior(relative, p=None):
+    """Unknown inputs require impact review; an extension allowlist cannot prove safety."""
+    if any(fnmatch.fnmatchcase(relative, pattern) or under(relative, pattern.rstrip("/"))
+           for pattern in (p or {}).get("behavior_paths", [])):
+        return True
+    path = PurePosixPath(relative)
+    if path.suffix.lower() in SOURCE_SUFFIXES or path.name in {"Dockerfile", "Makefile", "Jenkinsfile", "CMakeLists.txt"}:
+        return True
+    if path.suffix.lower() in {".md", ".rst", ".adoc", ".asciidoc"}:
+        return False
+    if path.suffix.lower() == ".txt" and (path.parts[0] in {"docs", "doc"} or path.stem.upper() in {"README", "CHANGELOG", "LICENSE", "COPYING", "NOTICE", "AUTHORS"}):
+        return False
+    return path.name not in {"README", "LICENSE", "COPYING", "NOTICE", "AUTHORS", ".gitignore", ".gitattributes", ".editorconfig"}
 
 
 def default_policy(mode, agents):
@@ -298,7 +314,7 @@ def default_policy(mode, agents):
         "agents": sorted(set(agents)), "source_paths": ["."], "test_paths": ["tests", "src/test"],
         "paths": {"baseline": "docs/baseline", "specs": "openspec/specs", "changes": "openspec/changes", "adr": "docs/adr", "templates": "docs/templates", "context": "docs/project-context.md", "standard": "docs/engineering-standard.md"},
         "exclude": [".ai", "hack/ai", ".agents/skills", ".claude/skills", ".opencode/skills", ".codex/hooks.json", ".claude/settings.json", "skills-lock.json", "openspec/config.yaml", "docs/baseline", "docs/templates", "openspec/changes"],
-        "checks": [], "requirements": {}, "command_candidates": [], "hook_mode": "advisory",
+        "checks": [], "requirements": {}, "command_candidates": [], "hook_mode": "advisory", "behavior_paths": [],
     }
 
 
@@ -335,7 +351,7 @@ def project_profile(root, p):
                 unknown.append(f"Could not parse build facts: {name}")
     source_roots = [name for name in ("src/main", "src", "app", "lib", "source") if (root / name).is_dir()]
     test_roots = [name for name in p["test_paths"] if (root / name).is_dir()]
-    behavior = {name: item["sha256"] for name, item in inventory.items() if is_behavior(name)}
+    behavior = {name: item["sha256"] for name, item in inventory.items() if is_behavior(name, p)}
     return {"schema_version": 1, "languages": languages, "build_manifests": manifests,
             "source_roots": source_roots, "test_roots": test_roots, "declared_versions": versions,
             "source_fingerprint": digest(dump(behavior).encode()),
@@ -433,7 +449,7 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
             agents = agents or ["codex", "claude", "opencode"]
             probe = default_policy("new", agents)
             observed = inventory_files(root, probe)
-            detected = "existing" if any(is_behavior(x) for x in observed) else "new"
+            detected = "existing" if any(is_behavior(x, probe) for x in observed) else "new"
             p = default_policy(detected if mode == "auto" else mode, agents)
             candidates = []
             for marker, argv in (("pom.xml", ["mvn", "test"]), ("build.gradle", ["./gradlew", "test"]), ("go.mod", ["go", "test", "./..."]), ("package.json", ["npm", "test"]), ("pyproject.toml", ["python", "-m", "unittest", "discover", "-s", "tests"])):
@@ -630,6 +646,17 @@ def baseline_inventory(root, p):
     return {"status": "PENDING", "files": len(reviewed), "reviewed": sum(x["status"] == "reviewed" for x in reviewed.values()), "coverage": path, "meaning": "Inventory is evidence navigation, not semantic approval."}
 
 
+def source_reference_valid(text, relative, content):
+    try:
+        lines = len(content.decode("utf-8").splitlines()) if b"\0" not in content else 0
+    except UnicodeError:
+        lines = 0
+    if not lines:
+        return bool(re.search(r"(?<![\w./-])" + re.escape(relative + "@sha256:" + digest(content)) + r"(?![a-f0-9])", text))
+    refs = re.findall(r"(?<![\w./-])" + re.escape(relative) + r":L(\d+)(?:-L?(\d+))?\b", text)
+    return bool(refs) and all(1 <= int(a) <= int(b or a) <= lines for a, b in refs)
+
+
 def baseline_review(root, p, document, files, reviewer):
     path = safe(root, document)
     if not path.is_file():
@@ -645,11 +672,8 @@ def baseline_review(root, p, document, files, reviewer):
             raise KitError(f"File is not in the current inventory: {relative}")
         if digest(source.read_bytes()) != coverage["files"][relative]["sha256"]:
             raise KitError(f"Inventory is stale for {relative}; refresh it first.")
-        pattern = re.compile(r"(?<![\w./-])" + re.escape(relative) + r":L(\d+)(?:-L?(\d+))?\b")
-        refs = pattern.findall(text)
-        lines = len(source.read_text(encoding="utf-8").splitlines())
-        if not refs or any(not 1 <= int(begin) <= int(finish or begin) <= lines for begin, finish in refs):
-            raise KitError(f"Provide valid file:L1-LN evidence for {relative}")
+        if not source_reference_valid(text, relative, source.read_bytes()):
+            raise KitError(f"Provide valid file:L1-LN evidence for {relative}; empty/binary inputs use file@sha256:<actual digest>")
     for relative in files:
         coverage["files"][relative].update(status="reviewed", document=document, document_sha256=digest(path.read_bytes()), reviewer=reviewer, level="static", reviewed_at=now())
     atomic(coverage_path, dump(coverage))
@@ -689,10 +713,8 @@ def knowledge_record(root, p, kind, document, files, reviewer):
         source = safe(root, relative)
         if not source.is_file() or excluded(relative, p):
             raise KitError(f"Knowledge source is absent or excluded: {relative}")
-        refs = re.findall(r"(?<![\w./-])" + re.escape(relative) + r":L(\d+)(?:-L?(\d+))?\b", text)
-        count = len(source.read_text(encoding="utf-8").splitlines())
-        if not refs or any(not 1 <= int(a) <= int(b or a) <= count for a, b in refs):
-            raise KitError(f"Provide valid source evidence for {relative}")
+        if not source_reference_valid(text, relative, source.read_bytes()):
+            raise KitError(f"Provide valid source evidence for {relative}; empty/binary inputs use file@sha256:<actual digest>")
         sources[relative] = digest(source.read_bytes())
     cases = []
     if kind == "cases":
@@ -728,7 +750,7 @@ def knowledge_status(root, p, scope=None):
     index = read_json(safe(root, p["paths"]["baseline"] + "/knowledge.json"), {"documents": {}})
     documents = []
     for name, item in index["documents"].items():
-        if scope and not any(any(under(path, prefix) for prefix in scope) for path in item["sources"]):
+        if scope and not any(under(name, prefix) or any(under(path, prefix) for path in item["sources"]) for prefix in scope):
             continue
         stale = []
         if item.get("state") != "obsolete":
@@ -742,6 +764,14 @@ def knowledge_status(root, p, scope=None):
         documents.append({**item, "freshness": "stale" if stale else "historical" if item.get("state") == "obsolete" else "current", "changed": stale})
     return {"status": "PENDING" if any(item["freshness"] == "stale" for item in documents) else "PASS", "documents": documents,
             "meaning": "Source/document currency and declared coverage, not certified semantic completeness or executed cases"}
+
+
+def delivery_knowledge_findings(root, p, scope):
+    if not scope:
+        return []
+    return [{"status": "PENDING", "code": "knowledge-stale", "path": item["document"],
+             "message": f"Recheck affected knowledge {item['document']} against {item['changed']}; refresh its declaration or explicitly retire it with a decision. Original snapshots stay immutable."}
+            for item in knowledge_status(root, p, scope)["documents"] if item["freshness"] == "stale"]
 
 
 def knowledge_transition(root, p, document, reviewer, decision, requirements=None, obsolete=False):
@@ -817,12 +847,12 @@ def baseline_findings(root, p, scope=None):
     findings = []
     current = inventory_files(root, p)
     for relative in sorted(set(current) - set(coverage.get("files", {}))):
-        if is_behavior(relative) and (not scope or any(under(relative, prefix) for prefix in scope)) and any(under(relative, prefix) for prefix in p.get("source_paths", ["."])):
+        if is_behavior(relative, p) and (not scope or any(under(relative, prefix) for prefix in scope)) and any(under(relative, prefix) for prefix in p.get("source_paths", ["."])):
             findings.append({"status": "PENDING", "code": "baseline-uninventoried", "message": f"No baseline inventory record for {relative}; inspect its origin and refresh scope."})
     for relative, item in coverage.get("files", {}).items():
         if scope and not any(under(relative, prefix) for prefix in scope):
             continue
-        if not is_behavior(relative):
+        if not is_behavior(relative, p):
             continue
         detail = current.get(relative)
         if not detail:
@@ -857,7 +887,7 @@ def file_change_metadata(root, p, directory):
             path = safe(root, candidate)
         except KitError:
             continue
-        if path.exists() and not excluded(candidate, p) and (path.is_dir() or is_behavior(candidate)):
+        if path.exists() and not excluded(candidate, p) and (path.is_dir() or is_behavior(candidate, p)):
             scope.append(candidate)
     origin = "proposal" if scope else "repository"
     if not scope:
@@ -1002,6 +1032,43 @@ def specification_findings(root, p, paths=None):
     return findings
 
 
+def requirement_test_findings(root, p, records, current=False):
+    """Check every effective promise, including ones absent from the selected delta."""
+    findings = []
+    tests = "\n".join(safe(root, name).read_text(encoding="utf-8", errors="replace")
+                      for name in inventory_files(root, p) if any(under(name, prefix) for prefix in p["test_paths"]))
+    for item in records:
+        if item["section"] in {"REMOVED", "RENAMED"}:
+            continue
+        identifier = item["id"]
+        declared = re.search(r"(?im)^Verification:\s*(automated|manual|external)\b", item["body"])
+        mapping = p.get("requirements", {}).get(identifier, {})
+        kind = mapping.get("type", declared.group(1).lower() if declared else "automated")
+        if declared and kind != declared.group(1).lower():
+            findings.append({"status": "FAIL", "code": "requirement-verification", "path": item.get("path"),
+                             "line": item.get("line", 1), "message": f"{identifier}: check mapping must preserve declared Verification: {declared.group(1).lower()}."})
+            continue
+        checks = {check["name"] for check in p["checks"] if check.get("required", True)
+                  and "delivery" in check.get("phases", ["ready", "delivery"])
+                  and check.get("type", "command") == ("command" if kind == "automated" else kind)}
+        mapped = bool(mapping.get("checks")) and set(mapping["checks"]).issubset(checks)
+        referenced = bool(re.search(r"(?<![\w-])" + re.escape(identifier) + r"(?![\w-])", tests))
+        if kind == "automated" and (mapped or referenced) or kind in {"manual", "external"} and mapped:
+            continue
+        code = "requirement-test" if kind == "automated" else "requirement-check"
+        findings.append({"status": "PENDING", "code": "current-" + code if current else code,
+                         "path": item.get("path"), "line": item.get("line", 1),
+                         "message": f"{identifier} needs {'a test-source reference or explicit required delivery check mapping' if kind == 'automated' else 'an explicit required ' + kind + ' delivery check mapping'}; textual references do not certify assertion quality."})
+    return findings
+
+
+def current_test_findings(root, p):
+    records = [{**item, "path": path.relative_to(root).as_posix()}
+               for path in sorted(safe(root, p["paths"]["specs"]).glob("**/*.md"))
+               for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name)]
+    return requirement_test_findings(root, p, records, current=True)
+
+
 def adr_status(text):
     match = re.search(r"(?m)^[ \t]*(?:[-*][ \t]+)?(?:\*\*Status:\*\*|(?:\*\*)?Status(?:\*\*)?:)[ \t]*(.+?)[ \t]*$", markdown_structure(text))
     return (match.group(1).strip().strip("`"), match.start(), match.end()) if match else None
@@ -1105,12 +1172,12 @@ def structure_findings(root, p):
         text = safe(root, path.relative_to(root).as_posix()).read_text(encoding="utf-8")
         if any(heading not in text for heading in ("## Context", "## Decision", "## Alternatives", "## Consequences")):
             findings.append({"status": "FAIL", "code": "adr-structure", "message": f"ADR missing required sections: {path.relative_to(root)}"})
-    return apply_format_exceptions(root, p, findings + specification_findings(root, p) + engineering_relations(root, p))
+    return apply_format_exceptions(root, p, findings + specification_findings(root, p) + engineering_relations(root, p)) + current_test_findings(root, p)
 
 
 def scoped_sources(root, p, scope):
     return {path: item["sha256"] for path, item in inventory_files(root, p).items()
-            if is_behavior(path) and any(under(path, prefix) for prefix in scope)
+            if is_behavior(path, p) and any(under(path, prefix) for prefix in scope)
             and not any(under(path, prefix) for prefix in p["test_paths"])}
 
 
@@ -1126,7 +1193,7 @@ def established_behavior(root, p, metadata, change):
     dirty = set(changed_files(root)) if listed is not None else set()
     for raw in (listed or b"").split(b"\0"):
         path = raw.decode("utf-8")
-        if not path or excluded(path, p) or not is_behavior(path) or any(under(path, prefix) for prefix in p["test_paths"]):
+        if not path or excluded(path, p) or not is_behavior(path, p) or any(under(path, prefix) for prefix in p["test_paths"]):
             continue
         if any(under(path, prefix) for prefix in metadata["scope"]) and records.get(path, {}).get("change") != change:
             content = git(root, "show", "HEAD:" + path, optional=True)
@@ -1256,36 +1323,22 @@ def change_findings(root, p, change, phase):
             needs_scenarios = any(item["section"] not in {"REMOVED", "RENAMED"} for item in spec_records(text, path.parent.name))
             if FILL in text or needs_scenarios and "#### Scenario:" not in text:
                 findings.append({"status": "PENDING", "code": "delta-scenarios", "message": f"Fill observable scenarios in {path.relative_to(root)}"})
-        if metadata["kind"] == "docs" and any(is_behavior(x) and not x.startswith("docs/") for x in metadata["scope"] if x != "."):
+        if metadata["kind"] == "docs" and any(is_behavior(x, p) and not x.startswith("docs/") for x in metadata["scope"] if x != "."):
             findings.append({"status": "FAIL", "code": "task-classification", "message": "A docs change cannot declare source/configuration file scope."})
     if phase == "ready" and metadata["kind"] != "docs":
         findings += baseline_findings(root, p, list(established_behavior(root, p, metadata, change))) if established_behavior(root, p, metadata, change) else []
     findings += behavior_findings(root, p, change, phase)
     if phase == "delivery":
+        findings += delivery_knowledge_findings(root, p, metadata["scope"])
         tasks = directory / "tasks.md"
         if tasks.is_file() and re.search(r"^\s*- \[ \]", tasks.read_text(encoding="utf-8"), re.MULTILINE):
             findings.append({"status": "PENDING", "code": "unfinished-tasks", "message": "Change tasks still contain unchecked items."})
-        tests = "\n".join(safe(root, path).read_text(encoding="utf-8", errors="replace") for path in inventory_files(root, p) if any(under(path, prefix) for prefix in p["test_paths"]))
-        spec_text = "\n".join(path.read_text(encoding="utf-8") for path in deltas)
-        current_text = "\n".join(path.read_text(encoding="utf-8") for path in safe(root, p["paths"]["specs"]).glob("**/*.md"))
         records = [item for path in deltas for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name)]
         declared = current_requirement_ids(root, p) | {item["id"] for item in records}
         for requirement in metadata.get("requirements", []):
             if requirement not in declared:
                 findings.append({"status": "FAIL", "code": "requirement-spec", "message": f"{requirement} has no specification reference."})
-            declaration = next((item for item in records if item["id"] == requirement), {})
-            declared_type = re.search(r"(?im)^Verification:\s*(automated|manual|external)\b", declaration.get("body", ""))
-            mapping = p.get("requirements", {}).get(requirement, {"type": declared_type.group(1).lower() if declared_type else "automated"})
-            verification_type = mapping.get("type", "automated")
-            configured_automated = {check["name"] for check in p["checks"] if check.get("type", "command") == "command" and check.get("required", True)}
-            mapped = bool(mapping.get("checks")) and set(mapping["checks"]).issubset(configured_automated)
-            referenced = bool(re.search(r"(?<![\w-])" + re.escape(requirement) + r"(?![\w-])", tests))
-            if verification_type == "automated" and not (mapped or referenced):
-                findings.append({"status": "PENDING", "code": "requirement-test", "message": f"{requirement} has no test-source reference; a reference still does not prove assertion quality."})
-            elif verification_type in {"manual", "external"}:
-                configured = {check["name"] for check in p["checks"] if check.get("type") == verification_type and check.get("required", True)}
-                if not mapping.get("checks") or not set(mapping["checks"]).issubset(configured):
-                    findings.append({"status": "PENDING", "code": "requirement-check", "message": f"{requirement} needs an explicit required {verification_type} check mapping."})
+        findings += requirement_test_findings(root, p, records)
         if deltas and metadata.get("origin") == "files" and directory.parent.name == "archive":
             current_blocks = {re.sub(r"\s+", " ", block).strip() for path in safe(root, p["paths"]["specs"]).glob("**/*.md")
                               for block in requirement_blocks(path.read_text(encoding="utf-8"))}
@@ -1445,7 +1498,7 @@ def verify(root, p, phase="structure", change=None, base=None, selected=None, pe
         _, metadata = change_at(root, p, change)
         findings += change_findings(root, p, change, phase)
         if base:
-            outside = [x for x in changed_files(root, base) if is_behavior(x) and not excluded(x, p) and not any(under(x, scope) for scope in metadata["scope"] + (peer_scopes or []))]
+            outside = [x for x in changed_files(root, base) if is_behavior(x, p) and not excluded(x, p) and not any(under(x, scope) for scope in metadata["scope"] + (peer_scopes or []))]
             if outside:
                 findings.append({"status": "FAIL", "code": "scope", "message": f"Behavior/config changes outside declared scope: {outside}"})
     elif phase != "structure":
@@ -1622,7 +1675,7 @@ def doctor(root, p):
 
 def work_selection(root, p, changed=None, behavior=None):
     changed = changed_files(root) if changed is None else changed
-    behavior = [path for path in changed if is_behavior(path) and not excluded(path, p)] if behavior is None else behavior
+    behavior = [path for path in changed if is_behavior(path, p) and not excluded(path, p)] if behavior is None else behavior
     candidates, catalog = [], []
     associations = p.get("change_associations", {})
     def owner(path):
@@ -1751,7 +1804,7 @@ def ci_verify(root, p, base, local=False):
                 immutable.append({"status": "FAIL", "code": "accepted-adr", "message": f"Accepted ADR body changed; preserve it and add a superseding decision: {relative}"})
     manifest = read_json(safe(root, MANIFEST))
     owned = set(manifest.get("files", {}))
-    behavior = [x for x in changed if is_behavior(x) and not excluded(x, p) and x not in owned]
+    behavior = [x for x in changed if is_behavior(x, p) and not excluded(x, p) and x not in owned]
     lightweight = set()
     for path in safe(root, ".ai/notes").glob("*.json"):
         if path.relative_to(root).as_posix() not in changed:
@@ -1768,7 +1821,7 @@ def ci_verify(root, p, base, local=False):
     selection = work_selection(root, p, changed, behavior)
     candidates = [item["id"] for item in selection["candidates"]]
     uncovered = [path for path in behavior if not any(path in item["files"] for item in selection["candidates"])]
-    results = list(immutable)
+    results = list(immutable) + delivery_knowledge_findings(root, p, changed)
     if selection["ambiguous"]:
         return {"status": "PENDING", "code": "ambiguous-change", "message": "Overlapping work scopes match the same real diff; clarify associations without guessing.", "candidates": candidates, "overlaps": selection["overlaps"], "behavior_files": behavior, "executed_check_count": 0}
     executed_count = 0
@@ -2076,7 +2129,7 @@ def main(argv=None):
                         result = new_change(root, p, args.id, args.kind, args.scope, args.requirements, args.remove_requirements)
                     elif args.operation == "inspect":
                         changed = changed_files(root, args.base)
-                        result = {"files": changed, "behavior_candidates": [x for x in changed if is_behavior(x) and not excluded(x, p)], "meaning": "Candidates require semantic impact review; line count does not determine risk."}
+                        result = {"files": changed, "behavior_candidates": [x for x in changed if is_behavior(x, p) and not excluded(x, p)], "meaning": "Candidates require semantic impact review; line count does not determine risk."}
                     elif args.operation == "activate":
                         change_at(root, p, args.id)
                         result = {"status": "PASS", "pointer": activate(root, args.id, args.session)}

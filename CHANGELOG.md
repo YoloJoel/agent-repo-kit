@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 — 2026-11-13
+
+- Reject unknown configuration/build/resource changes instead of treating them as documents.
+- Check the complete effective-spec verification matrix and required delivery check types/phases.
+- Keep delivery pending for affected stale current knowledge; preserve explicitly retired history.
+- Add audit counterexamples, recovery cases and model-driven new/existing/daily qualification.
+- Keep daily tools open and consumer operation local without hosted CI.
+
 ## 0.2.0 — 2026-11-13
 
 - Two default onboarding Skills; daily development uses OpenSpec, other tools or direct conversation.

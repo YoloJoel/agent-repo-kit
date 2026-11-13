@@ -104,6 +104,8 @@ def qualify(root, adapter):
     candidate = original.replace("    private final ArrayList<JsonValue> elements = new ArrayList<>();", "    private final ArrayList<JsonValue> elements = new ArrayList<>();\n    private final List<JsonValue> readOnlyElements = Collections.unmodifiableList(elements);").replace("return Collections.unmodifiableList(elements);", "return readOnlyElements;")
     (root / ARRAY).write_text(candidate, encoding="utf-8")
     (directory / "tasks.md").write_text("- [x] Execute original characterization.\n- [x] Apply the cached view and prepare native delivery checks.\n", encoding="utf-8")
+    kit.baseline_inventory(root, p)
+    review(True)
     good = kit.verify(root, p, "delivery", name)
     assert good["status"] == "PASS", good
     (root / ARRAY).write_text(candidate.replace("return readOnlyElements;", "return elements;"), encoding="utf-8")

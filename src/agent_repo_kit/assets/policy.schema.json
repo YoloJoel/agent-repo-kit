@@ -187,6 +187,14 @@
         "type": "string",
         "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
       }
+    },
+    "behavior_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Additional runtime input paths/globs, including documents consumed as configuration. Unknown non-document files are already treated conservatively."
     }
   },
   "$defs": {

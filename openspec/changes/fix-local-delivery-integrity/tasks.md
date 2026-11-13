@@ -1,0 +1,7 @@
+- [x] Reproduce the three local verification gaps against 0.2.0.
+- [x] Implement conservative input classification, effective-spec verification and scoped knowledge gates.
+- [x] Add counterexample, recovery and compatibility regression cases.
+- [x] Improve onboarding completion guidance and regenerate native resources.
+- [ ] Verify the final source, wheel and native OpenSpec qualification.
+- [ ] Review independent new/existing/daily model-driven results and correct discovered issues.
+- [ ] Record final evidence, create the PR and merge after final checks pass.
