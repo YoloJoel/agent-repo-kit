@@ -187,7 +187,7 @@ def policy_at(root):
         raise KitError("policy.skill_delivery must be repository or installed")
     if not isinstance(p.get("agents", []), list) or any(a not in AGENT_DIRS for a in p.get("agents", [])):
         raise KitError("policy.agents must contain supported adapter IDs")
-    for key in ("baseline", "specs", "changes", "adr", "templates", *[name for name in ("context", "standard") if name in p["paths"]]):
+    for key in ("baseline", "specs", "changes", "adr", "templates", *[name for name in ("context", "standard", "questions", "decision_view", "decision_details") if name in p["paths"]]):
         safe(root, p.get("paths", {}).get(key))
     for key in ("exclude", "test_paths", "checks", "source_paths"):
         if not isinstance(p.get(key), list):
@@ -280,7 +280,7 @@ def default_policy(mode, agents):
         "$schema": "../hack/ai/assets/policy.schema.json", "schema_version": 1, "kit_version": VERSION, "mode": mode,
         "agents": sorted(set(agents)), "source_paths": ["."], "test_paths": ["tests", "src/test"],
         "paths": {"baseline": "docs/baseline", "specs": "openspec/specs", "changes": "openspec/changes", "adr": "docs/adr", "templates": "docs/templates", "context": "docs/project-context.md", "standard": "docs/engineering-standard.md"},
-        "exclude": [".ai", "hack/ai", ".agents/skills", ".claude/skills", ".opencode/skills", "skills-lock.json", "openspec/config.yaml", "docs/baseline", "docs/templates", "openspec/changes"],
+        "exclude": [".ai", "hack/ai", ".agents/skills", ".claude/skills", ".opencode/skills", ".codex/hooks.json", ".claude/settings.json", "skills-lock.json", "openspec/config.yaml", "docs/baseline", "docs/templates", "openspec/changes"],
         "checks": [], "requirements": {}, "command_candidates": [], "hook_mode": "advisory",
     }
 
@@ -473,7 +473,7 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
             context_path: project_context(profile),
             standard_path: (ASSETS / "engineering-standard.md").read_text(encoding="utf-8").replace("docs/project-context.md", context_path),
             p["paths"]["baseline"] + "/README.md": "# Baseline\n\n" + ("Existing repository: inventory is pending review. Use baseline-repo; inventory alone is not an approved baseline.\n" if p["mode"] == "existing" else "New repository: no historical system is asserted. Build specifications from real requirements.\n"),
-            p["paths"]["baseline"] + "/questions.json": dump({"schema_version": 1, "questions": []}),
+            p["paths"].get("questions", p["paths"]["baseline"] + "/questions.json"): dump({"schema_version": 1, "questions": []}) if p["paths"].get("questions", "questions.json").endswith(".json") else "# Questions and decisions\n\nMaintain the existing native ledger format and decision identifiers.\n",
             p["paths"]["adr"] + "/README.md": "# Architecture decisions\n\nRecord consequential, long-lived choices using docs/templates/adr.md. Preserve accepted history and link superseding decisions.\n",
         }
         for relative, content in defaults.items():
@@ -569,8 +569,7 @@ def baseline_review(root, p, document, files, reviewer):
     if not path.is_file():
         raise KitError("Write the module explanation before recording a review.")
     text = path.read_text(encoding="utf-8")
-    required = ("## Purpose", "## Flow", "## State and failure", "## Evidence", "## Gaps")
-    if FILL in text or any(title not in text for title in required):
+    if FILL in text or not knowledge_sections_present(p, "module", text):
         raise KitError("Module explanation must fill the module template: Purpose, Flow, State and failure, Evidence, Gaps.")
     coverage_path = safe(root, p["paths"]["baseline"] + "/coverage.json")
     coverage = read_json(coverage_path)
@@ -588,7 +587,164 @@ def baseline_review(root, p, document, files, reviewer):
     for relative in files:
         coverage["files"][relative].update(status="reviewed", document=document, document_sha256=digest(path.read_bytes()), reviewer=reviewer, level="static", reviewed_at=now())
     atomic(coverage_path, dump(coverage))
+    knowledge_record(root, p, "module", document, files, reviewer)
     return {"status": "PASS", "meaning": "Static review declaration recorded; semantic correctness still requires review and behavioral verification.", "files": files}
+
+
+def knowledge_sections_present(p, kind, text):
+    aliases = {
+        "module": {"purpose": ["## Purpose", "## 职责", "## 模块职责"], "flow": ["## Flow", "## 流程", "## 业务流程", "## 处理流程"], "state": ["## State and failure", "## 状态与异常"], "evidence": ["## Evidence", "## 证据", "## 源码证据"], "gaps": ["## Gaps", "## 缺口", "## 未核实项"]},
+        "contract": {"evidence": ["## Source version and evidence", "## 来源与证据"], "interface": ["## Inputs and outputs", "## 输入与输出"], "failure": ["## Timing and failure", "## 时序与异常"], "promotion": ["## Compatibility and promotion", "## 兼容与晋升"]},
+        "cases": {"scope": ["## Scope and source", "## 范围与来源"], "cases": ["## Cases", "## 用例"]},
+    }
+    if kind not in aliases:
+        return False
+    mapped = p.get("knowledge_sections", {}).get(kind, {})
+    return all(any(heading in text for heading in ([mapped[role]] if role in mapped else names)) for role, names in aliases[kind].items())
+
+
+def knowledge_record(root, p, kind, document, files, reviewer):
+    """Record an explained artifact with immutable source/document snapshots, not approval."""
+    if not reviewer.strip() or not files:
+        raise KitError("Knowledge needs a reviewer identity and actual source scope")
+    headings = {
+        "module": ("## Purpose", "## Flow", "## State and failure", "## Evidence", "## Gaps"),
+        "contract": ("## Source version and evidence", "## Inputs and outputs", "## Timing and failure", "## Compatibility and promotion"),
+        "cases": ("## Scope and source", "## Cases"),
+    }
+    if kind not in headings:
+        raise KitError("Knowledge kind must be module, contract or cases")
+    path = safe(root, document)
+    text = path.read_text(encoding="utf-8")
+    if FILL in text or not knowledge_sections_present(p, kind, text):
+        raise KitError(f"Fill the {kind} explanation before recording it")
+    sources = {}
+    for relative in files:
+        source = safe(root, relative)
+        if not source.is_file() or excluded(relative, p):
+            raise KitError(f"Knowledge source is absent or excluded: {relative}")
+        refs = re.findall(r"(?<![\w./-])" + re.escape(relative) + r":L(\d+)(?:-L?(\d+))?\b", text)
+        count = len(source.read_text(encoding="utf-8").splitlines())
+        if not refs or any(not 1 <= int(a) <= int(b or a) <= count for a, b in refs):
+            raise KitError(f"Provide valid source evidence for {relative}")
+        sources[relative] = digest(source.read_bytes())
+    cases = []
+    if kind == "cases":
+        for line in text.splitlines():
+            cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+            if line.startswith('|') and len(cells) >= 6 and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]*", cells[0]) and any(x.isdigit() for x in cells[0]):
+                if any(not cell for cell in cells[:6]):
+                    raise KitError("Each behavior case needs preconditions, input, expected result, evidence and verification")
+                cases.append(cells[0])
+        if not cases or len(cases) != len(set(cases)):
+            raise KitError("Behavior cases need actual, uniquely identified scenarios")
+    base = p["paths"]["baseline"]
+    index_path = safe(root, base + "/knowledge.json")
+    index = read_json(index_path, {"schema_version": 1, "documents": {}})
+    record = {"kind": kind, "document": document, "document_sha256": digest(path.read_bytes()), "sources": sources,
+              "reviewer": reviewer, "level": "static-declared", "state": "reviewed", "cases": cases, "promoted_to": []}
+    identity = digest(dump(record).encode())
+    snapshot = base + "/raw/reviews/" + identity
+    record.update(snapshot=snapshot, source_ref=(git(root, "rev-parse", "HEAD", optional=True) or b"").decode().strip() or None)
+    previous = index["documents"].get(document)
+    if previous and previous.get("snapshot") == snapshot:
+        return {"status": "PASS", "meaning": "Unchanged static declaration retained", "document": document, "snapshot": snapshot}
+    index["documents"][document] = record
+    writes = {base + "/knowledge.json": dump(index)}
+    if not safe(root, snapshot + "/record.json").exists():
+        writes[snapshot + "/record.json"] = dump(record)
+        writes[snapshot + "/document.md"] = text
+    transact(root, writes)
+    return {"status": "PASS", "meaning": "Static declaration recorded; case execution and semantic review are separate", "document": document, "snapshot": snapshot}
+
+
+def knowledge_status(root, p, scope=None):
+    index = read_json(safe(root, p["paths"]["baseline"] + "/knowledge.json"), {"documents": {}})
+    documents = []
+    for name, item in index["documents"].items():
+        if scope and not any(any(under(path, prefix) for prefix in scope) for path in item["sources"]):
+            continue
+        stale = []
+        if item.get("state") != "obsolete":
+            evidence = {name: item["document_sha256"], **item["sources"]}
+            if item.get("decision"):
+                evidence[item["decision"]] = item["decision_sha256"]
+            for relative, expected in evidence.items():
+                path = safe(root, relative)
+                if not path.is_file() or digest(path.read_bytes()) != expected:
+                    stale.append(relative)
+        documents.append({**item, "freshness": "stale" if stale else "historical" if item.get("state") == "obsolete" else "current", "changed": stale})
+    return {"status": "PENDING" if any(item["freshness"] == "stale" for item in documents) else "PASS", "documents": documents,
+            "meaning": "Source/document currency and declared coverage, not certified semantic completeness or executed cases"}
+
+
+def knowledge_transition(root, p, document, reviewer, decision, requirements=None, obsolete=False):
+    base = p["paths"]["baseline"]
+    index = read_json(safe(root, base + "/knowledge.json"))
+    if document not in index["documents"]:
+        raise KitError("Register source-backed knowledge before transitioning it")
+    artifact = safe(root, decision)
+    if not reviewer.strip() or not artifact.is_file() or not artifact.read_bytes().strip():
+        raise KitError("An actual accepted decision/compatibility artifact and reviewer are required")
+    if not obsolete:
+        status = next(item for item in knowledge_status(root, p)["documents"] if item["document"] == document)
+        if status["freshness"] != "current":
+            raise KitError("Refresh stale source/document evidence before promotion")
+        current = set()
+        for path in safe(root, p["paths"]["specs"]).glob("**/*.md"):
+            for block in requirement_blocks(path.read_text(encoding="utf-8")):
+                current.update(REQ.findall(block.splitlines()[0]))
+        if not requirements or not set(requirements).issubset(current):
+            raise KitError("Promotion must name real current requirement declarations")
+    item = index["documents"][document]
+    item.update(state="obsolete" if obsolete else "promoted", promoted_to=[] if obsolete else requirements,
+                decision=decision, decision_sha256=digest(artifact.read_bytes()), decision_reviewer=reviewer)
+    event = {"document": document, "record": item, "decision_text": artifact.read_text(encoding="utf-8"), "recorded_at": now(), "meaning": "Recorded decision; authority and semantic quality require review"}
+    event_path = base + "/raw/transitions/" + digest(dump(event).encode()) + ".json"
+    transact(root, {base + "/knowledge.json": dump(index), event_path: dump(event)})
+    return {"status": "PASS", "state": item["state"], "document": document, "meaning": event["meaning"]}
+
+
+def decision_record(root, p, identity, category=None, question=None, scope=None, evidence=None, outcome=None, reviewer=None, options=None, recommendation=None, owner=None):
+    path = p["paths"].get("questions", p["paths"]["baseline"] + "/questions.json")
+    if not path.endswith(".json"):
+        raise KitError("The mapped decision ledger uses its native file format. Update it with the existing workflow; no parallel ledger will be created.")
+    ledger = read_json(safe(root, path), {"schema_version": 1, "questions": []})
+    if not isinstance(ledger.get("questions"), list):
+        raise KitError("Map the existing decision ledger before updating its schema")
+    if not re.fullmatch(r"[A-Z][A-Z0-9-]*", identity):
+        raise KitError("Use an existing stable uppercase decision ID")
+    existing = next((item for item in ledger["questions"] if item.get("id") == identity), None)
+    if outcome is None:
+        if existing or not question or not scope:
+            raise KitError("A new question needs a unique ID, concrete question and scope")
+        for relative in scope:
+            if relative != ".": safe(root, relative)
+        existing = {"id": identity, "category": category, "question": question, "scope": scope, "status": "open", "history": [], "options": options or [], "recommendation": recommendation, "owner": owner}
+        ledger["questions"].append(existing)
+    else:
+        if not existing or not reviewer or not evidence:
+            raise KitError("Resolve an existing item with an actual reviewer and evidence")
+        for relative in evidence:
+            if not safe(root, relative).is_file(): raise KitError(f"Decision evidence missing: {relative}")
+        existing.setdefault("history", []).append({key: value for key, value in existing.items() if key != "history"})
+        existing.update(status="resolved", outcome=outcome, reviewer=reviewer,
+                        evidence={relative: digest(safe(root, relative).read_bytes()) for relative in evidence})
+    rows = ["# Questions and decisions", "", f"Generated from `{path}`; edit the ledger through explicit records, not this view.", "", "| ID | Category | Status | Question | Outcome |", "| --- | --- | --- | --- | --- |"]
+    for item in ledger["questions"]:
+        cells = [str(item.get(key, "")).replace('|', '\\|').replace('\n', ' ') for key in ("id", "category", "status", "question", "outcome")]
+        rows.append("| " + " | ".join(cells) + " |")
+    cards = ["# Decision details", "", f"Generated from `{path}`; this view is not a second status source.", ""]
+    for item in ledger["questions"]:
+        cards += ["## " + item['id'], item.get('question', ''), "", "Status: " + item.get('status', 'unknown'), "Owner: " + str(item.get('owner') or 'not assigned')]
+        cards += ["- " + option for option in item.get('options', [])]
+        cards += ["Recommendation: " + str(item.get('recommendation') or 'not established'), "Outcome: " + str(item.get('outcome') or 'unresolved'), ""]
+    summary_path = p["paths"].get("decision_view", p["paths"]["baseline"] + "/questions.md")
+    details_path = p["paths"].get("decision_details", p["paths"]["baseline"] + "/decision-details.md")
+    if len({path, summary_path, details_path}) != 3:
+        raise KitError("Decision source and generated view paths must be distinct")
+    transact(root, {path: dump(ledger), summary_path: "\n".join(rows) + "\n", details_path: "\n".join(cards)})
+    return {"status": "PASS", "id": identity, "state": existing["status"], "meaning": "Decision declaration recorded; not independent approval"}
 
 
 def baseline_findings(root, p, scope=None):
@@ -1228,6 +1384,33 @@ def parser():
     review.add_argument("--files", nargs="+", required=True)
     review.add_argument("--reviewer", required=True)
     baseline.add_parser("validate")
+    baseline.add_parser("status")
+    register = baseline.add_parser("register")
+    register.add_argument("--kind", choices=["module", "contract", "cases"], required=True)
+    register.add_argument("--document", required=True)
+    register.add_argument("--files", nargs="+", required=True)
+    register.add_argument("--reviewer", required=True)
+    for operation in ("promote", "retire"):
+        transition = baseline.add_parser(operation)
+        transition.add_argument("--document", required=True)
+        transition.add_argument("--decision", required=True)
+        transition.add_argument("--reviewer", required=True)
+        if operation == "promote": transition.add_argument("--requirements", nargs="+", required=True)
+    decision = sub.add_parser("decision").add_subparsers(dest="operation", required=True)
+    question = decision.add_parser("add")
+    question.add_argument("--id", required=True)
+    question.add_argument("--category", choices=["fact", "behavior-decision", "design-task", "validation-gate"], required=True)
+    question.add_argument("--question", required=True)
+    question.add_argument("--scope", nargs="+", required=True)
+    question.add_argument("--options", nargs="+")
+    question.add_argument("--recommendation")
+    question.add_argument("--owner")
+    resolution = decision.add_parser("resolve")
+    resolution.add_argument("--id", required=True)
+    resolution.add_argument("--outcome", required=True)
+    resolution.add_argument("--reviewer", required=True)
+    resolution.add_argument("--evidence", nargs="+", required=True)
+    decision.add_parser("list")
     change = sub.add_parser("change").add_subparsers(dest="operation", required=True)
     new = change.add_parser("new")
     new.add_argument("id")
@@ -1280,6 +1463,8 @@ def parser():
 
 
 def main(argv=None):
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     args = parser().parse_args(argv)
     payload = {}
     try:
@@ -1316,9 +1501,25 @@ def main(argv=None):
                         result = baseline_inventory(root, p)
                     elif args.operation == "review":
                         result = baseline_review(root, p, args.document, args.files, args.reviewer)
+                    elif args.operation == "register":
+                        result = baseline_review(root, p, args.document, args.files, args.reviewer) if args.kind == "module" else knowledge_record(root, p, args.kind, args.document, args.files, args.reviewer)
+                    elif args.operation == "status":
+                        result = knowledge_status(root, p)
+                    elif args.operation in {"promote", "retire"}:
+                        result = knowledge_transition(root, p, args.document, args.reviewer, args.decision, getattr(args, "requirements", None), obsolete=args.operation == "retire")
                     else:
                         findings = baseline_findings(root, p)
+                        findings += [{"status": "PENDING", "code": "knowledge-stale", "message": f"Refresh affected knowledge: {item['document']} ({item['changed']})"} for item in knowledge_status(root, p)["documents"] if item["freshness"] == "stale"]
                         result = {"status": overall(findings, []), "findings": findings, "meaning": "Static evidence freshness only; not proof of complete behavioral understanding."}
+            elif args.command == "decision":
+                with lock(root):
+                    if args.operation == "list":
+                        ledger_path = p["paths"].get("questions", p["paths"]["baseline"] + "/questions.json")
+                        result = read_json(safe(root, ledger_path)) if ledger_path.endswith(".json") else {"status": "PASS", "provider": "native-file", "path": ledger_path, "content": safe(root, ledger_path).read_text(encoding="utf-8")}
+                    elif args.operation == "add":
+                        result = decision_record(root, p, args.id, args.category, args.question, args.scope, options=args.options, recommendation=args.recommendation, owner=args.owner)
+                    else:
+                        result = decision_record(root, p, args.id, outcome=args.outcome, reviewer=args.reviewer, evidence=args.evidence)
             elif args.command == "change":
                 with lock(root):
                     if args.operation == "new":
