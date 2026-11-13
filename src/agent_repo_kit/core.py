@@ -1058,6 +1058,7 @@ def established_behavior(root, p, metadata, change):
         if original and any(under(path, prefix) for prefix in metadata["scope"]):
             result[path] = original["sha256"]
     listed = git(root, "ls-tree", "-r", "--name-only", "-z", "HEAD", optional=True)
+    dirty = set(changed_files(root)) if listed is not None else set()
     for raw in (listed or b"").split(b"\0"):
         path = raw.decode("utf-8")
         if not path or excluded(path, p) or not is_behavior(path) or any(under(path, prefix) for prefix in p["test_paths"]):
@@ -1065,7 +1066,12 @@ def established_behavior(root, p, metadata, change):
         if any(under(path, prefix) for prefix in metadata["scope"]) and records.get(path, {}).get("change") != change:
             content = git(root, "show", "HEAD:" + path, optional=True)
             if content is not None:
-                result.setdefault(path, digest(content))
+                # Git can store LF while the unchanged checkout uses CRLF. Keep raw
+                # workspace fingerprints; use Git's actual diff to identify that
+                # unchanged checkout instead of treating line endings as late work.
+                current = safe(root, path)
+                original = current.read_bytes() if path not in dirty and current.is_file() else content
+                result.setdefault(path, digest(original))
     return result
 
 

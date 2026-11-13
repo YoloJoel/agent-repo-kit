@@ -103,3 +103,16 @@ class BehaviorVerificationTests(RepositoryCase):
         report = kit.verify(self.root, p, "delivery", "refactor")
         self.assertEqual(report["status"], "PENDING")
         self.assertEqual(next(item for item in report["checks"] if item["name"] == "target")["status"], "NOT_RUN")
+
+    def test_git_lf_storage_and_crlf_checkout_keep_real_original_fingerprints(self):
+        self.git_start()
+        self.run_git("config", "core.autocrlf", "true")
+        p = self.initialize()
+        path = self.root / "app.py"
+        path.write_bytes(b"value = 1\r\n")
+        self.commit()
+        metadata = {"scope": ["app.py"]}
+        before = kit.established_behavior(self.root, p, metadata, "edit")
+        self.assertEqual(before["app.py"], kit.digest(path.read_bytes()))
+        path.write_bytes(b"value = 2\r\n")
+        self.assertNotEqual(kit.established_behavior(self.root, p, metadata, "edit")["app.py"], kit.digest(path.read_bytes()))
