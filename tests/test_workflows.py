@@ -47,6 +47,22 @@ class RepositoryCase(unittest.TestCase):
         self.write("docs/baseline/modules/app.md", "# App\n\n## Purpose\nDouble a number.\n\n## Flow\nReturn x * 2.\n\n## State and failure\nNo persistent state. Python multiplication errors propagate.\n\n## Evidence\napp.py:L1-L2\n\n## Gaps\nStatic review; tests are separate execution evidence.\n")
         return kit.baseline_review(self.root, p, "docs/baseline/modules/app.md", ["app.py"], "test-reviewer")
 
+    def preserve_double(self, p):
+        self.write("tests/preserve.py", "from app import double\nassert double(3) == 6 and double(-1) == -2\n")
+        self.write("openspec/changes/example/behavior-plan.json", kit.dump({"cases": [{"id": "DT-DOUBLE-01", "effect": "preserve", "source": "app.py:L1-L2", "expected": "Positive and negative inputs double", "checks": ["unit"], "fixtures": ["tests/preserve.py"]}]}))
+
+    def characterize_value_change(self, p):
+        self.write("tests/before.py", "from app import value\nassert value == 1\n")
+        p["checks"].append({"name": "before", "argv": ["{python}", "-c", "exec(open('tests/before.py').read())"], "phases": ["ready"]})
+        self.configure(p, p["checks"])
+        self.write("docs/value-choice.md", "Change the initial value from one to two; this is the intended behavior change.\n")
+        self.write("openspec/changes/example/behavior-plan.json", kit.dump({"cases": [{"id": "DT-VALUE-01", "effect": "target", "source": "app.py:L1", "expected": "Value is two", "checks": ["unit"], "before_checks": ["before"], "before_expected": "Value is one", "replaces": "initial value one", "decision": "docs/value-choice.md", "fixtures": ["tests/before.py"]}]}))
+        kit.baseline_inventory(self.root, p)
+        self.write("docs/baseline/modules/value.md", "# Value\n## Purpose\nProvide initial value.\n## Flow\nRead module constant.\n## State and failure\nImport-time state, no external failure.\n## Evidence\napp.py:L1\n## Gaps\nOnly this constant is reviewed.\n")
+        kit.baseline_review(self.root, p, "docs/baseline/modules/value.md", ["app.py"], "fixture")
+        result = kit.verify(self.root, p, "ready", "example")
+        self.assertEqual(result["status"], "PASS", result)
+
     def git_start(self):
         if not shutil.which("git"):
             self.skipTest("Git is not installed")
@@ -228,6 +244,7 @@ class BaselineTests(RepositoryCase):
         self.review_app(p)
         self.configure(p, [{"name": "unit", "argv": ["{python}", "-c", "from app import double; assert double(3)==6 and double(-1)==-2"]}])
         self.change(p, scope=["app.py"])
+        self.preserve_double(p)
         ready = kit.verify(self.root, p, "ready", "example")
         self.assertEqual(ready["status"], "PASS", ready)
         anchor = self.root / "openspec/changes/example/baseline-anchor.json"
@@ -259,7 +276,8 @@ class DeliveryTests(RepositoryCase):
         self.write("app.py", "value = 1\n")
         self.configure(p, [{"name": "unit", "argv": ["{python}", "-c", "from app import value; assert value == 2"]}])
         base = self.commit()
-        directory = self.change(p, scope=["app.py"])
+        directory = self.change(p, scope=["app.py", "tests"])
+        self.characterize_value_change(p)
         self.write("app.py", "value = 2\n")
         spec = "### Requirement: Current output REQ-OUTPUT-001\nThe system SHALL output two.\nVerification: automated\n#### Scenario: Output\n- WHEN read\n- THEN value is two.\n"
         self.write("openspec/changes/example/specs/output/spec.md", "## MODIFIED Requirements\n" + spec)
@@ -450,7 +468,10 @@ class HookAndCITests(RepositoryCase):
         base = self.commit()
         self.write("app.py", "value = 2\n")
         self.assertEqual(kit.ci_verify(self.root, p, base)["status"], "FAIL")
-        self.change(p, scope=["app.py"])
+        self.write("app.py", "value = 1\n")
+        self.change(p, scope=["app.py", "tests"])
+        self.characterize_value_change(p)
+        self.write("app.py", "value = 2\n")
         self.assertEqual(kit.verify(self.root, p, "delivery", "example")["status"], "PASS")
         kit.close_change(self.root, p, "example")
         result = kit.ci_verify(self.root, p, base)

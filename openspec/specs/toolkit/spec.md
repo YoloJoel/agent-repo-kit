@@ -182,3 +182,20 @@ The toolkit SHALL validate applicable current/delta scenarios, identities, refer
 - WHEN valid native proposal/tasks/delta files still contain unfinished implementation tasks
 - THEN specification review can pass without running business commands
 - AND delivery remains pending until applicable checks and tasks are complete
+
+### Requirement: Execute preserved and target behavior verification (REQ-BEHAVIOR-001)
+
+Verification: automated
+
+Changes to established behavior SHALL have actual pre-change characterization bound to
+source, plan, fixtures, command definitions and environment. Delivery SHALL rerun required
+preserved regression and intended target checks separately. Missing original environments,
+stale fixtures and partial required execution SHALL NOT yield delivery PASS. Initially new
+repositories SHALL acquire baseline obligations as business code is committed/delivered.
+JSON replay normalization SHALL be explicit and preserve visible business differences.
+
+#### Scenario: Positive target passes while retained failure behavior breaks
+
+- WHEN the refactor returns the intended normal result but loses a preserved error/boundary case
+- THEN the actual regression command fails and delivery is FAIL
+- AND the original executed evidence remains unchanged

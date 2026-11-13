@@ -111,3 +111,25 @@ Use knowledge_sections.<kind>.<role> to reuse existing manual sections. Case pla
 `ark spec validate [--change <id>]` validates current/selected delta structure and relations without executing business checks. `verify --phase specification --change <id>` creates phase evidence while permitting unfinished implementation tasks; it cannot satisfy delivery/close.
 
 Format exceptions in policy.format_exceptions are limited to requirement-wording, scenario-conditions and verification-type. Each requires code, path, sha256, owner, reason, expires (ISO date), decision and decision_sha256. Exact source/decision changes or expiry restore the blocking finding. A valid exception is WARN; actual required check failures remain FAIL. Existing assets are never silently rewritten to fit the format.
+
+## Behavior preservation and intended changes
+
+For existing scoped behavior, record a behavior-plan.json under the native work directory
+(or policy.behavior_plans.<change> mapped path). Each case needs id, effect=preserve|target,
+source, expected and required checks. Preserve cases also name real fixture paths. An
+intentional replacement names replaces, before_checks, before_expected and decision. Checks
+can select phases=["ready"] for old-only expectations; the default includes ready/delivery.
+Ready executes only preservation/old-expectation checks. Delivery executes current required
+checks. Missing applicable checks cannot pass even if check.phases mistakenly excludes them.
+
+The original source, plan, regression fixtures, commands, environment, logs and results are
+bound into immutable docs/baseline/raw/behavior evidence. A changed fixture/plan/command or
+handwritten anchor cannot reuse old success. Already modified original inputs require
+characterization on the original version, not a retrospective PASS. There is no permanent
+mode=new exemption after real code is committed/delivered. First new behavior still needs
+actual required delivery checks. External unavailable conditions remain NOT_RUN/PENDING.
+
+`ark replay --before <recorded.json> --after <candidate.json>` compares actual JSON results.
+Optional --ignore-pointer /output/timestamp requires --normalization-reason; only specific
+existing output leaves can be normalized, not IDs, inputs, containers or the whole result.
+It records raw digests and the normalization; fixture coverage still requires review.

@@ -90,3 +90,22 @@ Keep AGENTS concise and load task-relevant context. Startup does not run full sc
 Save scope, completed work, actual results, blockers and next steps during work; exit hooks
 may never run. Isolate worktree/branch/session state. Normal pause and external blockers
 allow recoverable handoff. Limit stop retries. Upgrade explicitly and preserve human content.
+
+## Executed behavior evidence
+
+For changes to established behavior, maintain a scoped behavior-plan.json alongside native
+work artifacts, or map its existing path using policy.behavior_plans.<change>. The plan is a
+verification matrix, not a development lifecycle. Preserve entries identify original source,
+observable outcome, real checks and stable fixture/test files. Target entries identify intended
+outcomes and checks. Replacements also name the old expectation/checks and a compatibility
+decision. Use check.phases=["ready"] for old expectations that intentionally stop applying.
+Run ready verification on original inputs before implementation. It executes the applicable
+old checks and stores immutable source/plan/fixture/command/environment/log evidence. Delivery
+reruns required regression and target checks and reports them separately. Do not weaken a
+preserved fixture after anchoring; re-characterize the original version when evidence needs
+correction. A once-empty repository acquires the same obligations when behavior is committed
+or delivered. A missing old runtime remains PENDING; do not invent before-change success.
+
+Optional JSON replay comparison uses exact JSON equality by default. Any ignored output leaf
+needs an explicit pointer and nonbusiness reason. Keep the raw hashes and normalization visible;
+never normalize away a true business difference. Native project test commands remain primary.
