@@ -1,0 +1,4 @@
+- [x] Make default onboarding include current behavior specification.
+- [x] Add evidence-backed handoff status and regression cases.
+- [x] Run source/wheel/native validation and fresh model use.
+- [ ] Publish PR with observed results.

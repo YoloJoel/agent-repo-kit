@@ -1,6 +1,6 @@
 ---
 name: baseline-repo
-description: Establish or refresh source-grounded repository knowledge, contracts, behavior cases and evidence gaps. Use for existing-code onboarding, stale knowledge, refactor preparation or checking manuals against actual source; preserve existing documents, identifiers and history.
+description: Establish or refresh source-grounded repository knowledge, contracts, current behavior specifications, behavior cases and evidence gaps. Use for existing-code onboarding, stale knowledge, refactor preparation or checking manuals against actual source; preserve existing documents, identifiers and history.
 ---
 
 # Explain current behavior with evidence
@@ -27,11 +27,22 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
    Resolve accessible facts yourself. Keep questions in the single ledger with
    `ark decision add/resolve/list` for its JSON format, or preserve/update an existing mapped native ledger through its original workflow; generated views are not separately maintained truth.
    Prepare concrete options/recommendations only for real unresolved owner decisions.
-7. Promote selected promises only after an actual compatibility decision and current Spec
-   exist: `ark baseline promote --document <path> --requirements <IDs> --decision <artifact>
+7. By default, continue from Baseline to current behavior specifications; do not stop at
+   explanations, inventory or contract documents. Read `references/specification.md`.
+   Write/reuse current specs under policy.paths.specs for verified observable behavior,
+   with scenarios, Baseline/Source links and actual verification gaps. This is part of a
+   bare baseline-repo invocation, not an optional user prompt. Preserve existing specs/IDs;
+   record conflicts, defects and unknowns separately without endorsing or silently fixing them.
+   Document routine preservation reasoning as the actual Agent analysis, not invented owner approval.
+   Promote selected promises only after that compatibility record and current Spec exist: `ark baseline promote --document <path> --requirements <IDs> --decision <artifact>
    --reviewer <identity>`. Do not promote every implementation detail or defect. Retire
    obsolete knowledge explicitly with --decision; retain immutable raw snapshots.
-8. Run `ark baseline status` and `ark baseline validate`; execute real project checks.
+8. Run `ark baseline status`, `ark baseline validate` and `ark baseline spec-status`
+   (use --scope <source/document paths> for an explicitly limited task). Execute real project checks.
+   Report specification creation separately from verification: missing tests/check mappings
+   keep verification PENDING, never relabel them manual merely to pass. A planned or empty
+   specs directory is not a completed baseline. Respect an explicit analysis-only user scope
+   and report that specification is not performed rather than claiming full onboarding.
    Report source/module/contract/case coverage separately from executed tests. Explain
    uninspected, uncertain and unavailable ranges. Save progress for large scopes.
 

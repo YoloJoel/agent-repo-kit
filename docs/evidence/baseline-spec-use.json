@@ -1,0 +1,80 @@
+{
+  "kit_version": "0.2.2",
+  "runtime_sha256": "2458baf1fdc6dbbecd48a271a0349d6d185918745cd294e0cf496c21bfbefc4b",
+  "forward_task": "Use baseline-repo on an ungoverned existing source-only repository; no extra feature or spec prompt, no prepared solution supplied.",
+  "business_source_unchanged": true,
+  "model_artifacts": {
+    "catalog.py": "\"\"\"Small existing in-memory catalog.\"\"\"\nclass Catalog:\n    def __init__(self):\n        self._records = {}\n\n    def put(self, key, value):\n        if not isinstance(key, str) or not key:\n            raise ValueError(\"key must be nonempty text\")\n        if key in self._records:\n            if self._records[key] != value:\n                raise ValueError(\"conflict\")\n            return False\n        self._records[key] = value\n        return True\n\n    def get(self, key):\n        return self._records[key]\n\n    def keys(self):\n        return sorted(self._records)\n",
+    "openspec/specs/catalog/spec.md": "# 进程内键值目录当前行为\n\n## 范围\n当前 catalog.py 的普通顺序调用行为。来源为本地文件 SHA-256 053eea73bdb5851fea3b4a6c8ba6f0fb6acf764885ab08c8d6fdc1807e8e0372；无 Git revision。并发、持久化、特殊对象实现和生产调用方契约不在当前承诺内。案例与临时探针不是已建立的持续测试套件，Verification: automated 的映射尚缺失。\n\n## Requirements\n\n### Requirement: REQ-CATALOG-001 空目录与实例隔离\nVerification: automated\nBaseline: docs/baseline/contracts/catalog.md\nSource: catalog.py:L3-L4\nDecision: docs/baseline/preservation.md\n目录必须从空状态开始，独立创建的实例必须不共享记录。\n\n#### Scenario: 初始化与隔离\n- WHEN 创建两个目录并只向其中一个插入键 a\n- THEN 新目录最初 keys() 均为 []，另一个目录仍为空且读取 a 抛出 KeyError\n\n案例：CASE-CATALOG-001；自动化测试文件/required 检查映射 PENDING；本次探针 docs/baseline/execution.json。\n\n### Requirement: REQ-CATALOG-002 校验插入、重复与冲突\nVerification: automated\nBaseline: docs/baseline/contracts/catalog.md\nSource: catalog.py:L6-L14\nDecision: docs/baseline/preservation.md\nput 必须仅接受非空 str 键，拒绝时抛 ValueError(\"key must be nonempty text\")；空白文本键必须被接受。新键保存输入值并返回 True。对已有键，值按 Python 相等比较相等时必须返回 False 并保留原存储对象；值不相等时必须抛 ValueError(\"conflict\") 并保留已有记录。\n\n#### Scenario: 无效键\n- WHEN 向空目录 put 空串、None、数字或列表键\n- THEN 抛出上述校验 ValueError，keys() 仍为 []\n\n#### Scenario: 普通文本与空白\n- WHEN 对新的非空文本键（包括单个空格）执行 put\n- THEN 返回 True，键可读取其原值\n\n#### Scenario: 重复相等值\n- WHEN 已有键 a 的值为 [1]，再次 put(a, [1])\n- THEN 返回 False，原存储对象被保留\n\n#### Scenario: 冲突\n- WHEN 已有键 a 的值为 1，再次 put(a, 2)\n- THEN 抛 ValueError(\"conflict\")，读取 a 仍为 1，键集合不变\n\n案例：CASE-CATALOG-002 至 CASE-CATALOG-005；自动化测试文件/required 检查映射 PENDING；本次探针 docs/baseline/execution.json。\n\n### Requirement: REQ-CATALOG-003 读取已存值与缺失错误\nVerification: automated\nBaseline: docs/baseline/contracts/catalog.md\nSource: catalog.py:L16-L17\nDecision: docs/baseline/preservation.md\nget 对已有文本键必须返回保存的值对象，对不存在的文本键必须抛出 KeyError，不新增记录。\n\n#### Scenario: 已有记录\n- WHEN 插入键 a 与一个列表对象，再读取 a\n- THEN 得到原列表对象；修改该对象会在下一次读取中可见\n\n#### Scenario: 缺失键\n- WHEN 空目录读取 missing 或空串\n- THEN 抛出 KeyError，目录仍为空\n\n案例：CASE-CATALOG-006 至 CASE-CATALOG-007；自动化测试文件/required 检查映射 PENDING；本次探针 docs/baseline/execution.json。\n\n### Requirement: REQ-CATALOG-004 有序键列表快照\nVerification: automated\nBaseline: docs/baseline/contracts/catalog.md\nSource: catalog.py:L19-L20\nDecision: docs/baseline/preservation.md\nkeys 必须返回当前键按 Python 字符串升序排列的新列表，修改返回列表必须不改变目录键集合。\n\n#### Scenario: 排序与隔离\n- WHEN 依次插入 b、a、A，取得 keys() 后向返回列表添加 x\n- THEN 取得列表原始内容为 [\"A\", \"a\", \"b\"]，再次 keys() 仍为 [\"A\", \"a\", \"b\"]\n\n案例：CASE-CATALOG-008；自动化测试文件/required 检查映射 PENDING；本次探针 docs/baseline/execution.json。\n",
+    "docs/baseline/contracts/catalog.md": "# 观察契约：Catalog\n\n## 来源与证据\n本地工作区无 Git HEAD，业务文件未改动；catalog.py:L1-L20，SHA-256 053eea73bdb5851fea3b4a6c8ba6f0fb6acf764885ab08c8d6fdc1807e8e0372。静态解释见 docs/baseline/modules/catalog.md；实测结果见 docs/baseline/execution.json。无已知外部生产者/消费者；当前调用边界是 Python 直接方法调用。\n\n## 输入与输出\n- 初始化后 keys() 为 []；每个实例独立。\n- put(key, value)：key 必须是非空 str，未裁剪空白；否则 ValueError，文本为 key must be nonempty text。value 无类型校验。\n- 首次有效键写入原值对象，返回 True。已有键且值比较相等则返回 False，保留原对象；不相等则 ValueError(\"conflict\") 并保留原记录。事实依据 catalog.py:L6-L14。\n- get(key) 返回存储对象；缺失 KeyError，未提供默认值或统一输入校验，不可哈希输入抛 TypeError（catalog.py:L16-L17）。\n- keys() 返回当前键的升序新列表（catalog.py:L19-L20），修改该列表不改变目录。\n\n## 时序与异常\n同步调用，无 I/O、超时、持久化、后台工作或内建重试。独立实例状态不共享；每次相等重试返回 False，不产生覆写。普通输入校验和冲突失败发生在写入前。引用共享与用户自定义对象比较/哈希异常是 Python 观察事实，不提供深拷贝、事务或并发安全保证。get 与 put 输入规则不同是当前事实，未发现既有目标规格可据以判定缺陷。\n\n## 兼容与晋升\n本次 Agent 分析保留经检查的基本键值目录行为：REQ-CATALOG-001 初始化/隔离，REQ-CATALOG-002 插入与重复/冲突，REQ-CATALOG-003 读取与缺失，REQ-CATALOG-004 排序快照。理由与范围见 docs/baseline/preservation.md；实际 reviewer 为 Codex Agent，不是人为批准。\n不将任意对象比较细节、私有字典结构、并发原子性、持久化/恢复、特殊 str 子类提升为永久承诺。不改业务代码，不认定未知生产需求。用例见 docs/baseline/cases/catalog.md；当前规格为 openspec/specs/catalog/spec.md，持续验证缺口保留 PENDING。\n",
+    "docs/baseline/preservation.md": "# 当前行为保留分析\n\nReviewer: Codex Agent；日期：2026-11-16。\n这是按接管存量代码且保留业务实现要求进行的 Agent 分析，不代表 Owner 批准或新产品决策。\n\n检查了 catalog.py:L1-L20 全部路径。选择保留实例空状态/隔离、有效插入及重复/冲突结果、读取/缺失错误与排序列表快照；这些是简单目录的直接可观察行为，已有实现且本次不要求改变。输入校验、冲突异常文本和顺序重复返回值关系到调用兼容，不能静默重写。对应 REQ-CATALOG-001 至 REQ-CATALOG-004。\n\nget 未做 put 同样的输入校验、值对象引用共享、Python 自定义比较异常均记录为事实；没有外部目标契约证据把它们定性为缺陷。当前规格限定基本顺序调用，不声称任意值对象安全、并发事务、磁盘恢复、历史版本兼容或所有异常都无副作用。它们不是新增承诺，不静默修复。\n\n没有已有 ID、规格、ADR 或业务文档；本次新增 ID 不覆盖历史。无 Git 版本信息，以业务文件 SHA-256 与不可变注册快照绑定本地来源。外部来源不存在，台账只保留实际缺口，不虚构需 Owner 批准的日常选择。\n\n临时行为探针提供当前执行证据；没有原有测试文件与 required 检查映射，所以自动化 Verification 保持 PENDING。不会通过改成 manual 获得 PASS。后续有行为变更时先建立可重复 characterization tests，再作更改。\n",
+    "docs/baseline/cases/catalog.md": "# Catalog 行为用例\n\n## 范围与来源\ncatalog.py:L1-L20 全部已读；业务源 SHA-256 053eea73bdb5851fea3b4a6c8ba6f0fb6acf764885ab08c8d6fdc1807e8e0372，工作区无 Git HEAD。Reviewer: Codex Agent。契约 docs/baseline/contracts/catalog.md；当前规格 openspec/specs/catalog/spec.md。表中“本次探针 PASS”仅指 docs/baseline/execution.json 内对应动作已执行；没有可持续测试文件或 required 检查映射，长期 Verification 仍为 PENDING。\n\n## 用例\n\n| ID | Preconditions | Input/action | Expected output/state/error | Evidence | Verification |\n| --- | --- | --- | --- | --- | --- |\n| CASE-CATALOG-001 | 新建两个实例 | 只向第一个 put(a,1) | 均初始为空；第二个仍为空且 get(a) 为 KeyError | catalog.py:L3-L4；REQ-CATALOG-001 | 本次探针 PASS，持续自动化 PENDING |\n| CASE-CATALOG-002 | 空目录 | 分别 put('',1)、put(None,1)、put(7,1)、put([],1) | ValueError(key must be nonempty text)，目录为空 | catalog.py:L7-L8；REQ-CATALOG-002 | 本次探针 PASS，持续自动化 PENDING |\n| CASE-CATALOG-003 | 空目录 | put(' ', value) | True；get 返回原对象 | catalog.py:L7-L14；REQ-CATALOG-002 | 本次探针 PASS，持续自动化 PENDING |\n| CASE-CATALOG-004 | a 的值对象为 [1] | put(a,新的[1]) | False，get 返回旧对象 | catalog.py:L9-L12；REQ-CATALOG-002 | 本次探针 PASS，持续自动化 PENDING |\n| CASE-CATALOG-005 | a 的值为 1 | put(a,2) | ValueError(conflict)，a 仍为 1，keys 仍为 [a] | catalog.py:L9-L14；REQ-CATALOG-002 | 本次探针 PASS，持续自动化 PENDING |\n| CASE-CATALOG-006 | a 保存列表对象 | get(a)；在原列表添加 2 | 返回对象身份相同，随后读取见变更 | catalog.py:L13-L17；REQ-CATALOG-003 | 本次探针 PASS，持续自动化 PENDING |\n| CASE-CATALOG-007 | 空目录 | get(missing)、get('') | KeyError，目录仍空 | catalog.py:L16-L17；REQ-CATALOG-003 | 本次探针 PASS，持续自动化 PENDING |\n| CASE-CATALOG-008 | 已按 b,a,A 插入 | keys() 并更改返回列表 | 排序 [A,a,b]，再次读取不受列表更改影响 | catalog.py:L19-L20；REQ-CATALOG-004 | 本次探针 PASS，持续自动化 PENDING |\n| CASE-CATALOG-009 | 空目录 | get([]) | TypeError 原样传播；观察事实，未晋升额外承诺 | catalog.py:L16-L17 | 本次探针 PASS，持续自动化 PENDING |\n| CASE-CATALOG-010 | a 保存自定义比较对象 | 重复 put(a,object()) 使 __ne__ 抛 RuntimeError | 异常原样传播，未覆写；事实而非通用事务承诺 | catalog.py:L9-L11 | 本次探针 PASS，持续自动化 PENDING |\n\n无目标行为改动、无确认产品缺陷。并发、真实调用者、生产恢复和多版本未执行；不能由上述用例推导这些范围 PASS。\n",
+    "docs/baseline/modules/catalog.md": "# 模块：进程内目录\n\n## 职责\nCatalog 在单个实例中以文本键保存任意 Python 值，提供插入、读取和按键排序的快照。没有调用者、依赖清单、外部服务或传输层；唯一实现为 catalog.py。边界为当前本地文件而非历史提交。\n\n## 流程\n构造时创建新的空字典，实例互不共享记录。put 先要求键是非空 str：空串、数字、None、容器等均在查询字典前抛出 ValueError(\"key must be nonempty text\")。不 trim、不大小写归一，空白字符串有效。\n验证后查键：新键保存原 value 对象并返回 True；已有键执行已有值 != 输入值，若不等则抛 ValueError(\"conflict\")，不覆写已有值；相等则返回 False，也不替换对象。由 Python 比较语义决定相等，如 1 和 True 比较相等。\nget 直接查询字典：存在返回同一对象，缺失抛 KeyError；不复用 put 的验证，故空串/可哈希非文本缺失键也走 KeyError，不可哈希输入由字典抛 TypeError。\nkeys 对当前键产生新的升序列表；初始为空。排序基于原始字符串，大小写敏感；调用者更改返回列表不会改变目录。\n\n## 状态与异常\n记录生存期与实例一致，无更新、删除、清空或持久化 API；对象被释放时状态随之消失。值不复制，外部修改可变值也会改变之后 get 的观察结果。新插入只在验证与查重后执行；普通验证和冲突错误不会新增键或替换旧值，无网络/磁盘副作用。\n比较不是事务边界：用户对象的 __ne__/__eq__、str 子类哈希及比较可执行自定义代码并抛异常；异常未经包装向上传播，此类代码可能自行产生副作用。keys 返回新列表，但 value 仍是共享引用。\n无锁、超时、重试、去重存储或恢复机制；相等的重复 put 在顺序执行时返回 False。没有并发原子性/跨进程一致性承诺，不能从 Python 字典操作推导整个 put 原子性。\n\n## 证据\ncatalog.py:L1-L20 全文已读；创建见 catalog.py:L3-L4，验证/查重/写入见 catalog.py:L6-L14，读/排序见 catalog.py:L16-L20。源码 SHA-256 为 053eea73bdb5851fea3b4a6c8ba6f0fb6acf764885ab08c8d6fdc1807e8e0372。\n当前契约 docs/baseline/contracts/catalog.md；用例 docs/baseline/cases/catalog.md；执行探针 docs/baseline/execution.json。源码未修改。\n\n## 缺口\n所有业务源码已静态检查，普通顺序分支已执行探针；无原有测试文件、外部调用者、真实生产负载或版本矩阵。特殊比较对象探针只证明该输入，不证明任意 Python 对象安全。并发/恢复不受支持的事实已记录，不能将缺少锁直接标为已确认产品缺陷。自动化用例/检查映射仍缺失，见唯一台账 VAL-CATALOG-001；外围使用需求未知，见 FACT-CATALOG-001。不批准未知行为。\n",
+    "docs/baseline/execution.json": "{\n  \"created_at\": \"2026-11-16T00:44:24.137572+00:00\",\n  \"kind\": \"ad-hoc-executed-probes\",\n  \"reviewer\": \"Codex Agent\",\n  \"python\": \"3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]\",\n  \"platform\": \"Linux-6.18.57-x86_64-with-glibc2.41\",\n  \"source_ref\": null,\n  \"source_sha256\": \"053eea73bdb5851fea3b4a6c8ba6f0fb6acf764885ab08c8d6fdc1807e8e0372\",\n  \"results\": [\n    {\n      \"id\": \"CASE-CATALOG-001\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-002\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-003\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-004\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-005\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-006\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-007\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-008\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-009\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-010\",\n      \"status\": \"PASS\"\n    }\n  ],\n  \"status\": \"PASS\",\n  \"limitations\": \"Inline probes executed once; no persistent automated test source, required command mapping, concurrency/production/version-matrix verification. No historical revision available.\"\n}\n"
+  },
+  "parent_recheck": {
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+      "/workspace/scratch/f2ad980ad476/baseline-spec-fix/src/agent_repo_kit/core.py",
+      "--repo",
+      "/workspace/scratch/f2ad980ad476/baseline-spec-eval",
+      "baseline",
+      "spec-status"
+    ],
+    "exit_code": 2,
+    "report": {
+      "contracts": [
+        "docs/baseline/contracts/catalog.md"
+      ],
+      "findings": [
+        {
+          "code": "current-requirement-test",
+          "line": 8,
+          "message": "REQ-CATALOG-001 needs a test-source reference or explicit required delivery check mapping; textual references do not certify assertion quality.",
+          "path": "openspec/specs/catalog/spec.md",
+          "status": "PENDING"
+        },
+        {
+          "code": "current-requirement-test",
+          "line": 21,
+          "message": "REQ-CATALOG-002 needs a test-source reference or explicit required delivery check mapping; textual references do not certify assertion quality.",
+          "path": "openspec/specs/catalog/spec.md",
+          "status": "PENDING"
+        },
+        {
+          "code": "current-requirement-test",
+          "line": 46,
+          "message": "REQ-CATALOG-003 needs a test-source reference or explicit required delivery check mapping; textual references do not certify assertion quality.",
+          "path": "openspec/specs/catalog/spec.md",
+          "status": "PENDING"
+        },
+        {
+          "code": "current-requirement-test",
+          "line": 63,
+          "message": "REQ-CATALOG-004 needs a test-source reference or explicit required delivery check mapping; textual references do not certify assertion quality.",
+          "path": "openspec/specs/catalog/spec.md",
+          "status": "PENDING"
+        }
+      ],
+      "meaning": "Declared contract/spec links and verification mappings only; not semantic completeness, owner approval or executed business tests.",
+      "requirements": [
+        "REQ-CATALOG-001",
+        "REQ-CATALOG-002",
+        "REQ-CATALOG-003",
+        "REQ-CATALOG-004"
+      ],
+      "specification_status": "PASS",
+      "status": "PENDING",
+      "verification_status": "PENDING"
+    }
+  },
+  "source_tests": "----------------------------------------------------------------------\nRan 123 tests in 34.887s\n\nOK\n",
+  "wheel_tests": "----------------------------------------------------------------------\nRan 123 tests in 31.803s\n\nOK\n",
+  "native_and_skill_format": "PASS",
+  "limits": [
+    "Small Linux/Python fixture, not all projects or languages",
+    "10 one-off probes are actual execution but not persistent required test mappings",
+    "Spec-status checks declarations and links, not semantic completeness or executed business tests",
+    "No native OpenSpec CLI or trusted runtime Hook qualification claimed by this forward task"
+  ]
+}

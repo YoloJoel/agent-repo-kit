@@ -24,7 +24,7 @@ from datetime import date, datetime, timezone
 import uuid
 import xml.etree.ElementTree as ET
 
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 ASSETS = Path(__file__).parent / "assets"
 POLICY = ".ai/policy.json"
 MANIFEST = ".ai/manifest.json"
@@ -776,6 +776,46 @@ def knowledge_status(root, p, scope=None):
         documents.append({**item, "freshness": "stale" if stale else "historical" if item.get("state") == "obsolete" else "current", "changed": stale})
     return {"status": "PENDING" if any(item["freshness"] == "stale" for item in documents) else "PASS", "documents": documents,
             "meaning": "Source/document currency and declared coverage, not certified semantic completeness or executed cases"}
+
+
+def baseline_spec_status(root, p, scope=None):
+    """Check declared contract-to-current-spec handoff; never infer semantics from code."""
+    documents = [item for item in knowledge_status(root, p, scope)["documents"]
+                 if item["kind"] == "contract" and item["state"] != "obsolete"]
+    findings, linked = [], set()
+    records = [{**item, "path": path.relative_to(root).as_posix()}
+               for path in sorted(safe(root, p["paths"]["specs"]).glob("**/*.md"))
+               for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name)]
+    current = {item["id"]: item for item in records}
+    if not documents:
+        findings.append({"status": "PENDING", "code": "baseline-contract-missing",
+                         "message": "No registered observable contracts in scope; inventory or module prose alone does not complete baseline specification."})
+    for item in documents:
+        document = item["document"]
+        if item["freshness"] != "current":
+            findings.append({"status": "PENDING", "code": "baseline-spec-stale", "path": document,
+                             "message": "Refresh source/document/decision evidence before claiming current specification coverage."})
+        requirements = item.get("promoted_to", [])
+        if item["state"] != "promoted" or not requirements:
+            findings.append({"status": "PENDING", "code": "baseline-spec-missing", "path": document,
+                             "message": "Write or reuse source-backed current requirements, record the preservation decision and promote selected promises. Record defects/unknowns separately; do not silently approve them."})
+        for identity in requirements:
+            record = current.get(identity)
+            if not record:
+                findings.append({"status": "FAIL", "code": "baseline-spec-removed", "path": document,
+                                 "message": f"Missing current requirement: {identity}"})
+                continue
+            references = re.findall(r"(?im)^Baseline:\s*`?([^\s`]+)", record["body"])
+            if not any(reference.split('#', 1)[0] == document for reference in references):
+                findings.append({"status": "PENDING", "code": "baseline-spec-evidence", "path": record["path"],
+                                 "message": f"{identity} must cite Baseline: {document}; preserve native IDs and add the evidence link rather than duplicating the requirement."})
+            linked.add(identity)
+    findings += specification_findings(root, p, [safe(root, name) for name in sorted({record["path"] for record in records if record["id"] in linked})])
+    verification = requirement_test_findings(root, p, [item for item in records if item["id"] in linked], current=True)
+    return {"status": overall(findings + verification, []), "specification_status": overall(findings, []),
+            "verification_status": overall(verification, []), "contracts": [item["document"] for item in documents],
+            "requirements": sorted(linked), "findings": findings + verification,
+            "meaning": "Declared contract/spec links and verification mappings only; not semantic completeness, owner approval or executed business tests."}
 
 
 def delivery_knowledge_findings(root, p, scope):
@@ -1992,6 +2032,8 @@ def parser():
     review.add_argument("--reviewer", required=True)
     baseline.add_parser("validate")
     baseline.add_parser("status")
+    spec_status = baseline.add_parser("spec-status")
+    spec_status.add_argument("--scope", nargs="+", help="Limit contract source/document scope; omitted means all registered contracts")
     register = baseline.add_parser("register")
     register.add_argument("--kind", choices=["module", "contract", "cases"], required=True)
     register.add_argument("--document", required=True)
@@ -2132,6 +2174,8 @@ def main(argv=None):
                         result = baseline_review(root, p, args.document, args.files, args.reviewer) if args.kind == "module" else knowledge_record(root, p, args.kind, args.document, args.files, args.reviewer)
                     elif args.operation == "status":
                         result = knowledge_status(root, p)
+                    elif args.operation == "spec-status":
+                        result = baseline_spec_status(root, p, args.scope)
                     elif args.operation in {"promote", "retire"}:
                         result = knowledge_transition(root, p, args.document, args.reviewer, args.decision, getattr(args, "requirements", None), obsolete=args.operation == "retire")
                     else:
