@@ -26,19 +26,19 @@ class ArtifactQualityTests(RepositoryCase):
         for i in range(92):
             self.write(f'modules/m{i}/pom.xml', '<project/>\n')
         p = self.initialize('existing')
-        text = (self.root / 'AGENTS.md').read_text()
+        text = (self.root / 'AGENTS.md').read_text(encoding='utf-8')
         self.assertIn('# AGENTS.md', text)
         self.assertEqual(sum(line.startswith('## ') for line in text.splitlines()), 7)
         self.assertNotIn('m91/pom.xml', text)
         self.assertLess(len(text.splitlines()), 90)
         self.assertEqual(kit.entry_status(self.root, p)['status'], 'PENDING')
-        self.assertIn('m91/pom.xml', (self.root / 'docs/project-context.md').read_text())
+        self.assertIn('m91/pom.xml', (self.root / 'docs/project-context.md').read_text(encoding='utf-8'))
 
     def test_curated_entry_uses_project_facts_and_confirmed_commands_and_detects_staleness(self):
         p = self.prepare()
         self.write('.ai/project-entry.json', kit.dump(self.entry_data()))
         self.assertEqual(kit.entry_refresh(self.root, p)['status'], 'PASS')
-        text = (self.root / 'AGENTS.md').read_text()
+        text = (self.root / 'AGENTS.md').read_text(encoding='utf-8')
         self.assertIn('整数读取服务', text)
         self.assertIn('项目定位与技术栈', text)
         self.assertIn('代码与模块边界', text)
@@ -108,7 +108,7 @@ class ArtifactQualityTests(RepositoryCase):
             self.write(f'openspec/specs/{name}/spec.md', f'# {name}\n## Purpose\nCurrent source snapshot behavior.\n## Requirements\n### Requirement: REQ-{name.upper()}-001 {name}\nVerification: automated\nThe system SHALL {action}.\n#### Scenario: Request\n- WHEN the operation is called\n- THEN it produces its defined result\n')
         self.assertIn('spec-repeated-purpose', {x['code'] for x in kit.specification_findings(self.root, p)})
         path = self.root / 'openspec/specs/read/spec.md'
-        path.write_text(path.read_text().replace('Current source snapshot behavior.', 'Read the current value without changing stored records.'))
+        path.write_text(path.read_text(encoding='utf-8').replace('Current source snapshot behavior.', 'Read the current value without changing stored records.'), encoding='utf-8')
         self.assertEqual(kit.specification_findings(self.root, p), [])
 
     def test_historical_setup_pass_is_not_current_onboarding_completion(self):
