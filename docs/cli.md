@@ -18,6 +18,7 @@ Deterministic commands never invoke a model automatically.
 | `ark context --session <id>` | Navigation and explicit current work pointer |
 | `ark baseline inventory` | Ignore-aware paths/hashes, source version and pending coverage |
 | `ark baseline review --document <path> --files <paths...> --reviewer <id>` | Record a static review with actual explanations and valid source ranges |
+| `ark baseline spec-status [--scope <paths...>]` | Check registered contract-to-current-spec handoff; separate specification and verification mappings; no execution claim |
 | `ark baseline validate` | Detect unreviewed/stale evidence, not semantic completeness |
 | `ark change new <id> --kind <kind> --scope <paths...>` | Create a scoped native-layout change and draft artifacts |
 | `ark change inspect [--base <ref>]` | Actual diff and behavior/configuration candidates |
@@ -193,3 +194,15 @@ fingerprints, so a check cannot change its explanation or review record and reus
 Upgrade existing consumers explicitly with the updated initialize-repo helper --upgrade.
 Run local checks again; previous false PASS results may now be FAIL or PENDING. This adds no
 daily development Skill, remote dependency or hosted CI requirement.
+
+## Baseline specification handoff in 0.2.2
+
+The default baseline-repo workflow writes/reuses actual current requirements after explaining
+source-backed contracts, records preservation reasoning and promotes selected promises. It
+does not need an extra prompt or preinstalled OpenSpec CLI. Native CLI setup remains separate.
+`baseline spec-status` checks registered contracts, freshness, current requirement declarations,
+Baseline links, format and applicable test/check mappings. Use --scope for a limited module.
+No contracts or unpromoted contracts are PENDING; missing linked requirements FAIL. Missing
+verification mappings remain PENDING even when specification_status is PASS. A PASS means
+declared linkage, not semantic completeness, owner approval or actual test execution.
+Explicit analysis-only scope may stop before specs but must report that incomplete handoff.

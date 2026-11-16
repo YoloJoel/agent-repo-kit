@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 — 2026-11-16
+
+- Complete baseline-repo by default through source-backed current behavior specs, without an extra prompt.
+- Preserve existing native specs/IDs, separate defects and unknowns, and record routine preservation reasoning.
+- Add baseline spec-status to detect missing/stale contract handoff while separating specs from verification gaps.
+- Clarify that spec authoring does not require OpenSpec CLI; native CLI initialization remains separate.
+
 ## 0.2.1 — 2026-11-13
 
 - Reject unknown configuration/build/resource changes instead of treating them as documents.

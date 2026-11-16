@@ -76,7 +76,7 @@ python -m unittest discover -s tests -v
 
 ## 完成状态与使用说明
 
-0.2.1 默认只提供两个接入 Skill。日常开发入口自由，本地检查是基础；Plugin/Skills 安装、
+0.2.2 默认只提供两个接入 Skill。日常开发入口自由，本地检查是基础；Plugin/Skills 安装、
 原生 OpenSpec 两次交付与归档、存量 Java/Maven 仓的实施前验证和回归、0.1 升级均有实际记录。
 
 - [新仓 / 存量仓 / 已有 OpenSpec 的使用方式](docs/getting-started.md)
@@ -88,3 +88,7 @@ python -m unittest discover -s tests -v
 
 0.2.1 修复配置变更漏检、有效规格失去测试关联和说明过期仍通过交付的问题。
 未知文件保守检查，受影响的知识需复核；已有仓使用更新后的 initialize-repo 显式升级。
+
+0.2.2 的存量仓接入默认从 Baseline 继续生成或复用有源码依据的当前行为 Spec，
+不需要额外提示词或预先运行 OpenSpec。缺陷/未知项单列，缺少测试保持验证 PENDING。
+OpenSpec CLI 的安装及原生命令初始化仍是独立步骤。

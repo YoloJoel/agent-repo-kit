@@ -12,6 +12,10 @@ real requested scope. Do not substitute directory counts or checker success for 
   of normal/error/boundary flows, observable contracts, state/concurrency/recovery and gaps.
   A source index is navigation, not a completed explanation. Provide an architectural overview
   for a scope spanning components/processes, with useful diagrams and evidence-backed boundaries.
+- For existing code, create/reuse current behavior specs at policy.paths.specs, with
+  observable requirements/scenarios and Baseline/Source links. Invoke baseline spec-status
+  for the requested scope. Baseline prose without the spec handoff is incomplete onboarding;
+  distinguish specification PASS from missing verification PENDING. Respect analysis-only scope.
 - Maintain one question/decision source. Separate source facts, owner choices, accepted promises
   and validation conditions. Record accepted compatibility differences and their consequences;
   do not approve unknown semantics or invent owner decisions.

@@ -1,4 +1,4 @@
 interface:
   display_name: "Baseline Repository"
-  short_description: "Explain current behavior with source evidence and gaps"
-  default_prompt: "Use $baseline-repo to establish a source-grounded baseline for this repository."
+  short_description: "Establish source-backed baseline and current behavior specs"
+  default_prompt: "Use $baseline-repo to establish a source-grounded baseline and current behavior specifications for this repository."

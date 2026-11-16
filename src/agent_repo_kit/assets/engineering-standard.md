@@ -134,3 +134,14 @@ evidence with paths.evidence when native raw-batch directories have their own sc
 snapshots remain immutable and excluded from source inventory. Use path-scoped
 change_associations only to clarify genuinely overlapping work; this does not expand a
 change scope or create a global active-task pointer.
+
+## Existing repository specification handoff
+
+Existing-code onboarding includes source-backed current specs, not only Baseline prose.
+Extract observable preserved behavior with scenarios and Baseline/Source references; reuse
+existing IDs and native paths. Record routine preservation analysis without inventing owner
+approval. Keep defects, contradictions and unknowns in the single ledger. Use baseline
+spec-status to check declared handoff; specification and actual verification are separate.
+Absent tests/check mappings remain PENDING. Explicit analysis-only scope may omit specs but
+must report this limitation. Native OpenSpec CLI initialization is separate and optional: specs
+can be written without it, but do not claim native commands are installed or validated.
