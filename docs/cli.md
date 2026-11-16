@@ -19,6 +19,8 @@ Deterministic commands never invoke a model automatically.
 | `ark baseline inventory` | Ignore-aware paths/hashes, source version and pending coverage |
 | `ark baseline review --document <path> --files <paths...> --reviewer <id>` | Record a static review with actual explanations and valid source ranges |
 | `ark baseline spec-status [--scope <paths...>]` | Check registered contract-to-current-spec handoff; separate specification and verification mappings; no execution claim |
+| `ark baseline audit-record --report <json> --files <sources...> --artifacts <documents...> --reviewer <id>` | Record actual source-first and post-fix source recheck declarations with immutable evidence |
+| `ark baseline audit-status [--report <json>]` | Detect missing, stale or unresolved audit records; not semantic certification |
 | `ark baseline validate` | Detect unreviewed/stale evidence, not semantic completeness |
 | `ark change new <id> --kind <kind> --scope <paths...>` | Create a scoped native-layout change and draft artifacts |
 | `ark change inspect [--base <ref>]` | Actual diff and behavior/configuration candidates |
@@ -206,3 +208,14 @@ No contracts or unpromoted contracts are PENDING; missing linked requirements FA
 verification mappings remain PENDING even when specification_status is PASS. A PASS means
 declared linkage, not semantic completeness, owner approval or actual test execution.
 Explicit analysis-only scope may stop before specs but must report that incomplete handoff.
+
+## Source-first post-generation auditing in 0.2.3
+
+Baseline onboarding now requires a new source-derived coverage audit, corrections/dispositions,
+and separate source recheck after drafting. The report records actual review mode, every scoped
+source/artifact checked in each pass, findings/evidence and retained dispositions. First-pass
+findings are open; newly found second-pass issues remain open until further scoped review.
+`audit-record` stores immutable snapshots and final input hashes; `audit-status` stays PENDING
+for missing, changed or unresolved records. Same-agent rereading is not independent review;
+checks validate declared coverage and freshness, not actual rereading or zero defects.
+Accepted spec/source conflicts must be logged and not silently overwritten for a PASS.

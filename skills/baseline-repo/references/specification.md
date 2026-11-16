@@ -38,7 +38,7 @@ Honor an explicit analysis-only or limited module scope and report the omitted s
    ```
 
    Replace the example with observed behavior; no fabricated source ranges or test results.
-6. Register contract/case evidence, then `baseline promote --document <contract>\n+   --requirements <IDs> --decision <preservation-record> --reviewer <actual identity>`.
+6. Register contract/case evidence, then `baseline promote --document <contract> --requirements <IDs> --decision <preservation-record> --reviewer <actual identity>`.
    A promotion records selected promises, not every detail in a contract. Document
    exclusions and unresolved decisions so linked IDs cannot imply total semantic coverage.
 7. Run `baseline spec-status` (or --scope for a limited task), `baseline validate` and
@@ -48,3 +48,8 @@ Honor an explicit analysis-only or limited module scope and report the omitted s
    than claiming all onboarding needs a complete new test suite. `spec-status` checks
    declarations/mappings, not test execution or assertion quality. Report actual command
    outcomes independently. Save module checkpoints for unfinished work.
+
+After drafting and before final onboarding claims, perform the default two source passes in
+`source-audit.md`: omissions/claims audit, fixes/dispositions, then a fresh source recheck.
+Re-register changed knowledge and selected promotions after document fixes, preserving raw
+snapshots. Record the audit only after final artifacts and their evidence are consistent.

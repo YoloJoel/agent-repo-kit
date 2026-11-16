@@ -145,3 +145,13 @@ spec-status to check declared handoff; specification and actual verification are
 Absent tests/check mappings remain PENDING. Explicit analysis-only scope may omit specs but
 must report this limitation. Native OpenSpec CLI initialization is separate and optional: specs
 can be written without it, but do not claim native commands are installed or validated.
+
+## Source-first review after generation
+
+Baseline/spec generation must be followed by a new source-derived coverage audit, findings
+record, fixes or reasoned dispositions, and a separate post-fix source recheck. Cover both
+source-to-document omissions and document-to-source truth, not just headings/IDs/hashes.
+Use baseline audit-record/audit-status to bind the declared passes to source/artifact/report
+bytes. Missing, stale or unresolved audits remain PENDING. Such records cannot prove actual
+rereading, reviewer independence or semantic correctness. Declare actual review mode; preserve
+accepted decisions and history. Stop with explicit remaining work rather than loop indefinitely.

@@ -24,7 +24,7 @@ from datetime import date, datetime, timezone
 import uuid
 import xml.etree.ElementTree as ET
 
-VERSION = "0.2.2"
+VERSION = "0.2.3"
 ASSETS = Path(__file__).parent / "assets"
 POLICY = ".ai/policy.json"
 MANIFEST = ".ai/manifest.json"
@@ -776,6 +776,96 @@ def knowledge_status(root, p, scope=None):
         documents.append({**item, "freshness": "stale" if stale else "historical" if item.get("state") == "obsolete" else "current", "changed": stale})
     return {"status": "PENDING" if any(item["freshness"] == "stale" for item in documents) else "PASS", "documents": documents,
             "meaning": "Source/document currency and declared coverage, not certified semantic completeness or executed cases"}
+
+
+def baseline_audit_record(root, p, report, files, artifacts, reviewer):
+    """Bind a declared two-pass source audit to exact inputs, without certifying semantics."""
+    if not reviewer.strip() or not files or not artifacts:
+        raise KitError("A source audit needs an actual reviewer, source scope and reviewed artifacts")
+    if set(files) & set(artifacts) or report in files or report in artifacts:
+        raise KitError("Keep source, generated artifacts and audit report distinct")
+    paths = sorted(set(files + artifacts + [report]))
+    for relative in paths:
+        if not safe(root, relative).is_file():
+            raise KitError(f"Audit input missing: {relative}")
+    data = read_json(safe(root, report))
+    if not isinstance(data, dict) or data.get("review_mode") not in {"same-agent-separate-pass", "independent-reviewer"}:
+        raise KitError("Declare actual same-agent-separate-pass or independent-reviewer mode")
+    passes = data.get("passes", [])
+    if not isinstance(passes, list) or len(passes) != 2 or not all(isinstance(item, dict) for item in passes) or [item.get("kind") for item in passes] != ["source-first", "source-recheck"]:
+        raise KitError("Record source-first and source-recheck passes in order")
+    first_ids, open_ids = set(), set()
+    for index, audit in enumerate(passes):
+        sources, reviewed = audit.get("sources", []), audit.get("artifacts", [])
+        if not isinstance(sources, list) or not isinstance(reviewed, list):
+            raise KitError("Audit passes need explicit source and artifact coverage")
+        if not all(isinstance(item, dict) and isinstance(item.get("path"), str) for item in sources + reviewed):
+            raise KitError("Audit coverage entries need actual paths")
+        if {item.get("path") for item in sources} != set(files) or {item.get("path") for item in reviewed} != set(artifacts):
+            raise KitError("Both audit passes must account for the complete selected source and artifact scope")
+        for item in sources:
+            if not isinstance(item.get("checked"), str) or not item["checked"].strip() or not source_reference_valid(item.get("evidence", ""), item["path"], safe(root, item["path"]).read_bytes()):
+                raise KitError("Describe actual source branches checked with valid source evidence in both passes")
+        if any(not isinstance(item.get("checked"), str) or not item["checked"].strip() for item in reviewed):
+            raise KitError("Describe the claims or omissions checked in every artifact")
+        findings = audit.get("findings")
+        if not isinstance(findings, list):
+            raise KitError("Each pass needs actual findings (an empty list means none found)")
+        ids = set()
+        for finding in findings:
+            if not isinstance(finding, dict):
+                raise KitError("Audit findings must be objects")
+            identity = finding.get("id")
+            if not isinstance(identity, str) or not identity.strip() or identity in ids:
+                raise KitError("Audit findings need unique stable IDs within each pass")
+            ids.add(identity)
+            if not all(isinstance(finding.get(key), str) and finding[key].strip() for key in ("issue", "evidence")):
+                raise KitError("Findings need an actual issue and source evidence")
+            if not any(source_reference_valid(finding["evidence"], name, safe(root, name).read_bytes()) for name in files):
+                raise KitError("Finding evidence must reference actual scoped source")
+            if finding.get("status") not in {"open", "fixed", "rejected"}:
+                raise KitError("Finding status must be open, fixed or rejected")
+            if index == 0 and finding["status"] != "open":
+                raise KitError("Persist first-pass findings as open before fixes/dispositions")
+            if index == 1 and identity not in first_ids and finding["status"] != "open":
+                raise KitError("New recheck findings stay open until a further scoped source review")
+            if finding["status"] != "open" and not str(finding.get("resolution", "")).strip():
+                raise KitError("Fixed/rejected findings need resolution and recheck reasoning")
+            if index == 1 and finding["status"] == "open":
+                open_ids.add(identity)
+        if index == 0:
+            first_ids = ids
+        elif not first_ids.issubset(ids):
+            raise KitError("Recheck must retain every first-pass finding with its actual disposition")
+    record = {"report": report, "reviewer": reviewer, "files": sorted(set(files)), "artifacts": sorted(set(artifacts)),
+              "review_mode": data["review_mode"],
+              "inputs": {name: digest(safe(root, name).read_bytes()) for name in paths}, "open_findings": sorted(open_ids),
+              "level": "agent-declared-source-audit", "recorded_at": now()}
+    base = p["paths"]["baseline"]
+    ledger = read_json(safe(root, base + "/audits.json"), {"schema_version": 1, "reports": {}})
+    ledger["reports"][report] = record
+    snapshot = evidence_root(p) + "/audits/" + digest(dump(record).encode())
+    transact(root, {base + "/audits.json": dump(ledger), snapshot + "/record.json": dump(record),
+                    snapshot + "/report.json": dump(data)})
+    return baseline_audit_status(root, p, report)
+
+
+def baseline_audit_status(root, p, report=None):
+    ledger = read_json(safe(root, p["paths"]["baseline"] + "/audits.json"), {"reports": {}})
+    records = [item for name, item in ledger["reports"].items() if report is None or name == report]
+    findings = []
+    if not records:
+        findings.append({"status": "PENDING", "code": "source-audit-missing", "message": "Run the source-first audit and post-fix source recheck; structural checks do not replace them."})
+    for item in records:
+        changed = [name for name, expected in item["inputs"].items() if not safe(root, name).is_file() or digest(safe(root, name).read_bytes()) != expected]
+        if changed:
+            findings.append({"status": "PENDING", "code": "source-audit-stale", "path": item["report"], "changed": changed,
+                             "message": "Source, generated artifacts or audit report changed; recheck the affected scope and record fresh evidence."})
+        if item["open_findings"]:
+            findings.append({"status": "PENDING", "code": "source-audit-open", "path": item["report"], "ids": item["open_findings"],
+                             "message": "Unresolved source-audit findings remain; do not claim audit closure."})
+    return {"status": overall(findings, []), "findings": findings, "reports": records,
+            "meaning": "Checks declared source-first/recheck coverage, dispositions and freshness; cannot prove rereading occurred or certify semantic correctness/zero defects."}
 
 
 def baseline_spec_status(root, p, scope=None):
@@ -2034,6 +2124,13 @@ def parser():
     baseline.add_parser("status")
     spec_status = baseline.add_parser("spec-status")
     spec_status.add_argument("--scope", nargs="+", help="Limit contract source/document scope; omitted means all registered contracts")
+    audit = baseline.add_parser("audit-record")
+    audit.add_argument("--report", required=True)
+    audit.add_argument("--files", nargs="+", required=True)
+    audit.add_argument("--artifacts", nargs="+", required=True)
+    audit.add_argument("--reviewer", required=True)
+    audit_status = baseline.add_parser("audit-status")
+    audit_status.add_argument("--report", help="Limit to one audit; otherwise inspect all recorded audit scopes")
     register = baseline.add_parser("register")
     register.add_argument("--kind", choices=["module", "contract", "cases"], required=True)
     register.add_argument("--document", required=True)
@@ -2176,6 +2273,10 @@ def main(argv=None):
                         result = knowledge_status(root, p)
                     elif args.operation == "spec-status":
                         result = baseline_spec_status(root, p, args.scope)
+                    elif args.operation == "audit-record":
+                        result = baseline_audit_record(root, p, args.report, args.files, args.artifacts, args.reviewer)
+                    elif args.operation == "audit-status":
+                        result = baseline_audit_status(root, p, args.report)
                     elif args.operation in {"promote", "retire"}:
                         result = knowledge_transition(root, p, args.document, args.reviewer, args.decision, getattr(args, "requirements", None), obsolete=args.operation == "retire")
                     else:

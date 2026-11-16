@@ -28,7 +28,8 @@ description: Initialize or explicitly upgrade reusable AI engineering rules, ski
 5. For existing code, continue with **baseline-repo**: explain behavior, cite evidence,
    complete the coverage/gap ledger and create/reuse source-backed current behavior specs.
    Initialization does not end at inventory or Baseline prose; follow baseline-repo through
-   its specification handoff and report specification/verification gaps separately. Work by
+   its specification handoff AND default source-first/post-fix semantic audit.
+   Report source audit, specification and verification gaps separately. Work by
    module and save checkpoints for large repositories; state incomplete ranges honestly.
 6. For new code, keep historical baseline not applicable. Establish actual user goals
    and initial requirements/decisions; do not invent a product or architecture.
