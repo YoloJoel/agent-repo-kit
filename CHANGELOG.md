@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.4 — 2026-11-16
+
+- Render a curated project-specific seven-section AGENTS entrance; preserve human/native rules and keep manifest inventories in context.
+- Track source-derived major capability coverage and explicit supporting/excluded scope; partial lifecycle analysis cannot claim full onboarding.
+- Require independently usable spec input/rule/output/error detail and explicit semantic quality review, with narrow pointer/missing-owner guards.
+- Add entry, coverage and current onboarding quality status; distinguish dated setup snapshots, compile checks and actual business tests.
+
 ## 0.2.3 — 2026-11-16
 
 - Require a new source-first semantic audit after Baseline/spec generation, followed by fixes/dispositions and a separate post-fix source recheck.

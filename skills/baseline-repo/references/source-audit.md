@@ -88,3 +88,18 @@ Missing records, open issues or subsequent byte changes stay PENDING. This check
 coverage and freshness, not that rereading really occurred or semantics are flawless. Run status,
 validate, spec-status and actual project checks separately. Report audit scope/mode/findings,
 specification state and actual execution independently before claiming onboarding complete.
+
+## Required onboarding quality topics
+
+Use artifact-quality.md for the acceptance criteria. Rebuild the capability map independently
+from source directories/call paths and compare to current specs. Read each spec with Baseline
+hidden: can concrete inputs/assertions/error and side-effect checks be written from the spec
+alone? Open the source afterward to prove those details, not to excuse their omission from spec.
+Also review AGENTS as a project-specific entrance rather than a tool operation list. Include
+AGENTS, .ai/project-entry.json, the capability map and all claimed artifacts in audit scope.
+Record these actual checks in report.quality_checks, using one object per topic:
+`{"topic":"project-entry|capability-coverage|spec-self-containment","status":"PASS|PENDING","checked":"Actual inspected scope, evidence and result"}`.
+Each object uses one actual topic/status value, not the pipe-separated example. Mark quality
+PENDING and record findings for omissions or unverifiable details. These are review declarations,
+not machine semantic certification. After recording run onboarding-status; do not equate a
+selected spec's format/link PASS or an initial empty-spec run with whole-repository completion.

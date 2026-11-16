@@ -21,6 +21,9 @@ Deterministic commands never invoke a model automatically.
 | `ark baseline spec-status [--scope <paths...>]` | Check registered contract-to-current-spec handoff; separate specification and verification mappings; no execution claim |
 | `ark baseline audit-record --report <json> --files <sources...> --artifacts <documents...> --reviewer <id>` | Record actual source-first and post-fix source recheck declarations with immutable evidence |
 | `ark baseline audit-status [--report <json>]` | Detect missing, stale or unresolved audit records; not semantic certification |
+| `ark entry refresh` / `ark entry status` | Render/review source-backed project entrance; preserve human/native entry; no build inventory dump |
+| `ark baseline coverage-record --document <map.json> --reviewer <id>` / `ark baseline coverage-status` | Account for whole production/business capability scope and supporting exclusions; partial stays PENDING |
+| `ark onboarding-status` | Current declared entrance/coverage/spec/audit quality; does not execute or certify business tests |
 | `ark baseline validate` | Detect unreviewed/stale evidence, not semantic completeness |
 | `ark change new <id> --kind <kind> --scope <paths...>` | Create a scoped native-layout change and draft artifacts |
 | `ark change inspect [--base <ref>]` | Actual diff and behavior/configuration candidates |
@@ -219,3 +222,27 @@ findings are open; newly found second-pass issues remain open until further scop
 for missing, changed or unresolved records. Same-agent rereading is not independent review;
 checks validate declared coverage and freshness, not actual rereading or zero defects.
 Accepted spec/source conflicts must be logged and not silently overwritten for a PASS.
+
+## Project artifact quality in 0.2.4
+
+Agent-owned .ai/project-entry.json contains actual project purpose/stack/boundaries/constraints,
+workflow, precedence and source evidence, not business truth. entry refresh safely renders its
+managed block after real check confirmation; human/native entry is preserved without a second
+outline. Entry currency binds facts, policy and rendered content. Full manifest inventory stays
+in context rather than AGENTS.
+
+Capability maps classify actual production/build/config files as business/supporting, each
+with responsibility, explicit scope status and current requirement identities. Exclusions need
+reasons; business scope left uninspected stays partial. coverage-status also checks source
+review currency. Mapping and counts are declarations, never semantic coverage certification.
+
+Specs must state substantive observable contracts with concrete scenarios, provenance and
+existing current owners for essential delegated rules. A narrow pointer-only statement guard
+and explicit Depends-On checks catch deterministic mistakes; budget/payload/error completeness
+still requires source review. They are not a general semantic proof.
+
+onboarding-status combines current project entry, whole scope, spec/link findings, current
+audit artifacts and explicit project-entry/capability-coverage/spec-self-containment reviews.
+Missing, stale, unreviewed or partial scope stays PENDING. It reports verification mappings
+separately and does not infer that compilation means business tests executed. Historical
+initialization snapshots retain their stage/time; early empty-spec PASS is not current proof.

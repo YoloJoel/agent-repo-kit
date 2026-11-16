@@ -34,3 +34,13 @@ real requested scope. Do not substitute directory counts or checker success for 
 
 The desired result is usable source-backed engineering knowledge and repeatable local
 verification. It does not depend on hosted CI, a particular daily Skill, or identical filenames.
+
+## Project artifact quality
+
+Run onboarding-status, not just doctor/structure. Require a curated project-specific entrance,
+full declared production capability coverage with explicit supporting/excluded scope, current
+specs and source audit of all claimed artifacts. Explicitly review spec-self-containment with
+Baseline hidden. Requirement/scenario counts alone are not acceptance. Compilation-only
+checks do not count as business tests. init-report.json is a historical initialization snapshot;
+current summaries cite the actual phase/run/time/scope and PENDING gaps. An absent Change
+directory during source-baseline authoring is not itself an error; do not create empty artifacts.

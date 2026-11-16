@@ -1,38 +1,26 @@
-## Agent Repo Kit workflow
+# AGENTS.md — AI engineering entry
 
-Use the user's language for explanations and documents. Work from the repository root.
-Run `python hack/ai/ark.py` for every example below written as `ark`; global installation
-is optional. Use the available Python 3.11+ interpreter (`python3` or `py -3` if needed).
+Use the user's language. This is the project entrance; detailed procedures belong in the engineering standard.
 
-- Read `docs/engineering-standard.md` and `.ai/policy.json` when workflow details matter.
-- For onboarding or an explicit toolkit upgrade, use **initialize-repo**.
-- For current behavior, consult `{{BASELINE}}` and verify relevant source/configuration;
-  use **baseline-repo** when evidence is missing or stale. During existing-code onboarding,
-  continue through source-backed current specs and `ark baseline spec-status`; prose alone
-  is not complete onboarding. Reopen source for the default semantic audit and post-fix
-  recheck, record audit-status separately, and preserve unresolved conflicts as open questions.
-- For promised behavior, read relevant specs under `{{SPECS}}`; for planned changes,
-  read the related change under `{{CHANGES}}`. Use OpenSpec, another development tool or direct conversation; no development Skill is required.
-- Consult effective ADRs for consequential architecture choices. Record discrepancies
-  between observed behavior and specs; do not silently rewrite either side.
-- Read only task-relevant context. A typo/mechanical edit needs neither a full Change,
-  whole-repository Baseline nor new tests that merely mirror implementation.
-- For behavior changes and risky refactors, declare scope and acceptance scenarios.
-  Establish necessary characterization tests before changing behavior that must stay.
-- Use confirmed commands in policy. Candidate commands are unverified suggestions.
-  Never report NOT_RUN as PASS or an inventory as an approved semantic baseline.
-- Update affected specs, decisions, evidence and tasks. Preserve original evidence and
-  accepted history; link superseding records. Do not renumber existing requirement IDs.
-- Refresh affected current explanations after implementation, or retire them explicitly
-  with a decision; retain original snapshots. Unrelated stale knowledge is not a task blocker.
-- Treat unknown configuration/build/resource inputs as requiring impact review. Add runtime
-  document paths to policy.behavior_paths; do not classify them as harmless prose.
-- Read diff-based `ark context`/`ark impact` for affected work and knowledge; no activation is required.
-- Before declaring delivery complete, run fresh delivery verification. During work and
-  interruption, save a checkpoint and next step; use --paused for normal handoff and --blocked for genuine blockers.
-- Reuse authorization. Resolve facts and routine design choices yourself; ask only about
-  material scope/compatibility decisions or required permissions not already resolved.
+## 1. Project and stack
+{{PURPOSE}}
 
-Commands: `ark doctor`, `ark context`, `ark baseline inventory`, `ark change inspect`,
-`ark check`, `ark verify --phase structure`, `ark verify --phase delivery --change <id>`.
-All checks run locally. Hosted CI is optional; use the existing project workflow and native change lifecycle.
+{{STACK}}
+
+## 2. Architecture constraints
+{{CONSTRAINTS}}
+
+## 3. Asset navigation
+{{ASSETS}}
+
+## 4. Source boundaries
+{{BOUNDARIES}}
+
+## 5. Project commands
+{{COMMANDS}}
+
+## 6. Development workflow
+{{WORKFLOW}}
+
+## 7. Rule precedence
+{{PRECEDENCE}}

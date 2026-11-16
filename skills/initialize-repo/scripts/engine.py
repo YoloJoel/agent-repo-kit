@@ -24,7 +24,7 @@ from datetime import date, datetime, timezone
 import uuid
 import xml.etree.ElementTree as ET
 
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 ASSETS = Path(__file__).parent / "assets"
 POLICY = ".ai/policy.json"
 MANIFEST = ".ai/manifest.json"
@@ -379,10 +379,104 @@ def project_context(profile):
     return "\n".join(lines)
 
 
+def project_entry(root, p, profile, existing=""):
+    """Render a project entrance; never dump the build inventory into AGENTS."""
+    data = read_json(safe(root, ".ai/project-entry.json"), {})
+    if not isinstance(data, dict):
+        raise KitError("Project entry facts must be an object")
+    context = p["paths"].get("context", "docs/project-context.md")
+    standard = p["paths"].get("standard", "docs/engineering-standard.md")
+    defaults = {
+        "purpose": f"`{root.name}`. Project purpose requires source review; see `{context}`.",
+        "stack": ", ".join(profile["languages"]) or "Not established; inspect actual source and build configuration.",
+        "boundaries": "Observed source roots: " + (", ".join(profile["source_roots"]) or "not established") + f". Confirm actual module/runtime boundaries in `{context}`.",
+        "constraints": "Preserve observable contracts and accepted decisions. Project-specific constraints require source review.",
+        "workflow": f"Read current specs before behavior changes; record scope, design when needed, tests and actual verification. Project branch/review/release rules must be established from existing evidence in `{standard}`.",
+        "precedence": "Explicit user instructions apply first. Current specs govern behavior, accepted ADRs decisions, the engineering standard process, and this file navigation. Record conflicts; do not invent or silently change accepted promises.",
+    }
+    values = {key: data.get(key, value) for key, value in defaults.items()}
+    if any(not isinstance(value, str) for value in values.values()):
+        raise KitError("Project entry sections must be text")
+    commands = []
+    for check in p["checks"]:
+        argv = check.get("argv")
+        command = " ".join(argv) if isinstance(argv, list) else "outside evidence"
+        commands.append(f"- `{check['name']}`: `{command}` ({check.get('type', 'command')}; execution results are recorded separately)")
+    values["commands"] = "\n".join(commands) or "No confirmed project checks yet. Candidate commands are unverified; do not claim compilation or tests passed."
+    rows = [("Current behavior", p["paths"]["specs"]), ("Changes", p["paths"]["changes"]), ("Decisions", p["paths"]["adr"]),
+            ("Source-backed knowledge", p["paths"]["baseline"]), ("Engineering standard", standard), ("Project context", context), ("Checks", "hack/ai/ark.py")]
+    values["assets"] = "| Asset | Location |\n| --- | --- |\n" + "\n".join(f"| {name} | `{path}` |" for name, path in rows)
+    text = (ASSETS / "agents.md").read_text(encoding="utf-8")
+    for key, value in values.items():
+        text = text.replace("{{" + key.upper() + "}}", value)
+    if data.get("language") == "zh":
+        for old, new in (("AI engineering entry", "AI 工程规则入口"), ("Project and stack", "项目定位与技术栈"), ("Architecture constraints", "架构约束"),
+                         ("Asset navigation", "资产导航"), ("Source boundaries", "代码与模块边界"), ("Project commands", "工程命令"), ("Development workflow", "开发流程"), ("Rule precedence", "规则优先级")):
+            text = text.replace(old, new)
+        text = text.replace("Use the user's language. This is the project entrance; detailed procedures belong in the engineering standard.", "使用用户的语言。本文件是项目入口；详细流程以工程规范为准。")
+        text = text.replace("execution results are recorded separately", "实际执行结果另行记录")
+        for old, new in (("Asset | Location", "资产 | 位置"), ("Current behavior", "当前规格"), ("Changes", "变更"), ("Decisions", "决策"), ("Source-backed knowledge", "源码基线"), ("Engineering standard", "工程规范"), ("Project context", "项目上下文"), ("Checks", "检查入口")):
+            text = text.replace("| " + old, "| " + new)
+    outside = existing
+    if START in existing and END in existing:
+        outside = existing[:existing.index(START)] + existing[existing.index(END) + len(END):]
+    if outside.strip():
+        # Existing human/native entry stays authoritative. Do not append a second
+        # project outline or tool manual underneath it.
+        text = f"## Engineering integration\n\nUse the user's language. Preserve the project rules above.\nRead `{standard}` and `{context}`; paths/checks are mapped in `.ai/policy.json`.\nLocal check: `python hack/ai/ark.py check`. Initialization is not onboarding completion.\n"
+        if data.get("language") == "zh":
+            text = f"## 工程工具接入\n\n保留以上项目规则。详细流程见 `{standard}`，项目上下文见 `{context}`。\n路径与确认后的命令见 `.ai/policy.json`；本地检查：`python hack/ai/ark.py check`。初始化不等于接入完成。\n"
+    return text
+
+
+def entry_refresh(root, p):
+    path = safe(root, ".ai/project-entry.json")
+    data = read_json(path)
+    for key in ("purpose", "stack", "boundaries", "constraints", "workflow", "precedence", "reviewer"):
+        if not isinstance(data.get(key), str) or not data[key].strip() or FILL in data[key]:
+            raise KitError("Project entry needs source-backed " + key)
+    evidence = data.get("source_evidence", {})
+    if not isinstance(evidence, dict) or not evidence:
+        raise KitError("Project entry needs actual source/config evidence")
+    if not isinstance(data.get("gaps", []), list):
+        raise KitError("Project entry gaps must be an explicit list")
+    for name, reference in evidence.items():
+        source = safe(root, name)
+        if not source.is_file() or not isinstance(reference, str) or not source_reference_valid(reference, name, source.read_bytes()):
+            raise KitError("Invalid project-entry source evidence: " + name)
+    manifest = read_json(safe(root, MANIFEST))
+    existing = safe(root, "AGENTS.md").read_bytes().decode("utf-8")
+    old = existing[existing.index(START):existing.index(END) + len(END)]
+    if digest(old.encode()) != manifest.get("agents_block"):
+        raise KitError("AGENTS.md managed block was edited; explicitly merge human changes before refresh")
+    updated = block(existing, project_entry(root, p, project_profile(root, p), existing))
+    manifest["agents_block"] = digest(updated[updated.index(START):updated.index(END) + len(END)].encode())
+    record = {"reviewer": data["reviewer"], "inputs": {name: digest(updated.encode()) if name == "AGENTS.md" else digest(safe(root, name).read_bytes()) for name in [".ai/project-entry.json", POLICY, *evidence]},
+              "agents_sha256": digest(updated.encode()), "gaps": data.get("gaps", []), "recorded_at": now(), "level": "agent-declared-project-entry"}
+    transact(root, {"AGENTS.md": updated, MANIFEST: dump(manifest), ".ai/project-entry-review.json": dump(record)})
+    return entry_status(root, p)
+
+
+def entry_status(root, p):
+    record = read_json(safe(root, ".ai/project-entry-review.json"), {})
+    findings = []
+    if not record:
+        findings.append({"status": "PENDING", "code": "project-entry-unreviewed", "message": "Project entrance is setup only; curate real project purpose/boundaries/constraints/commands/workflow and run entry refresh."})
+    else:
+        changed = [name for name, sha in record["inputs"].items() if not safe(root, name).is_file() or digest(safe(root, name).read_bytes()) != sha]
+        if digest(safe(root, "AGENTS.md").read_bytes()) != record["agents_sha256"]:
+            changed.append("AGENTS.md")
+        if changed:
+            findings.append({"status": "PENDING", "code": "project-entry-stale", "changed": changed, "message": "Recheck project entrance against current inputs and confirmed checks."})
+        if record.get("gaps"):
+            findings.append({"status": "PENDING", "code": "project-entry-gaps", "message": "Project-specific facts remain unresolved.", "gaps": record["gaps"]})
+    return {"status": overall(findings, []), "findings": findings, "meaning": "Declared project-specific entry review and currency, not semantic certification."}
+
+
 def fingerprint(root, p, change=None):
     files = inventory_files(root, p)
     # Configuration/contract inputs are always bound, even if excluded from inventory.
-    required = [POLICY, MANIFEST, "AGENTS.md"]
+    required = [POLICY, MANIFEST, "AGENTS.md", ".ai/project-entry.json", ".ai/project-entry-review.json", ".ai/capability-coverage-review.json"]
     spec_root = safe(root, p["paths"]["specs"])
     if spec_root.exists():
         required += [f.relative_to(root).as_posix() for f in spec_root.rglob("*.md") if f.is_file()]
@@ -515,11 +609,9 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
                 managed("hack/ai/assets/" + path.relative_to(ASSETS).as_posix(), path.read_bytes())
         context_path = p["paths"].get("context", "docs/project-context.md")
         standard_path = p["paths"].get("standard", "docs/engineering-standard.md")
-        routing = (ASSETS / "agents.md").read_text(encoding="utf-8").replace("{{BASELINE}}", p["paths"]["baseline"]).replace("{{SPECS}}", p["paths"]["specs"]).replace("{{CHANGES}}", p["paths"]["changes"]).replace("docs/engineering-standard.md", standard_path)
-        routing += "\nProject observations: " + (", ".join(profile["languages"]) or "stack not established") + ". "
-        routing += "Build evidence: " + (", ".join(profile["build_manifests"]) or "not established") + f".\nRead {context_path} for observed roots, declared versions and unresolved facts.\n"
         agent_path = safe(root, "AGENTS.md")
         existing = agent_path.read_bytes().decode("utf-8") if agent_path.exists() else ""
+        routing = project_entry(root, p, profile, existing)
         previous_block = old_manifest.get("agents_block")
         if START in existing and previous_block:
             old_block = existing[existing.index(START):existing.index(END) + len(END)]
@@ -606,7 +698,7 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
         if p["mode"] == "existing":
             baseline_inventory(root, p)
         baseline_status = "NOT_APPLICABLE" if p["mode"] == "new" else ("PENDING" if baseline_findings(root, p) else "STATIC_REVIEW_CURRENT")
-        report = {"status": "PASS", "meaning": "Scaffolding installed; no semantic baseline or runtime hook trust is asserted.", "mode": p["mode"], "changed": changed, "changed_scope": "Installation/configuration assets; excludes this generated report and baseline/runtime observations.", "baseline": baseline_status, "checks": "NOT_RUN", "hook_trust": "NOT_VERIFIED", "branch_protection": "NOT_VERIFIED", "kit_version": VERSION}
+        report = {"status": "PASS", "report_kind": "initialization_snapshot", "created_at": now(), "meaning": "Historical setup snapshot, not current onboarding/verification status. Scaffolding installed; no semantic baseline or runtime hook trust is asserted.", "mode": p["mode"], "changed": changed, "changed_scope": "Installation/configuration assets; excludes this generated report and baseline/runtime observations.", "baseline": baseline_status, "checks": "NOT_RUN", "hook_trust": "NOT_VERIFIED", "branch_protection": "NOT_VERIFIED", "kit_version": VERSION}
         atomic(safe(root, ".ai/init-report.json"), dump(report))
         return report
 
@@ -866,6 +958,114 @@ def baseline_audit_status(root, p, report=None):
                              "message": "Unresolved source-audit findings remain; do not claim audit closure."})
     return {"status": overall(findings, []), "findings": findings, "reports": records,
             "meaning": "Checks declared source-first/recheck coverage, dispositions and freshness; cannot prove rereading occurred or certify semantic correctness/zero defects."}
+
+
+def capability_sources(root, p):
+    return {name: item["sha256"] for name, item in inventory_files(root, p).items()
+            if is_behavior(name, p) and any(under(name, prefix) for prefix in p["source_paths"])
+            and not any(under(name, prefix) for prefix in p["test_paths"])}
+
+
+def coverage_record(root, p, document, reviewer):
+    data = read_json(safe(root, document))
+    if not reviewer.strip() or not isinstance(data, dict) or not isinstance(data.get("capabilities"), list) or not data["capabilities"]:
+        raise KitError("Map actual business/supporting capabilities with a reviewer before recording coverage")
+    identities = set()
+    for item in data["capabilities"]:
+        if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"].strip() or item["id"] in identities:
+            raise KitError("Capability map needs unique stable IDs")
+        identities.add(item["id"])
+        if item.get("kind") not in {"business", "supporting"} or item.get("status") not in {"specified", "pending", "excluded"}:
+            raise KitError("Declare business/supporting kind and specified/pending/excluded status")
+        if not isinstance(item.get("purpose"), str) or not item["purpose"].strip() or not isinstance(item.get("sources"), list) or not item["sources"]:
+            raise KitError("Every capability needs actual responsibility and source files")
+        for name in item["sources"]:
+            if not isinstance(name, str) or not safe(root, name).is_file():
+                raise KitError("Capability source is missing or unsafe")
+        if item["status"] == "excluded" and not str(item.get("reason", "")).strip():
+            raise KitError("Exclusions need a concrete scope/supporting/generated/vendor rationale")
+        if not isinstance(item.get("requirements", []), list) or any(not isinstance(identity, str) for identity in item.get("requirements", [])):
+            raise KitError("Requirements must be actual declared IDs/titles")
+    inputs = capability_sources(root, p)
+    record = {"document": document, "sha256": digest(safe(root, document).read_bytes()), "sources": inputs,
+              "reviewer": reviewer, "recorded_at": now(), "level": "agent-declared-capability-map"}
+    snapshot = evidence_root(p) + "/capabilities/" + digest(dump(record).encode())
+    transact(root, {".ai/capability-coverage-review.json": dump(record), snapshot + "/record.json": dump(record), snapshot + "/map.json": dump(data)})
+    return coverage_status(root, p)
+
+
+def coverage_status(root, p):
+    record = read_json(safe(root, ".ai/capability-coverage-review.json"), {})
+    current_sources = capability_sources(root, p)
+    findings, capabilities, mapped, included = [], [], set(), set()
+    current = current_requirement_ids(root, p)
+    if not record:
+        findings.append({"status": "PENDING", "code": "capability-map-missing", "message": "Build a source-derived business capability map, not just a few lifecycle/cross-cutting specs."})
+    else:
+        path = safe(root, record["document"])
+        if not path.is_file() or digest(path.read_bytes()) != record["sha256"] or record["sources"] != current_sources:
+            findings.append({"status": "PENDING", "code": "capability-map-stale", "message": "Map or production-source inventory changed; reconcile scope before re-recording."})
+        data = read_json(path, {"capabilities": []}) if path.is_file() else {"capabilities": []}
+        for item in data["capabilities"]:
+            sources = set(item["sources"]) & set(current_sources)
+            mapped |= sources
+            capabilities.append({"id": item["id"], "kind": item["kind"], "status": item["status"], "source_files": len(sources), "requirements": item.get("requirements", [])})
+            if item["status"] == "pending" or item["status"] == "excluded" and item["kind"] == "business":
+                findings.append({"status": "PENDING", "code": "capability-incomplete", "message": f"Business scope is not fully specified: {item['id']}"})
+            if item["status"] != "excluded":
+                included |= sources
+            if item["kind"] == "business" and item["status"] == "specified" and (not item.get("requirements") or not set(item["requirements"]).issubset(current)):
+                findings.append({"status": "PENDING", "code": "capability-spec-missing", "message": f"{item['id']} needs real current requirements; a baseline link or future uncreated owner is not a spec."})
+        if included:
+            findings += baseline_findings(root, p, sorted(included))
+    missing = sorted(set(current_sources) - mapped)
+    if missing:
+        findings.append({"status": "PENDING", "code": "capability-unmapped-sources", "count": len(missing), "sample": missing[:10], "message": "Production/build/config sources are outside the declared capability coverage."})
+    return {"status": overall(findings, []), "production_files": len(current_sources), "mapped_files": len(mapped),
+            "unmapped_files": len(missing), "capabilities": capabilities, "findings": findings,
+            "meaning": "Declared source/capability/current-requirement coverage; counts and mappings do not prove semantic completeness or assertion quality."}
+
+
+def onboarding_status(root, p):
+    entry = entry_status(root, p)
+    if p["mode"] == "new":
+        return {"status": entry["status"], "entry": entry, "baseline": "NOT_APPLICABLE", "meaning": "No legacy baseline asserted; initial goals/specs/implementation require their own delivery verification."}
+    coverage = coverage_status(root, p)
+    specs = baseline_spec_status(root, p)
+    audits = baseline_audit_status(root, p)
+    expected = {"AGENTS.md"} | {path.relative_to(root).as_posix() for path in safe(root, p["paths"]["specs"]).glob("**/*.md")}
+    if safe(root, ".ai/project-entry.json").is_file():
+        expected.add(".ai/project-entry.json")
+    for item in knowledge_status(root, p)["documents"]:
+        if item["state"] != "obsolete":
+            expected.add(item["document"])
+            if item.get("decision"):
+                expected.add(item["decision"])
+    coverage_recorded = read_json(safe(root, ".ai/capability-coverage-review.json"), {})
+    if coverage_recorded:
+        expected.add(coverage_recorded["document"])
+    audited, topics, findings = set(), set(), []
+    for item in audits["reports"]:
+        if any(not safe(root, name).is_file() or digest(safe(root, name).read_bytes()) != sha for name, sha in item["inputs"].items()):
+            continue
+        audited.update(item["artifacts"])
+        report = read_json(safe(root, item["report"]))
+        for check in report.get("quality_checks", []):
+            if isinstance(check, dict) and check.get("status") == "PASS" and isinstance(check.get("checked"), str) and check["checked"].strip():
+                topics.add(check.get("topic"))
+    missing = sorted(expected - audited)
+    if missing:
+        findings.append({"status": "PENDING", "code": "onboarding-artifacts-unaudited", "paths": missing, "message": "Source audit must include project entry, capability map, explanations and current specs, not a token subset."})
+    required_topics = {"project-entry", "capability-coverage", "spec-self-containment"}
+    if required_topics - topics:
+        findings.append({"status": "PENDING", "code": "onboarding-quality-unreviewed", "topics": sorted(required_topics - topics), "message": "Explicitly review project-specific entry, major capability omissions and whether specs are independently usable without Baseline."})
+    verification = current_test_findings(root, p)
+    overall_findings = entry["findings"] + coverage["findings"] + specs["findings"] + audits["findings"] + findings + verification
+    return {"status": overall(overall_findings, []), "completion": "COMPLETE_DECLARED" if not overall_findings else "PARTIAL",
+            "entry_status": entry["status"], "coverage": coverage, "specification_status": specs["specification_status"],
+            "audit_status": audits["status"], "verification_mapping_status": overall(verification, []), "findings": overall_findings,
+            "execution": "Not assessed by this quality declaration; cite actual build/test/external runs separately. Compilation is not business testing.",
+            "meaning": "Current declared onboarding quality and coverage, not zero defects or runtime verification. init-report.json is a historical setup snapshot."}
 
 
 def baseline_spec_status(root, p, scope=None):
@@ -1132,7 +1332,7 @@ def active(root, session="default"):
 
 
 def specification_findings(root, p, paths=None):
-    findings, seen = [], {}
+    findings, seen, purposes = [], {}, {}
     paths = list(paths) if paths is not None else sorted(safe(root, p["paths"]["specs"]).glob("**/*.md"))
     for path in paths:
         relative = path.relative_to(root).as_posix()
@@ -1140,6 +1340,13 @@ def specification_findings(root, p, paths=None):
         records = spec_records(text, path.parent.name)
         def issue(status, code, message, line=1):
             findings.append({"status": status, "code": code, "path": relative, "line": line, "message": f"{relative}:{line}: {message}"})
+        if path.name == "spec.md" and path.is_relative_to(safe(root, p["paths"]["specs"])):
+            purpose = re.search(r"(?ms)^## Purpose\s*\n(.*?)(?=^## |\Z)", markdown_structure(text))
+            value = re.sub(r"\s+", " ", purpose.group(1)).strip() if purpose else ""
+            if value:
+                if value in purposes and purposes[value] != relative:
+                    issue("PENDING", "spec-repeated-purpose", f"Capability Purpose repeats {purposes[value]}; explain this capability's actual responsibility, not shared scope boilerplate.")
+                purposes[value] = relative
         if path.name == "spec.md" and not records:
             issue("PENDING", "spec-empty", "Declare observable requirements or valid native renames.")
         for item in records:
@@ -1162,6 +1369,18 @@ def specification_findings(root, p, paths=None):
             verification = re.search(r"(?im)^Verification:\s*(.+)$", body)
             if verification and not re.match(r"(automated|manual|external)\b", verification.group(1), re.I):
                 issue("FAIL", "verification-type", f"{identifier}: use automated, manual or external verification.", line)
+            normative = body.split("#### Scenario:", 1)[0]
+            normative = re.sub(r"(?m)^### Requirement:[^\n]*$", "", normative)
+            normative = re.sub(r"(?m)^(?:Verification|Source|Baseline|Decision|Depends-On):[^\n]*$", "", normative).strip()
+            pointer = re.fullmatch(r"(?is)(?:the )?(?:system|service)\s+(?:SHALL|MUST)\s+(?:follow|implement|use|preserve)\s+(?:the |all |existing )*(?:(?:behavior|rules|contract|requirements)\s+(?:described in|defined in|in|from)\s+.*(?:baseline|source document).*|(?:baseline|source document)[\w\s/`.:-]*(?:rules|contract|requirements|behavior))[.]?", normative)
+            pointer = pointer or re.fullmatch(r"(?is)(?:系统|服务)\s*(?:SHALL|MUST|必须|应当|应)\s*(?:遵循|沿用|按照|按|参照|参考)\s*[^。\n]*(?:Baseline|基线|契约文档|源码说明)[^。\n]*(?:规则|约定|要求|处理|执行)[。.]?", normative)
+            if pointer:
+                issue("PENDING", "spec-delegated-body", f"{identifier}: state the observable rules and outcomes in the spec; Baseline is provenance, not a substitute for the promise.", line)
+            if path.is_relative_to(safe(root, p["paths"]["specs"])):
+                for dependencies in re.findall(r"(?im)^Depends-On:\s*(.+)$", body):
+                    for dependency in re.findall(r"REQ-[A-Z0-9]+-\d+", dependencies):
+                        if dependency not in current_requirement_ids(root, p):
+                            issue("PENDING", "spec-missing-owner", f"{identifier}: dependency {dependency} is not current; do not delegate a required payload/contract to an uncreated capability.", line)
             for match in re.finditer(r"(?im)^(?:Source|Baseline|Decision):\s*\x60?([^\s\x60]+)", body):
                 reference = re.sub(r":L?\d+(?:-L?\d+)?$", "", match.group(1).split("#", 1)[0])
                 if "://" not in reference and not safe(root, reference).is_file():
@@ -2109,6 +2328,10 @@ def parser():
     init.add_argument("--upgrade", action="store_true")
     init.add_argument("--path", action="append", dest="mappings", help="Reuse an existing asset location: KEY=repository-relative-path")
     sub.add_parser("doctor")
+    entry = sub.add_parser("entry").add_subparsers(dest="operation", required=True)
+    entry.add_parser("refresh")
+    entry.add_parser("status")
+    sub.add_parser("onboarding-status")
     ctx = sub.add_parser("context")
     ctx.add_argument("--session", default="default")
     affected = sub.add_parser("impact")
@@ -2122,6 +2345,10 @@ def parser():
     review.add_argument("--reviewer", required=True)
     baseline.add_parser("validate")
     baseline.add_parser("status")
+    coverage = baseline.add_parser("coverage-record")
+    coverage.add_argument("--document", required=True)
+    coverage.add_argument("--reviewer", required=True)
+    baseline.add_parser("coverage-status")
     spec_status = baseline.add_parser("spec-status")
     spec_status.add_argument("--scope", nargs="+", help="Limit contract source/document scope; omitted means all registered contracts")
     audit = baseline.add_parser("audit-record")
@@ -2239,6 +2466,11 @@ def main(argv=None):
                 result = hook(root, p, args.action, args.agent, payload)
             elif args.command == "doctor":
                 result = doctor(root, p)
+            elif args.command == "entry":
+                with lock(root):
+                    result = entry_refresh(root, p) if args.operation == "refresh" else entry_status(root, p)
+            elif args.command == "onboarding-status":
+                result = onboarding_status(root, p)
             elif args.command == "context":
                 result = context(root, p, args.session)
             elif args.command == "impact":
@@ -2271,6 +2503,10 @@ def main(argv=None):
                         result = baseline_review(root, p, args.document, args.files, args.reviewer) if args.kind == "module" else knowledge_record(root, p, args.kind, args.document, args.files, args.reviewer)
                     elif args.operation == "status":
                         result = knowledge_status(root, p)
+                    elif args.operation == "coverage-record":
+                        result = coverage_record(root, p, args.document, args.reviewer)
+                    elif args.operation == "coverage-status":
+                        result = coverage_status(root, p)
                     elif args.operation == "spec-status":
                         result = baseline_spec_status(root, p, args.scope)
                     elif args.operation == "audit-record":
