@@ -16,6 +16,10 @@ real requested scope. Do not substitute directory counts or checker success for 
   observable requirements/scenarios and Baseline/Source links. Invoke baseline spec-status
   for the requested scope. Baseline prose without the spec handoff is incomplete onboarding;
   distinguish specification PASS from missing verification PENDING. Respect analysis-only scope.
+- Require the default generation-aftercare source audit: reopen source independently of the
+  generated outline, inspect omissions and reverse-check claims, record findings, fix/dispose,
+  and reopen source for post-fix recheck. Run baseline audit-status for the relevant report.
+  Structural PASS cannot replace this; a same-agent pass is not an independent reviewer.
 - Maintain one question/decision source. Separate source facts, owner choices, accepted promises
   and validation conditions. Record accepted compatibility differences and their consequences;
   do not approve unknown semantics or invent owner decisions.

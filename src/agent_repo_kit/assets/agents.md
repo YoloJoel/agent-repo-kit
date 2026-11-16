@@ -9,7 +9,8 @@ is optional. Use the available Python 3.11+ interpreter (`python3` or `py -3` if
 - For current behavior, consult `{{BASELINE}}` and verify relevant source/configuration;
   use **baseline-repo** when evidence is missing or stale. During existing-code onboarding,
   continue through source-backed current specs and `ark baseline spec-status`; prose alone
-  is not complete onboarding. Preserve conflicting or uncertain behavior as open questions.
+  is not complete onboarding. Reopen source for the default semantic audit and post-fix
+  recheck, record audit-status separately, and preserve unresolved conflicts as open questions.
 - For promised behavior, read relevant specs under `{{SPECS}}`; for planned changes,
   read the related change under `{{CHANGES}}`. Use OpenSpec, another development tool or direct conversation; no development Skill is required.
 - Consult effective ADRs for consequential architecture choices. Record discrepancies

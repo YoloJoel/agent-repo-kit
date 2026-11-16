@@ -1,0 +1,4 @@
+- [x] Add default source-first and post-fix source review workflow.
+- [x] Add auditable scope/finding/freshness records and regression cases.
+- [x] Complete source/wheel/native checks and fresh-source audit exercise.
+- [ ] Publish with observed results and final-head checks.

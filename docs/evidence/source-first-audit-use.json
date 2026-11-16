@@ -1,0 +1,132 @@
+{
+  "kit_version": "0.2.3",
+  "final_runtime_sha256": "acf7ea395d407261328e0ff3e0653a59447fa2b3fd82e5e2f6b40988cd152dae",
+  "task": "Refresh Baseline/spec from source using baseline-repo; no diagnosis or expected fixes supplied to the fresh model.",
+  "setup": "Three syntactically valid semantic contradictions inserted in previously generated artifacts: missing lookup result, equal retry behavior, sorting direction.",
+  "source_unchanged": true,
+  "prior_raw_snapshots_preserved": true,
+  "model_review_mode": "same-agent-separate-pass",
+  "model_outcome": {
+    "found": 3,
+    "fixed": 2,
+    "open_accepted_conflict": 1,
+    "ad_hoc_probes": 10
+  },
+  "parent_final_runtime_recheck": {
+    "status": "PENDING",
+    "findings": [
+      {
+        "status": "PENDING",
+        "code": "source-audit-open",
+        "path": "docs/baseline/source-audit.json",
+        "ids": [
+          "AUD-CATALOG-003"
+        ],
+        "message": "Unresolved source-audit findings remain; do not claim audit closure."
+      }
+    ],
+    "reports": [
+      {
+        "artifacts": [
+          "docs/baseline/README.md",
+          "docs/baseline/cases/catalog.md",
+          "docs/baseline/contracts/catalog.md",
+          "docs/baseline/execution.json",
+          "docs/baseline/modules/catalog.md",
+          "docs/baseline/modules/governance.md",
+          "docs/baseline/preservation.md",
+          "docs/baseline/questions.json",
+          "openspec/specs/catalog/spec.md"
+        ],
+        "files": [
+          ".ai/policy.json",
+          ".gitignore",
+          "AGENTS.md",
+          "catalog.py",
+          "docs/adr/README.md",
+          "docs/engineering-standard.md",
+          "docs/project-context.md"
+        ],
+        "inputs": {
+          ".ai/policy.json": "8719a285f83afcc99fa87c8a056b3e43f70fea226106bc2741680d4d1d7f8de0",
+          ".gitignore": "13e78b172a43adbbb328e4498f43c7cc161ca79b441359ac3328742a483609e1",
+          "AGENTS.md": "57927359aefa1e6ee7d42beb986099c667e1d259203362e2aad9575cc4ebcbb1",
+          "catalog.py": "053eea73bdb5851fea3b4a6c8ba6f0fb6acf764885ab08c8d6fdc1807e8e0372",
+          "docs/adr/README.md": "a5116af01ed836486a5fa9a028ef7f0d2bd17758fa4abb76df0c392a5c6b36b8",
+          "docs/baseline/README.md": "f93b699f9d6d284b6a336cf0a7a0fe481ce09aac2b50673b15785009e1682df3",
+          "docs/baseline/cases/catalog.md": "60dd65a5e018d3f904dfa4dc4b07fc5a4b59d7ac3a80e9d2912a09d26c2020bc",
+          "docs/baseline/contracts/catalog.md": "04a0fa13a07b73dd9b85666bb086d9072cbe26efe913173fca6c2e0f21e847ba",
+          "docs/baseline/execution.json": "9105b81c2302d58df06ac87a9c8b2f44e3c8a5f6219f1f780fc4016d0a24a4a8",
+          "docs/baseline/modules/catalog.md": "25e2182404307f1498517cbd17dbff187736d3c05b05ee189061f106167f9914",
+          "docs/baseline/modules/governance.md": "bd35405fab6a1d712effc3f2855001d9e3be91ed28078265bca569af55f9c035",
+          "docs/baseline/preservation.md": "6720a6b3bf5cee998fceae59ab4acd303dad1d04810e9b2d691da23872dd9114",
+          "docs/baseline/questions.json": "ea6ff6a00b69dd52f2c0c73387ed3a4bb710aaca7696a34b5884e43e3e59585e",
+          "docs/baseline/source-audit.json": "719707b8a1462c34790ff2bc44a0f0d4e81d552926951d48775de091bb273619",
+          "docs/engineering-standard.md": "c22cd5d9ae1ace7799afa5719ad5c6e6a84f528a95a3d3b8808ed6dbafc558b6",
+          "docs/project-context.md": "5bfe7d8d8a8a0135bc6c92196e3f3a81eedd944e6e2d1f456ace3b5d70f9abc4",
+          "openspec/specs/catalog/spec.md": "5851fa2afefefcac95baf958e4a1392b0ed0c8c32ceee638f87238ed3fbb7494"
+        },
+        "level": "agent-declared-source-audit",
+        "open_findings": [
+          "AUD-CATALOG-003"
+        ],
+        "recorded_at": "2026-11-16T01:20:38+00:00",
+        "report": "docs/baseline/source-audit.json",
+        "review_mode": "same-agent-separate-pass",
+        "reviewer": "Codex source-audit-use Agent"
+      }
+    ],
+    "meaning": "Checks declared source-first/recheck coverage, dispositions and freshness; cannot prove rereading occurred or certify semantic correctness/zero defects."
+  },
+  "parent_stale_injection": [
+    {
+      "status": "PENDING",
+      "code": "source-audit-stale",
+      "path": "docs/baseline/source-audit.json",
+      "changed": [
+        "catalog.py"
+      ],
+      "message": "Source, generated artifacts or audit report changed; recheck the affected scope and record fresh evidence."
+    },
+    {
+      "status": "PENDING",
+      "code": "source-audit-open",
+      "path": "docs/baseline/source-audit.json",
+      "ids": [
+        "AUD-CATALOG-003"
+      ],
+      "message": "Unresolved source-audit findings remain; do not claim audit closure."
+    }
+  ],
+  "parent_restored": [
+    {
+      "status": "PENDING",
+      "code": "source-audit-open",
+      "path": "docs/baseline/source-audit.json",
+      "ids": [
+        "AUD-CATALOG-003"
+      ],
+      "message": "Unresolved source-audit findings remain; do not claim audit closure."
+    }
+  ],
+  "artifacts": {
+    "catalog.py": "\"\"\"Small existing in-memory catalog.\"\"\"\nclass Catalog:\n    def __init__(self):\n        self._records = {}\n\n    def put(self, key, value):\n        if not isinstance(key, str) or not key:\n            raise ValueError(\"key must be nonempty text\")\n        if key in self._records:\n            if self._records[key] != value:\n                raise ValueError(\"conflict\")\n            return False\n        self._records[key] = value\n        return True\n\n    def get(self, key):\n        return self._records[key]\n\n    def keys(self):\n        return sorted(self._records)\n",
+    "docs/baseline/source-audit.json": "{\n  \"review_mode\": \"same-agent-separate-pass\",\n  \"reviewer\": \"Codex source-audit-use Agent\",\n  \"passes\": [\n    {\n      \"kind\": \"source-first\",\n      \"sources\": [\n        {\n          \"path\": \"catalog.py\",\n          \"evidence\": \"catalog.py:L1-L20\",\n          \"checked\": \"重新从构造、验证顺序、查重比较、False/True 返回、冲突前写入边界、字典读取与 sorted 调用逐分支检查；无调用方、配置、I/O、锁、重试或恢复。\"\n        },\n        {\n          \"path\": \"AGENTS.md\",\n          \"evidence\": \"AGENTS.md:L1-L43\",\n          \"checked\": \"当前规则要求保留 accepted specs 与历史、单一台账、两轮审计及实际验证。\"\n        },\n        {\n          \"path\": \".gitignore\",\n          \"evidence\": \".gitignore:L1-L2\",\n          \"checked\": \"仅忽略本地运行证据，不为业务输入。\"\n        },\n        {\n          \"path\": \"docs/adr/README.md\",\n          \"evidence\": \"docs/adr/README.md:L1-L3\",\n          \"checked\": \"无既有业务 ADR。\"\n        },\n        {\n          \"path\": \"docs/engineering-standard.md\",\n          \"evidence\": \"docs/engineering-standard.md:L1-L147\",\n          \"checked\": \"规格/观察事实区分、验证缺口不得改为 PASS。\"\n        },\n        {\n          \"path\": \"docs/project-context.md\",\n          \"evidence\": \"docs/project-context.md:L1-L18\",\n          \"checked\": \"来源边界与无持续测试说明一致，原有“本次新增”需标为历史初始化。\"\n        },\n        {\n          \"path\": \".ai/policy.json\",\n          \"evidence\": \".ai/policy.json:L1-L45\",\n          \"checked\": \"source_paths 为全根目录；工具/模板/Baseline 排除，checks 和 requirements 为空，specs 路径与既有文档一致。\"\n        }\n      ],\n      \"artifacts\": [\n        {\n          \"path\": \"docs/baseline/modules/catalog.md\",\n          \"checked\": \"核对全部声明、分支覆盖、错误/状态/顺序/引用共享、来源链接与未执行范围；既有执行报告只作历史证据。\"\n        },\n        {\n          \"path\": \"docs/baseline/modules/governance.md\",\n          \"checked\": \"核对全部声明、分支覆盖、错误/状态/顺序/引用共享、来源链接与未执行范围；既有执行报告只作历史证据。\"\n        },\n        {\n          \"path\": \"docs/baseline/contracts/catalog.md\",\n          \"checked\": \"核对全部声明、分支覆盖、错误/状态/顺序/引用共享、来源链接与未执行范围；既有执行报告只作历史证据。\"\n        },\n        {\n          \"path\": \"docs/baseline/cases/catalog.md\",\n          \"checked\": \"核对全部声明、分支覆盖、错误/状态/顺序/引用共享、来源链接与未执行范围；既有执行报告只作历史证据。\"\n        },\n        {\n          \"path\": \"openspec/specs/catalog/spec.md\",\n          \"checked\": \"核对全部声明、分支覆盖、错误/状态/顺序/引用共享、来源链接与未执行范围；既有执行报告只作历史证据。\"\n        },\n        {\n          \"path\": \"docs/baseline/preservation.md\",\n          \"checked\": \"核对全部声明、分支覆盖、错误/状态/顺序/引用共享、来源链接与未执行范围；既有执行报告只作历史证据。\"\n        },\n        {\n          \"path\": \"docs/baseline/questions.json\",\n          \"checked\": \"核对全部声明、分支覆盖、错误/状态/顺序/引用共享、来源链接与未执行范围；既有执行报告只作历史证据。\"\n        },\n        {\n          \"path\": \"docs/baseline/README.md\",\n          \"checked\": \"核对全部声明、分支覆盖、错误/状态/顺序/引用共享、来源链接与未执行范围；既有执行报告只作历史证据。\"\n        },\n        {\n          \"path\": \"docs/baseline/execution.json\",\n          \"checked\": \"核对全部声明、分支覆盖、错误/状态/顺序/引用共享、来源链接与未执行范围；既有执行报告只作历史证据。\"\n        }\n      ],\n      \"findings\": [\n        {\n          \"id\": \"AUD-CATALOG-001\",\n          \"issue\": \"模块补充称缺失读取返回 None，与其正文及源码字典读取矛盾。\",\n          \"evidence\": \"catalog.py:L16-L17; docs/baseline/modules/catalog.md 补充说明\",\n          \"status\": \"open\"\n        },\n        {\n          \"id\": \"AUD-CATALOG-002\",\n          \"issue\": \"契约称相等重复返回 True 并替换对象，但源码返回 False 且不写入。\",\n          \"evidence\": \"catalog.py:L9-L14; docs/baseline/contracts/catalog.md 输入与输出\",\n          \"status\": \"open\"\n        },\n        {\n          \"id\": \"AUD-CATALOG-003\",\n          \"issue\": \"已晋升 REQ-CATALOG-004 要求降序，源码 sorted 默认升序；现有模块、契约、案例及历史晋升快照均为升序。保留现有 accepted spec 原文，需台账显式记录待定兼容选择。\",\n          \"evidence\": \"catalog.py:L19-L20; openspec/specs/catalog/spec.md:L63-L74\",\n          \"status\": \"open\"\n        }\n      ]\n    },\n    {\n      \"kind\": \"source-recheck\",\n      \"sources\": [\n        {\n          \"path\": \"catalog.py\",\n          \"evidence\": \"catalog.py:L1-L20\",\n          \"checked\": \"修正后再次完整打开 catalog.py：构造独立空字典；put 在查字典前验证非空 str，新键仅在 L13 写入，重复比较不等 L11 抛 conflict、相等 L12 返回 False；get L17 直接字典索引缺失 KeyError/不可哈希 TypeError；keys L20 无 reverse，升序新列表。重查引用共享、比较异常传播、无 I/O/锁/重试路径，跨文档及上下文未导入并发/恢复保证。10 个临时案例另已实跑。\"\n        },\n        {\n          \"path\": \"AGENTS.md\",\n          \"evidence\": \"AGENTS.md:L1-L43\",\n          \"checked\": \"当前规则要求保留 accepted specs 与历史、单一台账、两轮审计及实际验证。\"\n        },\n        {\n          \"path\": \".gitignore\",\n          \"evidence\": \".gitignore:L1-L2\",\n          \"checked\": \"仅忽略本地运行证据，不为业务输入。\"\n        },\n        {\n          \"path\": \"docs/adr/README.md\",\n          \"evidence\": \"docs/adr/README.md:L1-L3\",\n          \"checked\": \"无既有业务 ADR。\"\n        },\n        {\n          \"path\": \"docs/engineering-standard.md\",\n          \"evidence\": \"docs/engineering-standard.md:L1-L147\",\n          \"checked\": \"规格/观察事实区分、验证缺口不得改为 PASS。\"\n        },\n        {\n          \"path\": \"docs/project-context.md\",\n          \"evidence\": \"docs/project-context.md:L1-L21\",\n          \"checked\": \"来源边界与无持续测试说明一致，原有“本次新增”需标为历史初始化。\"\n        },\n        {\n          \"path\": \".ai/policy.json\",\n          \"evidence\": \".ai/policy.json:L1-L45\",\n          \"checked\": \"重读策略确认仍未配置 required checks/测试映射，没有通过 manual 或扩大 exclude 绕过门禁。\"\n        }\n      ],\n      \"artifacts\": [\n        {\n          \"path\": \"docs/baseline/modules/catalog.md\",\n          \"checked\": \"重开对应最终文档核对全部声明与源码分支：两项事实纠正，现存降序冲突及普通/异常/引用共享边界明确，原 ID 和历史证据保留。\"\n        },\n        {\n          \"path\": \"docs/baseline/modules/governance.md\",\n          \"checked\": \"重开对应最终文档核对全部声明与源码分支：两项事实纠正，现存降序冲突及普通/异常/引用共享边界明确，原 ID 和历史证据保留。\"\n        },\n        {\n          \"path\": \"docs/baseline/contracts/catalog.md\",\n          \"checked\": \"重开对应最终文档核对全部声明与源码分支：两项事实纠正，现存降序冲突及普通/异常/引用共享边界明确，原 ID 和历史证据保留。\"\n        },\n        {\n          \"path\": \"docs/baseline/cases/catalog.md\",\n          \"checked\": \"重开对应最终文档核对全部声明与源码分支：两项事实纠正，现存降序冲突及普通/异常/引用共享边界明确，原 ID 和历史证据保留。\"\n        },\n        {\n          \"path\": \"openspec/specs/catalog/spec.md\",\n          \"checked\": \"重开对应最终文档核对全部声明与源码分支：两项事实纠正，现存降序冲突及普通/异常/引用共享边界明确，原 ID 和历史证据保留。\"\n        },\n        {\n          \"path\": \"docs/baseline/preservation.md\",\n          \"checked\": \"重开对应最终文档核对全部声明与源码分支：两项事实纠正，现存降序冲突及普通/异常/引用共享边界明确，原 ID 和历史证据保留。\"\n        },\n        {\n          \"path\": \"docs/baseline/questions.json\",\n          \"checked\": \"重开对应最终文档核对全部声明与源码分支：两项事实纠正，现存降序冲突及普通/异常/引用共享边界明确，原 ID 和历史证据保留。\"\n        },\n        {\n          \"path\": \"docs/baseline/README.md\",\n          \"checked\": \"重开对应最终文档核对全部声明与源码分支：两项事实纠正，现存降序冲突及普通/异常/引用共享边界明确，原 ID 和历史证据保留。\"\n        },\n        {\n          \"path\": \"docs/baseline/execution.json\",\n          \"checked\": \"重开对应最终文档核对全部声明与源码分支：两项事实纠正，现存降序冲突及普通/异常/引用共享边界明确，原 ID 和历史证据保留。\"\n        }\n      ],\n      \"findings\": [\n        {\n          \"id\": \"AUD-CATALOG-001\",\n          \"issue\": \"模块补充称缺失读取返回 None，与其正文及源码字典读取矛盾。\",\n          \"evidence\": \"catalog.py:L16-L17; docs/baseline/modules/catalog.md 补充说明\",\n          \"status\": \"fixed\",\n          \"resolution\": \"模块补充更正 KeyError；L17 字典读取及 CASE-007 复跑验证缺失键和空串不新增记录，临近 TypeError 与共享引用路径也复查。\"\n        },\n        {\n          \"id\": \"AUD-CATALOG-002\",\n          \"issue\": \"契约称相等重复返回 True 并替换对象，但源码返回 False 且不写入。\",\n          \"evidence\": \"catalog.py:L9-L14; docs/baseline/contracts/catalog.md 输入与输出\",\n          \"status\": \"fixed\",\n          \"resolution\": \"契约改为 False 且保留旧对象，重读 L9-L14 并执行 CASE-004/005，确认相等返回与身份、冲突前不写入；新键 True 路径未误改。\"\n        },\n        {\n          \"id\": \"AUD-CATALOG-003\",\n          \"issue\": \"已晋升 REQ-CATALOG-004 要求降序，源码 sorted 默认升序；现有模块、契约、案例及历史晋升快照均为升序。保留现有 accepted spec 原文，需台账显式记录待定兼容选择。\",\n          \"evidence\": \"catalog.py:L19-L20; openspec/specs/catalog/spec.md:L63-L74\",\n          \"status\": \"open\",\n          \"resolution\": \"DEC-CATALOG-003 是唯一决策台账条目；已增加证据说明，未修改 accepted 降序承诺或升序实现。Owner 尚未选择。当前复跑升序案例不能关闭规格冲突。\"\n        }\n      ]\n    }\n  ],\n  \"scope_limits\": \"全部 Catalog 业务源码和 7 个 inventory 文件，另读内部 policy 以确定路径/检查边界。无外部调用方、历史 Git、生产/并发/多版本资料；vendor 工具本体不在业务审计范围。未采用独立 reviewer，明确为同 Agent 分开的两轮实际重读。 current spec 在 audit-record 中作为被审计 artifact（同时属于 inventory 范围），不重复分类为 source；project-context 作为 source。\",\n  \"additional_execution_review\": [\n    {\n      \"path\": \"docs/baseline/execution-refresh.json\",\n      \"checked\": \"核对本轮 10 项真实临时断言结果、源码哈希、升序观察及验证限制。不是永久测试映射。\"\n    }\n  ]\n}\n",
+    "docs/baseline/contracts/catalog.md": "# 观察契约：Catalog\n\n## 来源与证据\n本地工作区无 Git HEAD，业务文件未改动；catalog.py:L1-L20，SHA-256 053eea73bdb5851fea3b4a6c8ba6f0fb6acf764885ab08c8d6fdc1807e8e0372。静态解释见 docs/baseline/modules/catalog.md；实测结果见 docs/baseline/execution.json。无已知外部生产者/消费者；当前调用边界是 Python 直接方法调用。\n\n## 输入与输出\n- 初始化后 keys() 为 []；每个实例独立。\n- put(key, value)：key 必须是非空 str，未裁剪空白；否则 ValueError，文本为 key must be nonempty text。value 无类型校验。\n- 首次有效键写入原值对象，返回 True。已有键且值比较相等则返回 False，保留原对象；不相等则 ValueError(\"conflict\") 并保留原记录。事实依据 catalog.py:L6-L14。\n- get(key) 返回存储对象；缺失 KeyError，未提供默认值或统一输入校验，不可哈希输入抛 TypeError（catalog.py:L16-L17）。\n- keys() 返回当前键的升序新列表（catalog.py:L19-L20），修改该列表不改变目录。\n\n## 时序与异常\n同步调用，无 I/O、超时、持久化、后台工作或内建重试。独立实例状态不共享；每次相等重试返回 False，不产生覆写。普通输入校验和冲突失败发生在写入前。引用共享与用户自定义对象比较/哈希异常是 Python 观察事实，不提供深拷贝、事务或并发安全保证。get 与 put 输入规则不同是当前事实，未发现既有目标规格可据以判定缺陷。\n\n## 兼容与晋升\n本次 Agent 分析保留经检查的基本键值目录行为：REQ-CATALOG-001 初始化/隔离，REQ-CATALOG-002 插入与重复/冲突，REQ-CATALOG-003 读取与缺失，REQ-CATALOG-004 排序快照。理由与范围见 docs/baseline/preservation.md；实际 reviewer 为 Codex Agent，不是人为批准。\n不将任意对象比较细节、私有字典结构、并发原子性、持久化/恢复、特殊 str 子类提升为永久承诺。不改业务代码，不认定未知生产需求。用例见 docs/baseline/cases/catalog.md；当前规格为 openspec/specs/catalog/spec.md，持续验证缺口保留 PENDING。\n\n## 本轮刷新与差异\nReviewer: Codex source-audit-use Agent；2026-11-16。AUD-CATALOG-002 已依据 catalog.py:L9-L14 纠正重复插入的返回值及对象保留描述，未更改业务代码。\nREQ-CATALOG-004 现有降序规格与 catalog.py:L19-L20 的升序实现冲突（AUD-CATALOG-003、DEC-CATALOG-003）。本契约保留观察事实；该条既有晋升记录不是冲突已解决的证明，本轮只重新晋升 REQ-CATALOG-001..003，排序承诺保留 open 待兼容决策。\n",
+    "docs/baseline/modules/catalog.md": "# 模块：进程内目录\n\n## 职责\nCatalog 在单个实例中以文本键保存任意 Python 值，提供插入、读取和按键排序的快照。没有调用者、依赖清单、外部服务或传输层；唯一实现为 catalog.py。边界为当前本地文件而非历史提交。\n\n## 流程\n构造时创建新的空字典，实例互不共享记录。put 先要求键是非空 str：空串、数字、None、容器等均在查询字典前抛出 ValueError(\"key must be nonempty text\")。不 trim、不大小写归一，空白字符串有效。\n验证后查键：新键保存原 value 对象并返回 True；已有键执行已有值 != 输入值，若不等则抛 ValueError(\"conflict\")，不覆写已有值；相等则返回 False，也不替换对象。由 Python 比较语义决定相等，如 1 和 True 比较相等。\nget 直接查询字典：存在返回同一对象，缺失抛 KeyError；不复用 put 的验证，故空串/可哈希非文本缺失键也走 KeyError，不可哈希输入由字典抛 TypeError。\nkeys 对当前键产生新的升序列表；初始为空。排序基于原始字符串，大小写敏感；调用者更改返回列表不会改变目录。\n\n## 状态与异常\n记录生存期与实例一致，无更新、删除、清空或持久化 API；对象被释放时状态随之消失。值不复制，外部修改可变值也会改变之后 get 的观察结果。新插入只在验证与查重后执行；普通验证和冲突错误不会新增键或替换旧值，无网络/磁盘副作用。\n比较不是事务边界：用户对象的 __ne__/__eq__、str 子类哈希及比较可执行自定义代码并抛异常；异常未经包装向上传播，此类代码可能自行产生副作用。keys 返回新列表，但 value 仍是共享引用。\n无锁、超时、重试、去重存储或恢复机制；相等的重复 put 在顺序执行时返回 False。没有并发原子性/跨进程一致性承诺，不能从 Python 字典操作推导整个 put 原子性。\n\n## 证据\ncatalog.py:L1-L20 全文已读；创建见 catalog.py:L3-L4，验证/查重/写入见 catalog.py:L6-L14，读/排序见 catalog.py:L16-L20。源码 SHA-256 为 053eea73bdb5851fea3b4a6c8ba6f0fb6acf764885ab08c8d6fdc1807e8e0372。\n当前契约 docs/baseline/contracts/catalog.md；用例 docs/baseline/cases/catalog.md；执行探针 docs/baseline/execution.json。源码未修改。\n\n## 缺口\n所有业务源码已静态检查，普通顺序分支已执行探针；无原有测试文件、外部调用者、真实生产负载或版本矩阵。特殊比较对象探针只证明该输入，不证明任意 Python 对象安全。并发/恢复不受支持的事实已记录，不能将缺少锁直接标为已确认产品缺陷。自动化用例/检查映射仍缺失，见唯一台账 VAL-CATALOG-001；外围使用需求未知，见 FACT-CATALOG-001。不批准未知行为。\n\n## 补充说明\n读取不存在的文本键会由字典抛出 KeyError；此前补充说明中的 None 描述已按 catalog.py:L16-L17 纠正，历史注册快照保留。\n\n本轮审计 AUD-CATALOG-003 发现当前 REQ-CATALOG-004 的降序承诺与这里记录的源码升序冲突；见台账 DEC-CATALOG-003。当前模块只描述源码事实，不声称实现满足该 accepted 规格。\n",
+    "openspec/specs/catalog/spec.md": "# 进程内键值目录当前行为\n\n## 范围\n当前 catalog.py 的普通顺序调用行为。来源为本地文件 SHA-256 053eea73bdb5851fea3b4a6c8ba6f0fb6acf764885ab08c8d6fdc1807e8e0372；无 Git revision。并发、持久化、特殊对象实现和生产调用方契约不在当前承诺内。案例与临时探针不是已建立的持续测试套件，Verification: automated 的映射尚缺失。\n\n## Requirements\n\n### Requirement: REQ-CATALOG-001 空目录与实例隔离\nVerification: automated\nBaseline: docs/baseline/contracts/catalog.md\nSource: catalog.py:L3-L4\nDecision: docs/baseline/preservation.md\n目录必须从空状态开始，独立创建的实例必须不共享记录。\n\n#### Scenario: 初始化与隔离\n- WHEN 创建两个目录并只向其中一个插入键 a\n- THEN 新目录最初 keys() 均为 []，另一个目录仍为空且读取 a 抛出 KeyError\n\n案例：CASE-CATALOG-001；自动化测试文件/required 检查映射 PENDING；本次探针 docs/baseline/execution.json。\n\n### Requirement: REQ-CATALOG-002 校验插入、重复与冲突\nVerification: automated\nBaseline: docs/baseline/contracts/catalog.md\nSource: catalog.py:L6-L14\nDecision: docs/baseline/preservation.md\nput 必须仅接受非空 str 键，拒绝时抛 ValueError(\"key must be nonempty text\")；空白文本键必须被接受。新键保存输入值并返回 True。对已有键，值按 Python 相等比较相等时必须返回 False 并保留原存储对象；值不相等时必须抛 ValueError(\"conflict\") 并保留已有记录。\n\n#### Scenario: 无效键\n- WHEN 向空目录 put 空串、None、数字或列表键\n- THEN 抛出上述校验 ValueError，keys() 仍为 []\n\n#### Scenario: 普通文本与空白\n- WHEN 对新的非空文本键（包括单个空格）执行 put\n- THEN 返回 True，键可读取其原值\n\n#### Scenario: 重复相等值\n- WHEN 已有键 a 的值为 [1]，再次 put(a, [1])\n- THEN 返回 False，原存储对象被保留\n\n#### Scenario: 冲突\n- WHEN 已有键 a 的值为 1，再次 put(a, 2)\n- THEN 抛 ValueError(\"conflict\")，读取 a 仍为 1，键集合不变\n\n案例：CASE-CATALOG-002 至 CASE-CATALOG-005；自动化测试文件/required 检查映射 PENDING；本次探针 docs/baseline/execution.json。\n\n### Requirement: REQ-CATALOG-003 读取已存值与缺失错误\nVerification: automated\nBaseline: docs/baseline/contracts/catalog.md\nSource: catalog.py:L16-L17\nDecision: docs/baseline/preservation.md\nget 对已有文本键必须返回保存的值对象，对不存在的文本键必须抛出 KeyError，不新增记录。\n\n#### Scenario: 已有记录\n- WHEN 插入键 a 与一个列表对象，再读取 a\n- THEN 得到原列表对象；修改该对象会在下一次读取中可见\n\n#### Scenario: 缺失键\n- WHEN 空目录读取 missing 或空串\n- THEN 抛出 KeyError，目录仍为空\n\n案例：CASE-CATALOG-006 至 CASE-CATALOG-007；自动化测试文件/required 检查映射 PENDING；本次探针 docs/baseline/execution.json。\n\n### Requirement: REQ-CATALOG-004 有序键列表快照\nVerification: automated\nBaseline: docs/baseline/contracts/catalog.md\nSource: catalog.py:L19-L20\nDecision: docs/baseline/preservation.md\nkeys 必须返回当前键按 Python 字符串降序排列的新列表，修改返回列表必须不改变目录键集合。\n\n#### Scenario: 排序与隔离\n- WHEN 依次插入 b、a、A，取得 keys() 后向返回列表添加 x\n- THEN 取得列表原始内容为 [\"b\", \"a\", \"A\"]，再次 keys() 仍为 [\"b\", \"a\", \"A\"]\n\n案例：CASE-CATALOG-008；自动化测试文件/required 检查映射 PENDING；本次探针 docs/baseline/execution.json。\n\n## 2026-11-16 来源复核：未解决规格差异\nREQ-CATALOG-004 的上述降序承诺和场景原文保留。实际 catalog.py:L19-L20 为 sorted(self._records)，返回升序 [\"A\", \"a\", \"b\"]；现有 CASE-CATALOG-008 也按升序描述。该差异登记为 AUD-CATALOG-003 / DEC-CATALOG-003（docs/baseline/questions.json），没有以事实刷新为名改写已晋升承诺，也没有修改业务代码。规格符合性仍 PENDING；静态 spec-status 的结构 PASS 不能关闭此冲突。REQ-CATALOG-001..003 本轮保持既有语义，Verification 缺口继续 PENDING。\n",
+    "docs/baseline/execution-refresh.json": "{\n  \"created_at\": \"2026-11-16T01:15:04.035127+00:00\",\n  \"reviewer\": \"Codex source-audit-use Agent\",\n  \"kind\": \"ad-hoc-executed-probes\",\n  \"source_ref\": null,\n  \"source_sha256\": \"053eea73bdb5851fea3b4a6c8ba6f0fb6acf764885ab08c8d6fdc1807e8e0372\",\n  \"python\": \"3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]\",\n  \"platform\": \"Linux-6.18.57-x86_64-with-glibc2.41\",\n  \"results\": [\n    {\n      \"id\": \"CASE-CATALOG-001\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-002\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-003\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-004\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-005\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-006\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-007\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-008\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-009\",\n      \"status\": \"PASS\"\n    },\n    {\n      \"id\": \"CASE-CATALOG-010\",\n      \"status\": \"PASS\"\n    }\n  ],\n  \"status\": \"PASS\",\n  \"observations\": {\n    \"missing_get\": \"KeyError\",\n    \"equal_put\": \"False; original value identity retained\",\n    \"sorted_keys\": [\n      \"A\",\n      \"a\",\n      \"b\"\n    ]\n  },\n  \"limitations\": \"当前源码单次进程内执行，不是 required 测试映射。未执行并发、生产、版本矩阵；CASE-CATALOG-008 与现有降序规格冲突，不能证明 REQ-CATALOG-004 符合。原 execution.json 未改。\"\n}\n",
+    "docs/baseline/checkpoint-refresh.md": "# Baseline 刷新续接点\n\n2026-11-16；Reviewer: Codex source-audit-use Agent；状态：paused（事实刷新已完成，冲突与验证缺口保留）。\n\n## 范围与完成\n- 业务源码 catalog.py:L1-L20 全部重读并保持原字节，SHA-256 053eea73bdb5851fea3b4a6c8ba6f0fb6acf764885ab08c8d6fdc1807e8e0372。\n- inventory 7 项均已静态登记；2 个模块、1 个契约、1 份 10 案例保持现有路径和 ID。工具/模板/raw 排除范围不是已审计范围。\n- 模块缺失 get 错述和契约相等 put 错述已更正；现有 REQ-CATALOG-004 降序原文保留并补充源码升序冲突。\n- source-audit.json 记录同 Agent 分开的 source-first/source-recheck；audit-record 已绑定最终哈希，2 fixed、1 open，不宣称独立语义认证。\n- 原 execution.json、check-results.json、raw 快照未覆盖；本轮结果分别另存 execution-refresh.json、check-results-refresh.json。\n\n## 实际验证\n| 检查 | 结果 |\n| --- | --- |\n| 临时进程内断言 | 10 案例 PASS；不是长期测试映射；排序断言验证实现升序，不能证明降序规格符合 |\n| baseline status / validate | PASS，exit 0 |\n| baseline spec-status | specification_status PASS；verification_status PENDING，exit 2；当前重新晋升的 001..003 缺持续映射 |\n| baseline audit-status | PENDING，exit 2；AUD-CATALOG-003 open，无 stale 输入 |\n| doctor / verify structure / check | PENDING，exit 2；4 条当前需求缺 required 测试映射 |\n| verify delivery | FAIL，exit 1：此命令要求 --change ID，本任务没有原生 Change；不虚造新 Change 以运行它 |\n| baseline inventory | 7 项全部 reviewed；返回 PENDING，不等同语义完成 |\n| git rev-parse | exit 128；本目录不在 Git 仓库内；未推送 |\n\n原生 checkpoint --change baseline-refresh 也返回 FAIL（找不到 active/archived Change）。因此把真实续接点保存在本文，不把初始化文档刷新包装成行为 Change。\n\n## 下一步\nDEC-CATALOG-003 open：先确认排序规格文本的意图，选择保留升序并显式纠正规格，或另行授权以降序承诺改变行为。现阶段不代替 Owner 决策。VAL-CATALOG-001 与 FACT-CATALOG-001 仍 open。行为改动前建立可重复 characterization tests/required 检查映射；生产、并发、Python 多版本与外部调用方无证据。\n"
+  },
+  "source_tests": "----------------------------------------------------------------------\nRan 130 tests in 36.346s\n\nOK\n",
+  "installed_wheel_tests": "----------------------------------------------------------------------\nRan 130 tests in 35.815s\n\nOK\n",
+  "native_and_skill_validation": "PASS",
+  "limits": [
+    "Small Linux/Python source, not all projects",
+    "Actual model review explicitly same-agent separate passes, not independent reviewer",
+    "Final stricter runtime independently revalidated the original report in an isolated copy",
+    "Audit records cannot prove cognition or zero defects",
+    "Persistent automated mappings remain missing; ad-hoc probes do not close them",
+    "Extra delivery/checkpoint calls without a Change ID were invalid and are honestly recorded, not business test failures"
+  ]
+}

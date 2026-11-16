@@ -37,7 +37,17 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
    Promote selected promises only after that compatibility record and current Spec exist: `ark baseline promote --document <path> --requirements <IDs> --decision <artifact>
    --reviewer <identity>`. Do not promote every implementation detail or defect. Retire
    obsolete knowledge explicitly with --decision; retain immutable raw snapshots.
-8. Run `ark baseline status`, `ark baseline validate` and `ark baseline spec-status`
+8. After drafting, perform a NEW source-first semantic audit using `references/source-audit.md`.
+   Reopen actual source/configuration/callers and build a coverage checklist from code, not
+   from the generated documents. Check both source-to-artifact omissions and artifact-to-source
+   truth, including errors, boundaries, state and side effects. Record findings before fixing.
+   Correct generated claims or give evidence-backed dispositions; preserve accepted conflicts.
+   Then reopen source again for a separate post-fix pass and check affected/cross-cutting flows.
+   Default to these two real passes, not two runs of a structural validator. Use a fresh reviewer
+   when available; otherwise use an explicitly same-agent separate pass. Never claim independence
+   if unavailable. Keep unresolved/recurrent issues PENDING and save a checkpoint; no infinite loop.
+   Record the actual report with `ark baseline audit-record`, then run `ark baseline audit-status`.
+9. Run `ark baseline status`, `ark baseline validate` and `ark baseline spec-status`
    (use --scope <source/document paths> for an explicitly limited task). Execute real project checks.
    Report specification creation separately from verification: missing tests/check mappings
    keep verification PENDING, never relabel them manual merely to pass. A planned or empty

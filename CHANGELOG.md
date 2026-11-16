@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.3 — 2026-11-16
+
+- Require a new source-first semantic audit after Baseline/spec generation, followed by fixes/dispositions and a separate post-fix source recheck.
+- Record actual reviewer mode, source/artifact coverage and findings without implying independent review or semantic certification.
+- Add audit-record/audit-status for immutable evidence, missing/stale/open status and no dropped first-pass findings.
+- Keep accepted spec conflicts explicit and avoid unbounded audit loops.
+
 ## 0.2.2 — 2026-11-16
 
 - Complete baseline-repo by default through source-backed current behavior specs, without an extra prompt.
