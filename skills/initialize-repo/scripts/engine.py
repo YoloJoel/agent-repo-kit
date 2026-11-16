@@ -24,7 +24,7 @@ from datetime import date, datetime, timezone
 import uuid
 import xml.etree.ElementTree as ET
 
-VERSION = "0.2.4"
+VERSION = "0.2.5"
 ASSETS = Path(__file__).parent / "assets"
 POLICY = ".ai/policy.json"
 MANIFEST = ".ai/manifest.json"
@@ -418,9 +418,12 @@ def project_entry(root, p, profile, existing=""):
         for old, new in (("Asset | Location", "资产 | 位置"), ("Current behavior", "当前规格"), ("Changes", "变更"), ("Decisions", "决策"), ("Source-backed knowledge", "源码基线"), ("Engineering standard", "工程规范"), ("Project context", "项目上下文"), ("Checks", "检查入口")):
             text = text.replace("| " + old, "| " + new)
     outside = existing
+    generated_project_entry = False
     if START in existing and END in existing:
+        managed = existing[existing.index(START):existing.index(END)]
+        generated_project_entry = bool(re.search(r"(?m)^## 1\. (?:Project and stack|项目定位与技术栈)$", managed))
         outside = existing[:existing.index(START)] + existing[existing.index(END) + len(END):]
-    if outside.strip():
+    if outside.strip() and not generated_project_entry:
         # Existing human/native entry stays authoritative. Do not append a second
         # project outline or tool manual underneath it.
         text = f"## Engineering integration\n\nUse the user's language. Preserve the project rules above.\nRead `{standard}` and `{context}`; paths/checks are mapped in `.ai/policy.json`.\nLocal check: `python hack/ai/ark.py check`. Initialization is not onboarding completion.\n"

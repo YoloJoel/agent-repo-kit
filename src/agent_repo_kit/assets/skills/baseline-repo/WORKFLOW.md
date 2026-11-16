@@ -5,6 +5,11 @@ description: Establish or refresh source-grounded repository knowledge, contract
 
 # Explain current behavior with evidence
 
+A bare invocation covers the whole repository. Select the first capability/vertical slice
+and subsequent batches yourself; do not ask the user to choose ordering or approve normal
+continuation. Explicit user limits take priority. Checkpoints preserve progress while work
+continues; they do not shrink the completion scope or end the task after one slice.
+
 Use the supplied initialize-repo helper if project rules/runtime are absent. Run the target's
 `python hack/ai/ark.py` for command examples written as `ark`. No package or global CLI is needed.
 
@@ -12,7 +17,8 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
    contracts, decisions and tests as navigation; verify important claims against actual
    source/configuration/callers. Do not silently treat design targets as current facts.
 2. Run `ark baseline inventory`. Establish included modules, generated/vendor exclusions,
-   unavailable external sources and actual revision/workspace. Inventory is not understanding. Read `references/artifact-quality.md` before selecting scope.
+   unavailable external sources and actual revision/workspace. Inventory is not understanding. Read `references/artifact-quality.md` before planning batches. Keep the whole repository
+   inventory/capability map as the denominator unless the user explicitly limited scope.
    Derive a complete business/supporting capability map from actual production/build/config
    sources, not from already generated specs. Record it with baseline coverage-record;
    uninspected capabilities remain pending. Do not present lifecycle-only or a partial module
@@ -67,7 +73,9 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
    scope and pending capabilities even if the selected specs validate. A few cross-cutting
    capabilities or valid links cannot establish full project coverage.
    Report source/module/contract/case coverage separately from executed tests. Explain
-   uninspected, uncertain and unavailable ranges. Save progress for large scopes.
+   uninspected, uncertain and unavailable ranges. Save progress for large scopes and
+   continue the next available pending batch automatically. Genuine blockers remain PENDING;
+   work on independent unblocked modules. Do not stop solely because a batch finished.
 
 During later development, refresh affected knowledge only. New repositories acquire existing
 behavior as code lands; later changes also need evidence and regression safeguards. Native

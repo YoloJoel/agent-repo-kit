@@ -349,3 +349,50 @@ counts, format PASS, compilation or a historical initialization snapshot.
 - WHEN a historical setup snapshot says PENDING and later compile checks passed
 - THEN reports distinguish their phase/time/scope and current quality is recalculated
 - AND actual business-test execution remains a separate reported outcome
+
+#### Scenario: Add human notes around a generated project entrance
+- GIVEN an existing generated project-specific entrance with source-backed facts
+- WHEN human notes are added outside its intact managed block and the entry is refreshed
+- THEN both the human notes and seven project sections are preserved
+- AND a later initialization keeps that entrance rather than reducing it to generic integration
+
+### Requirement: Automatic whole-repository onboarding (REQ-ONBOARDING-DEFAULTS-001)
+
+Verification: manual
+
+A bare initialize-repo or baseline-repo invocation SHALL target all first-party existing
+behavior in the repository, including relevant supporting configuration and build inputs.
+The executing Agent SHALL choose and continue batches without asking the user to select a
+vertical slice or approve routine continuation. Checkpoints SHALL preserve remaining scope;
+completion of one batch SHALL NOT imply whole-repository completion. Explicit user limits
+SHALL take priority; real blockers SHALL remain visible while independent work continues.
+
+Before writing specifications, the Agent SHALL resolve existing policy and current-spec
+authority from actual repository rules/content. It SHALL preserve authoritative mappings and
+IDs, otherwise use the OpenSpec layout. It SHALL NOT ask a routine doc/specs-versus-OpenSpec
+question or treat target designs as current promises. It SHALL automatically initialize missing
+native setup with a compatible installed CLI's supported noninteractive options when doing so
+preserves existing human/mapped assets. Unavailable/unsafe native setup SHALL be NOT_RUN and
+SHALL NOT prevent source-backed file-based specification authoring or trigger package installation.
+
+#### Scenario: Several business capabilities
+- WHEN a bare invocation starts in an existing repository with several business capabilities
+- THEN the Agent selects batch order and continues pending batches automatically
+- AND retains the whole capability map as completion scope and reports genuine remaining gaps
+
+#### Scenario: Current specification authority already exists
+- GIVEN repository rules identify doc/specs as effective current specifications
+- WHEN initialization runs
+- THEN those paths and IDs are reused without migration or a competing OpenSpec spec tree
+
+#### Scenario: Only target designs exist and native CLI is unavailable
+- GIVEN doc/specs contains target designs and no current-spec authority is established
+- WHEN bare initialization runs without an installed OpenSpec CLI
+- THEN source-backed current specs are authored at openspec/specs and designs are preserved
+- AND native initialization/validation is reported NOT_RUN separately from actual spec results
+
+#### Scenario: Compatible native tool exists
+- GIVEN a locally installed compatible CLI and missing native configuration
+- WHEN initialization can run noninteractively without overwriting human or mapped assets
+- THEN the Agent inspects installed help/version and performs native setup automatically
+- AND reports actual native results without asking for a routine tooling choice
