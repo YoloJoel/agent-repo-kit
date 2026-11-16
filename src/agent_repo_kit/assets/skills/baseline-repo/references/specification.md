@@ -8,6 +8,9 @@ Honor an explicit analysis-only or limited module scope and report the omitted s
    (default openspec/specs/<capability>/spec.md). Do not create empty directories or
    assume OpenSpec CLI is installed. Native commands require its own initialization;
    use it when available/requested, preserve its files, and report unavailable validation.
+Read `artifact-quality.md`: specs must be independently understandable and testable;
+Baseline/Source are provenance, not a replacement for normative input/rule/output details.
+
 2. Extract public observable behavior from traced source/config/callers and tests:
    normal results, validation/errors, state/side effects, ordering/idempotency, recovery
    and compatibility where actually present. Keep algorithms and class names in Baseline

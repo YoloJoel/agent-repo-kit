@@ -1,0 +1,5 @@
+- [x] Render project-specific entrance with bounded inventory and preserved human rules.
+- [x] Add whole-scope capability/quality state and standalone-spec criteria.
+- [x] Add deterministic counterexamples and completion/recovery cases.
+- [x] Complete source/wheel/native checks and realistic content qualification.
+- [ ] Publish observed evidence and pass final-head checks.

@@ -12,7 +12,11 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
    contracts, decisions and tests as navigation; verify important claims against actual
    source/configuration/callers. Do not silently treat design targets as current facts.
 2. Run `ark baseline inventory`. Establish included modules, generated/vendor exclusions,
-   unavailable external sources and actual revision/workspace. Inventory is not understanding.
+   unavailable external sources and actual revision/workspace. Inventory is not understanding. Read `references/artifact-quality.md` before selecting scope.
+   Derive a complete business/supporting capability map from actual production/build/config
+   sources, not from already generated specs. Record it with baseline coverage-record;
+   uninspected capabilities remain pending. Do not present lifecycle-only or a partial module
+   pass as whole-repository completion. Preserve explicit exclusions and their reasons.
 3. Read `references/analysis.md`. Trace full normal/error paths, branch conditions, state,
    side effects, concurrency/recovery and compatibility. Explain what happens and why;
    function signatures alone are insufficient. Preserve useful existing prose and IDs.
@@ -47,12 +51,21 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
    when available; otherwise use an explicitly same-agent separate pass. Never claim independence
    if unavailable. Keep unresolved/recurrent issues PENDING and save a checkpoint; no infinite loop.
    Record the actual report with `ark baseline audit-record`, then run `ark baseline audit-status`.
-9. Run `ark baseline status`, `ark baseline validate` and `ark baseline spec-status`
+9. Recheck project-specific AGENTS facts/commands and use initialize-repo project-entry guidance
+   with `entry refresh` if necessary. Explicitly audit the three quality topics from
+   references/artifact-quality.md: project-entry, capability-coverage, spec-self-containment.
+   Include AGENTS, .ai/project-entry.json, the capability map, module/contract/case artifacts
+   and current specs in the actual source-audit scope. After these edits refresh audit records;
+   do not use an old audit on changed artifacts.
+10. Run `ark baseline status`, `ark baseline validate` and `ark baseline spec-status`
    (use --scope <source/document paths> for an explicitly limited task). Execute real project checks.
    Report specification creation separately from verification: missing tests/check mappings
    keep verification PENDING, never relabel them manual merely to pass. A planned or empty
    specs directory is not a completed baseline. Respect an explicit analysis-only user scope
    and report that specification is not performed rather than claiming full onboarding.
+   Run `ark baseline coverage-status` and `ark onboarding-status`. Report uncovered production
+   scope and pending capabilities even if the selected specs validate. A few cross-cutting
+   capabilities or valid links cannot establish full project coverage.
    Report source/module/contract/case coverage separately from executed tests. Explain
    uninspected, uncertain and unavailable ranges. Save progress for large scopes.
 
