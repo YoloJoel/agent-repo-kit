@@ -2,12 +2,21 @@
 
 Do this during ordinary baseline-repo onboarding without asking for an extra prompt.
 Honor an explicit analysis-only or limited module scope and report the omitted scope.
+Otherwise the scope is the whole repository, with automatically ordered batches; checkpoints
+are recoverable progress, not a reason to ask for continuation or deliver one slice as complete.
 
 1. Read policy.paths.specs/changes and existing requirements before writing. For an
    ungoverned repository, create real capability spec files at the mapped specs path
    (default openspec/specs/<capability>/spec.md). Do not create empty directories or
-   assume OpenSpec CLI is installed. Native commands require its own initialization;
-   use it when available/requested, preserve its files, and report unavailable validation.
+   assume OpenSpec CLI is installed. Preserve an existing authoritative mapping (including
+   doc/specs); do not ask the user to choose a directory. Without established current specs,
+   use the default OpenSpec layout. Target design documents alone do not establish current
+   authority. With a compatible installed CLI, inspect its --help/version and initialize missing
+   native setup noninteractively for the current runtime when it preserves mapped assets.
+   Preserve existing native config/rules; do not overwrite human instructions or introduce a
+   second spec tree. If native setup is unavailable/unsafe, record NOT_RUN and continue file-based
+   authoring. Never auto-install packages just to probe availability. Native CLI setup and actual
+   specs are separate results; neither a directory nor an unavailable CLI ends the baseline.
 Read `artifact-quality.md`: specs must be independently understandable and testable;
 Baseline/Source are provenance, not a replacement for normative input/rule/output details.
 

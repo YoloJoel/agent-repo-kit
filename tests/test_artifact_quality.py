@@ -48,6 +48,25 @@ class ArtifactQualityTests(RepositoryCase):
         self.write('app.py', 'def lookup(values, key):\n    return values.get(key)\n')
         self.assertEqual(kit.entry_status(self.root, p)['status'], 'PENDING')
 
+    def test_outside_notes_do_not_erase_an_existing_generated_project_entrance(self):
+        p = self.prepare()
+        self.write('.ai/project-entry.json', kit.dump(self.entry_data()))
+        kit.entry_refresh(self.root, p)
+        path = self.root / 'AGENTS.md'
+        before = path.read_bytes()
+        prefix = b'# Local note\r\nKeep the local command guidance.\r\n'
+        suffix = b'\nUser-maintained release note.\n'
+        path.write_bytes(prefix + before + suffix)
+        self.assertEqual(kit.entry_refresh(self.root, p)['status'], 'PASS')
+        refreshed = path.read_bytes()
+        self.assertTrue(refreshed.startswith(prefix))
+        self.assertTrue(refreshed.endswith(suffix))
+        self.assertIn('整数读取服务'.encode('utf-8'), refreshed)
+        self.assertIn('## 7. 规则优先级'.encode('utf-8'), refreshed)
+        self.assertNotIn('## 工程工具接入'.encode('utf-8'), refreshed)
+        kit.init_repo(self.root)
+        self.assertEqual(path.read_bytes(), refreshed)
+
     def test_human_native_entrance_is_preserved_without_a_second_project_outline(self):
         human = b'# Project instructions\r\n## Project scope\r\nKeep human decisions.  \r\n'
         (self.root / 'AGENTS.md').write_bytes(human)

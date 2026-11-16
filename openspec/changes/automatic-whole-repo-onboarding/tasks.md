@@ -1,0 +1,6 @@
+- [x] Define whole-repository default and automatic batch continuation in both workflows.
+- [x] Define automatic authority/path/native-tool setup with explicit unavailable results.
+- [x] Reproduce/fix outside-note entrance loss with a failing-to-passing regression.
+- [x] Regenerate native distribution and update usage guide and normative specification.
+- [x] Run source/wheel/native checks and inspect fresh bare-invocation qualifications.
+- [ ] Publish evidence and pass final-head CI before merging.

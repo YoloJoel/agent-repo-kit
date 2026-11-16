@@ -1,0 +1,787 @@
+{
+  "kit_version": "0.2.5",
+  "task": "initialize-repo (bare invocation, fresh targets; no prepared expected solution or module scope supplied)",
+  "final_runtime_sha256": "2c1f8ba0ada3ff46bd43a3356af0dcf99af8570c7600f9a1bd1170b73746ea31",
+  "qualification_model_runtime_sha256": "92480dbb6eb3387388587e937bd429d4343f9b64cb50b5b662b3156f8f8db23a",
+  "kernel_difference": "Full model onboarding used the earlier 0.2.5 kernel. Final kernel additionally preserves generated entrance layout after outside notes; this was reproduced failing before fix and passing in final source/wheel tests. Parent queried actual final artifacts using the final installed kernel.",
+  "checks": {
+    "source": "141 tests PASS",
+    "actual_built_installed_wheel": "141 tests PASS",
+    "native_resources": "build_native.py --check PASS",
+    "skill_format": "both PASS",
+    "entry_regression": "1 failing regression before fix; 11 artifact-quality tests PASS after fix"
+  },
+  "cases": [
+    {
+      "fixture": "onboarding-defaults-eval",
+      "source": "tkem/cachetools source-only public revision 1ce79efa552d1bdda70d144d401ef9105d999184",
+      "spec_root": "openspec/specs",
+      "change_root": "openspec/changes",
+      "parent_actual_test": {
+        "command": "PYTHONPATH=src python -m unittest discover -s tests -t .",
+        "count": 416,
+        "status": "PASS"
+      },
+      "model_runtime_sha256": "92480dbb6eb3387388587e937bd429d4343f9b64cb50b5b662b3156f8f8db23a",
+      "final_installed_runtime_quality": {
+        "entry status": {
+          "exit_code": 2,
+          "result": {
+            "findings": [
+              {
+                "code": "project-entry-gaps",
+                "gaps": [
+                  "Build NOT_RUN: README.rst declared but absent",
+                  "Static lint/type and Python-version matrix NOT_RUN",
+                  "Native OpenSpec setup/validation NOT_RUN: CLI absent",
+                  "Codex live Skill/hook loading and trust NOT_VERIFIED"
+                ],
+                "message": "Project-specific facts remain unresolved.",
+                "status": "PENDING"
+              }
+            ],
+            "meaning": "Declared project-specific entry review and currency, not semantic certification.",
+            "status": "PENDING"
+          }
+        },
+        "baseline coverage-status": {
+          "exit_code": 0,
+          "result": {
+            "capabilities": [
+              {
+                "id": "mapping",
+                "kind": "business",
+                "requirements": [
+                  "REQ-MAPPING-001"
+                ],
+                "source_files": 1,
+                "status": "specified"
+              },
+              {
+                "id": "eviction",
+                "kind": "business",
+                "requirements": [
+                  "REQ-EVICTION-001"
+                ],
+                "source_files": 1,
+                "status": "specified"
+              },
+              {
+                "id": "expiration",
+                "kind": "business",
+                "requirements": [
+                  "REQ-EXPIRATION-001"
+                ],
+                "source_files": 1,
+                "status": "specified"
+              },
+              {
+                "id": "keys",
+                "kind": "business",
+                "requirements": [
+                  "REQ-KEYS-001"
+                ],
+                "source_files": 1,
+                "status": "specified"
+              },
+              {
+                "id": "memoization",
+                "kind": "business",
+                "requirements": [
+                  "REQ-MEMOIZATION-001"
+                ],
+                "source_files": 3,
+                "status": "specified"
+              },
+              {
+                "id": "methods",
+                "kind": "business",
+                "requirements": [
+                  "REQ-METHODS-001"
+                ],
+                "source_files": 4,
+                "status": "specified"
+              },
+              {
+                "id": "convenience",
+                "kind": "business",
+                "requirements": [
+                  "REQ-CONVENIENCE-001"
+                ],
+                "source_files": 1,
+                "status": "specified"
+              },
+              {
+                "id": "build-typing-support",
+                "kind": "supporting",
+                "requirements": [],
+                "source_files": 6,
+                "status": "excluded"
+              }
+            ],
+            "findings": [],
+            "mapped_files": 13,
+            "meaning": "Declared source/capability/current-requirement coverage; counts and mappings do not prove semantic completeness or assertion quality.",
+            "production_files": 13,
+            "status": "PASS",
+            "unmapped_files": 0
+          }
+        },
+        "baseline spec-status": {
+          "exit_code": 0,
+          "result": {
+            "contracts": [
+              "docs/baseline/contracts/convenience.md",
+              "docs/baseline/contracts/eviction.md",
+              "docs/baseline/contracts/expiration.md",
+              "docs/baseline/contracts/keys.md",
+              "docs/baseline/contracts/mapping.md",
+              "docs/baseline/contracts/memoization.md",
+              "docs/baseline/contracts/methods.md"
+            ],
+            "findings": [],
+            "meaning": "Declared contract/spec links and verification mappings only; not semantic completeness, owner approval or executed business tests.",
+            "requirements": [
+              "REQ-CONVENIENCE-001",
+              "REQ-EVICTION-001",
+              "REQ-EXPIRATION-001",
+              "REQ-KEYS-001",
+              "REQ-MAPPING-001",
+              "REQ-MEMOIZATION-001",
+              "REQ-METHODS-001"
+            ],
+            "specification_status": "PASS",
+            "status": "PASS",
+            "verification_status": "PASS"
+          }
+        },
+        "baseline audit-status": {
+          "exit_code": 0,
+          "result": {
+            "findings": [],
+            "meaning": "Checks declared source-first/recheck coverage, dispositions and freshness; cannot prove rereading occurred or certify semantic correctness/zero defects.",
+            "reports": [
+              {
+                "artifacts": [
+                  ".ai/project-entry.json",
+                  "AGENTS.md",
+                  "docs/baseline/capabilities.json",
+                  "docs/baseline/cases/convenience.md",
+                  "docs/baseline/cases/eviction.md",
+                  "docs/baseline/cases/expiration.md",
+                  "docs/baseline/cases/keys.md",
+                  "docs/baseline/cases/mapping.md",
+                  "docs/baseline/cases/memoization.md",
+                  "docs/baseline/cases/methods.md",
+                  "docs/baseline/contracts/convenience.md",
+                  "docs/baseline/contracts/eviction.md",
+                  "docs/baseline/contracts/expiration.md",
+                  "docs/baseline/contracts/keys.md",
+                  "docs/baseline/contracts/mapping.md",
+                  "docs/baseline/contracts/memoization.md",
+                  "docs/baseline/contracts/methods.md",
+                  "docs/baseline/modules/library.md",
+                  "docs/baseline/modules/support.md",
+                  "docs/baseline/preservation.md",
+                  "docs/project-context.md",
+                  "openspec/specs/convenience/spec.md",
+                  "openspec/specs/eviction/spec.md",
+                  "openspec/specs/expiration/spec.md",
+                  "openspec/specs/keys/spec.md",
+                  "openspec/specs/mapping/spec.md",
+                  "openspec/specs/memoization/spec.md",
+                  "openspec/specs/methods/spec.md"
+                ],
+                "files": [
+                  ".ai/policy.json",
+                  ".gitignore",
+                  "LICENSE",
+                  "pyproject.toml",
+                  "src/cachetools/__init__.py",
+                  "src/cachetools/__init__.pyi",
+                  "src/cachetools/_cached.py",
+                  "src/cachetools/_cachedmethod.py",
+                  "src/cachetools/_decorator.py",
+                  "src/cachetools/_descriptor.py",
+                  "src/cachetools/func.py",
+                  "src/cachetools/func.pyi",
+                  "src/cachetools/keys.py",
+                  "src/cachetools/keys.pyi",
+                  "src/cachetools/py.typed",
+                  "tests/test_cachedmethod.py",
+                  "tests/test_fifo.py",
+                  "tests/test_keys.py",
+                  "tests/test_lfu.py",
+                  "tests/test_rr.py",
+                  "tests/test_threading.py",
+                  "tests/test_ttl.py"
+                ],
+                "inputs": {
+                  ".ai/policy.json": "116ee97e2723d1e10deba68d5e4b9bf27f7a5058d4e60284c553bcfcd407a033",
+                  ".ai/project-entry.json": "07997542000a628859ee0972c4b200304a15a02bfd7d1caa4813b92f1ca0d288",
+                  ".gitignore": "13e78b172a43adbbb328e4498f43c7cc161ca79b441359ac3328742a483609e1",
+                  "AGENTS.md": "e338a25609ead6f4f58500e7574f78e4b84069de922058bd66811f845a1458f4",
+                  "LICENSE": "28c000b52b0ee27138a68ef778227e4057046e86b65f62f1cacb99b0cc49e0d2",
+                  "docs/baseline/capabilities.json": "f78074e0e8e4ec9134180e3d63bce548750f6be972da1f74844a41bedc8fbad9",
+                  "docs/baseline/cases/convenience.md": "d46463492666cc3ff9f3fa176700ebbdca3e5706ef5b2111263caadb3705619b",
+                  "docs/baseline/cases/eviction.md": "ef26b7a80b80b7a5113d1e6c1a704d1e310d08040a9490ae9a01f28de5d6d9b8",
+                  "docs/baseline/cases/expiration.md": "14914b2eeb167db3af51f69f67f0b83d88fc7eda4f1c337c6df710d3a6350f5a",
+                  "docs/baseline/cases/keys.md": "203c0d9b5d71a3febe4a7a356ed7d7b9fd6322a4937985cfe3e7c1b6c8f3e661",
+                  "docs/baseline/cases/mapping.md": "8d80e769c5e39f855fbd85deedda8b51c3d02787aef699af89d8009b508b03dc",
+                  "docs/baseline/cases/memoization.md": "34088f6e31d1fede5b33ab334344d880d9fec2c400f3b99bb6dd2a679ab52bf6",
+                  "docs/baseline/cases/methods.md": "9845506b94bf7cffbabf9ee3e78e6aa44dc575dcab4aacc44da18d7efd213aa2",
+                  "docs/baseline/contracts/convenience.md": "a1d68198f6cf7709d2e859f064717dc2d4f218eab7deab069e938fc578635633",
+                  "docs/baseline/contracts/eviction.md": "80f824f8f847973bcfdbfb31c625ad3cab722faf31315da363a1ab2922150274",
+                  "docs/baseline/contracts/expiration.md": "0df080b7133a85a9f26c570b262a666c6d662addef8648371a0d12452795c3ff",
+                  "docs/baseline/contracts/keys.md": "ded4af8620cefaf6310c2b4172f163515d0a985d00c669880a73cf4251e69ae2",
+                  "docs/baseline/contracts/mapping.md": "b60bfdc34fb034082ca424f43e0282a781473180b4ae54705f941b8c7636c46c",
+                  "docs/baseline/contracts/memoization.md": "334330d9284a9061e822289f3c529613c9c3fb8369a8a03b706d94ae8d407ae9",
+                  "docs/baseline/contracts/methods.md": "df0bc77016b4c75a9c5904985d131aeeaaf01d0faaecf16b2efdc089bd9b893d",
+                  "docs/baseline/modules/library.md": "f15a5e5230177f2ec8b06e0a5e7515001bf087f83b676f5c25640b2ce30d6008",
+                  "docs/baseline/modules/support.md": "c482ca72af346b0529712f7a8a51c221c8d40db5c70d2a92ae8f00342b26da93",
+                  "docs/baseline/preservation.md": "ac17f714f21cafd3908ab2a58a61dd02c4740972ebd7388657a3d034a740007d",
+                  "docs/baseline/source-audit.json": "4c4df728f7c3b775acb204cf4ecd7713a224f2aed51eed6ad6f5c93c439e93a3",
+                  "docs/project-context.md": "7ebc70a44657430aea2183f0da4a891966c78abb6bc37820fd84ea939ae2a62c",
+                  "openspec/specs/convenience/spec.md": "bbf393a8ad7b370ef4b753a893d91f0805dae943cdc7b1438b27062fdc3ae9fe",
+                  "openspec/specs/eviction/spec.md": "81ddbf544865deaae8767f75b9879914c4f7ebe164eb4c2b07360f80d517c327",
+                  "openspec/specs/expiration/spec.md": "b9d7fdeb0de236e63b7e5fa656cb9f2d721f68e9f2b664bfecf07f19544e86f1",
+                  "openspec/specs/keys/spec.md": "15e9fc9c9396a636517c837448156ca3ba7152616822b0807b525a1e910d53ab",
+                  "openspec/specs/mapping/spec.md": "18df5a627b0bfdc5306c076c2940c2ca49348e16466cd54f57d51ed064d12cf2",
+                  "openspec/specs/memoization/spec.md": "0302a121821fff63485590d089582648c5ed8c1e08fb775a21e0b3225c10e3c6",
+                  "openspec/specs/methods/spec.md": "80680d1e6fcd5036a313b39803a7f67fb8240c35be6f5a04372cbc468387872b",
+                  "pyproject.toml": "4a274e158640847c29365da6791fafed1c553d72fbc221572d834ca3753291b7",
+                  "src/cachetools/__init__.py": "4464e8d8d635e9bb115624f41b1b63794d766eee5215375aeee1adb7ab7e4626",
+                  "src/cachetools/__init__.pyi": "62991313784fdb5f156a964988df908fd86bbfa45dd703b5df576e9072be11b5",
+                  "src/cachetools/_cached.py": "6383295e33b69737d46cb30e9dd06d3e8cb7df851d0b0e2cf9b0d6d990feeaa9",
+                  "src/cachetools/_cachedmethod.py": "f08ad3d9fa6f91a0a11172573825f460b323e47f9518838698ca0546061e1494",
+                  "src/cachetools/_decorator.py": "8209ace6b20016327fd57aca97544d7ba774c9a0c3a62fc5c70aa219b2172962",
+                  "src/cachetools/_descriptor.py": "0169b07f1f6e75fe637822740dafb1009bf38f0d5e723f12aa278d949e2238f9",
+                  "src/cachetools/func.py": "87724e4fc82303fd5172cc9fd03c7aaf6a767c6c477f3cb74a245fc45ebf7816",
+                  "src/cachetools/func.pyi": "f2ee087107e5d8a46f204828892751cc1c01aeccb2976519974f4ece8d747df2",
+                  "src/cachetools/keys.py": "335731b45dcff3a4569e7a490818636266498933d414994d6f39253d52274e7b",
+                  "src/cachetools/keys.pyi": "594a1166a9c399a375b6095ee1b38408f44b7d7c8b7b57685caab85b4598a24c",
+                  "src/cachetools/py.typed": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                  "tests/test_cachedmethod.py": "ecbe35f45ab9b93c1a78cbbf6dbdd95643e4f20e392a64331aa06c6687da07b8",
+                  "tests/test_fifo.py": "c6134627b4d9daab20e67b27fe2ff8d7e225116ae46d6a0e79b2c9b620d25941",
+                  "tests/test_keys.py": "e4e7855553ec09b8fd4864f57b3ac7e4094a4a28b960ee1517a2bd8adfa9354a",
+                  "tests/test_lfu.py": "1a94216847c04e48d72ce71e6e592b52cdc6c3309707ec6e5d4efb8dca502dba",
+                  "tests/test_rr.py": "995ee7555ebe96c8b4f988c23a8923de980b5f0c42ca073906988e28dd773ec2",
+                  "tests/test_threading.py": "8d2e53ee065976ce9caf2964a64dd4b3d47bbe3337bb84eb763103f7710ec032",
+                  "tests/test_ttl.py": "8afc4404c5089ebb519bfcde0661da8c79da23f394b5ae88503dd3c40fa4dc76"
+                },
+                "level": "agent-declared-source-audit",
+                "open_findings": [],
+                "recorded_at": "2026-11-16T14:21:38+00:00",
+                "report": "docs/baseline/source-audit.json",
+                "review_mode": "independent-reviewer",
+                "reviewer": "Independent Codex source reviewer (/root/onboarding_defaults_use/source_review)"
+              }
+            ],
+            "status": "PASS"
+          }
+        },
+        "onboarding-status": {
+          "exit_code": 2,
+          "result": {
+            "audit_status": "PASS",
+            "completion": "PARTIAL",
+            "coverage": {
+              "capabilities": [
+                {
+                  "id": "mapping",
+                  "kind": "business",
+                  "requirements": [
+                    "REQ-MAPPING-001"
+                  ],
+                  "source_files": 1,
+                  "status": "specified"
+                },
+                {
+                  "id": "eviction",
+                  "kind": "business",
+                  "requirements": [
+                    "REQ-EVICTION-001"
+                  ],
+                  "source_files": 1,
+                  "status": "specified"
+                },
+                {
+                  "id": "expiration",
+                  "kind": "business",
+                  "requirements": [
+                    "REQ-EXPIRATION-001"
+                  ],
+                  "source_files": 1,
+                  "status": "specified"
+                },
+                {
+                  "id": "keys",
+                  "kind": "business",
+                  "requirements": [
+                    "REQ-KEYS-001"
+                  ],
+                  "source_files": 1,
+                  "status": "specified"
+                },
+                {
+                  "id": "memoization",
+                  "kind": "business",
+                  "requirements": [
+                    "REQ-MEMOIZATION-001"
+                  ],
+                  "source_files": 3,
+                  "status": "specified"
+                },
+                {
+                  "id": "methods",
+                  "kind": "business",
+                  "requirements": [
+                    "REQ-METHODS-001"
+                  ],
+                  "source_files": 4,
+                  "status": "specified"
+                },
+                {
+                  "id": "convenience",
+                  "kind": "business",
+                  "requirements": [
+                    "REQ-CONVENIENCE-001"
+                  ],
+                  "source_files": 1,
+                  "status": "specified"
+                },
+                {
+                  "id": "build-typing-support",
+                  "kind": "supporting",
+                  "requirements": [],
+                  "source_files": 6,
+                  "status": "excluded"
+                }
+              ],
+              "findings": [],
+              "mapped_files": 13,
+              "meaning": "Declared source/capability/current-requirement coverage; counts and mappings do not prove semantic completeness or assertion quality.",
+              "production_files": 13,
+              "status": "PASS",
+              "unmapped_files": 0
+            },
+            "entry_status": "PENDING",
+            "execution": "Not assessed by this quality declaration; cite actual build/test/external runs separately. Compilation is not business testing.",
+            "findings": [
+              {
+                "code": "project-entry-gaps",
+                "gaps": [
+                  "Build NOT_RUN: README.rst declared but absent",
+                  "Static lint/type and Python-version matrix NOT_RUN",
+                  "Native OpenSpec setup/validation NOT_RUN: CLI absent",
+                  "Codex live Skill/hook loading and trust NOT_VERIFIED"
+                ],
+                "message": "Project-specific facts remain unresolved.",
+                "status": "PENDING"
+              },
+              {
+                "code": "onboarding-quality-unreviewed",
+                "message": "Explicitly review project-specific entry, major capability omissions and whether specs are independently usable without Baseline.",
+                "status": "PENDING",
+                "topics": [
+                  "project-entry"
+                ]
+              }
+            ],
+            "meaning": "Current declared onboarding quality and coverage, not zero defects or runtime verification. init-report.json is a historical setup snapshot.",
+            "specification_status": "PASS",
+            "status": "PENDING",
+            "verification_mapping_status": "PASS"
+          }
+        }
+      },
+      "audit": {
+        "mode": "independent-reviewer",
+        "pass_kinds": [
+          "source-first",
+          "source-recheck"
+        ],
+        "final_findings": [
+          {
+            "id": "AUD-001",
+            "issue": "AGENTS displays policy argv by raw joining: Python -c body is unquoted and {python} remains a placeholder; copying the purported project command into a shell will not execute the confirmed unit check. A usable direct command should be supplied outside managed content or via supported facts rendering. Preserve toolkit code.",
+            "evidence": "AGENTS.md:L25-L26; .ai/policy.json check unit argv; docs/project-context.md:L4-L5; .ai/policy.json:L1-L30",
+            "artifacts": [
+              "AGENTS.md",
+              ".ai/project-entry.json",
+              "docs/project-context.md"
+            ],
+            "status": "fixed",
+            "resolution": "AGENTS now includes a runnable PYTHONPATH=src python -m unittest discover -s tests -t . shell command; context and entry workflow clarify argv semantics. The related entrance regression is independently tracked as AUD-003."
+          },
+          {
+            "id": "AUD-002",
+            "issue": "Memoization/method specs mention lock/condition compatibility but omit the fixed observable RuntimeError and partial side effect for incompatible stdlib Lock and Condition. First miss computes and stores a result, then finally notify_all raises RuntimeError because the condition lock is not held. Add explicit input/error/side-effect boundary so standalone specs distinguish the compatible failure; propagate to contract/cases.",
+            "evidence": "src/cachetools/_decorator.py:L72-L101; src/cachetools/_decorator.py:L175-L209; tests/test_threading.py:L157-L187",
+            "artifacts": [
+              "openspec/specs/memoization/spec.md",
+              "openspec/specs/methods/spec.md",
+              "docs/baseline/contracts/memoization.md",
+              "docs/baseline/contracts/methods.md",
+              "docs/baseline/cases/memoization.md",
+              "docs/baseline/cases/methods.md"
+            ],
+            "status": "fixed",
+            "resolution": "Reopened _decorator basic/condition/info branches, _cached and _cachedmethod dispatch, tests/test_threading.py:L147-L178. With cacheable successful work, cache assignment precedes finally notification, so incompatible stdlib condition raises RuntimeError while preserving inserted value. Updated both specs, contracts/cases and module state/failure describe that boundary. Compatible-condition waiting and exception cleanup neighboring paths remain correctly stated."
+          },
+          {
+            "id": "AUD-003",
+            "issue": "Post-fix AGENTS refresh replaced the project-specific seven-section entrance with only a generic Engineering integration block and a command appendix. It no longer identifies cachetools, stack, source boundaries, architecture constraints or rule precedence. The appendix also references a managed unit line that is absent. Correct project-entry JSON alone is not a usable entrance.",
+            "evidence": "AGENTS.md:L1-L16; .ai/project-entry.json purpose/stack/boundaries/constraints/precedence remain populated; src/cachetools/__init__.py:L1-L16 (source identity omitted from the interim entrance)",
+            "artifacts": [
+              "AGENTS.md",
+              ".ai/project-entry.json"
+            ],
+            "status": "fixed",
+            "resolution": "Final AGENTS now has all seven native project-specific sections above the preserved managed integration block: cachetools identity/stack, actual constraints, assets, source boundaries, runnable direct shell test command, workflow limits and precedence. Reopened raw source version/public exports/decorator entry, descriptor ownership and pyproject manifest to corroborate identity/boundaries/constraints. Support module evidence references updated to actual entrance/context line ranges. No unsupported release/build success added."
+          }
+        ]
+      },
+      "artifacts": {
+        "AGENTS.md": {
+          "sha256": "e338a25609ead6f4f58500e7574f78e4b84069de922058bd66811f845a1458f4"
+        },
+        ".ai/project-entry.json": {
+          "sha256": "07997542000a628859ee0972c4b200304a15a02bfd7d1caa4813b92f1ca0d288"
+        },
+        "docs/baseline/capabilities.json": {
+          "sha256": "f78074e0e8e4ec9134180e3d63bce548750f6be972da1f74844a41bedc8fbad9"
+        },
+        "docs/baseline/source-audit.json": {
+          "sha256": "4c4df728f7c3b775acb204cf4ecd7713a224f2aed51eed6ad6f5c93c439e93a3"
+        },
+        "openspec/specs/convenience/spec.md": {
+          "sha256": "bbf393a8ad7b370ef4b753a893d91f0805dae943cdc7b1438b27062fdc3ae9fe"
+        },
+        "openspec/specs/eviction/spec.md": {
+          "sha256": "81ddbf544865deaae8767f75b9879914c4f7ebe164eb4c2b07360f80d517c327"
+        },
+        "openspec/specs/expiration/spec.md": {
+          "sha256": "b9d7fdeb0de236e63b7e5fa656cb9f2d721f68e9f2b664bfecf07f19544e86f1"
+        },
+        "openspec/specs/keys/spec.md": {
+          "sha256": "15e9fc9c9396a636517c837448156ca3ba7152616822b0807b525a1e910d53ab"
+        },
+        "openspec/specs/mapping/spec.md": {
+          "sha256": "18df5a627b0bfdc5306c076c2940c2ca49348e16466cd54f57d51ed064d12cf2"
+        },
+        "openspec/specs/memoization/spec.md": {
+          "sha256": "0302a121821fff63485590d089582648c5ed8c1e08fb775a21e0b3225c10e3c6"
+        },
+        "openspec/specs/methods/spec.md": {
+          "sha256": "80680d1e6fcd5036a313b39803a7f67fb8240c35be6f5a04372cbc468387872b"
+        }
+      },
+      "original_inputs_unchanged": {
+        "LICENSE": "28c000b52b0ee27138a68ef778227e4057046e86b65f62f1cacb99b0cc49e0d2",
+        "pyproject.toml": "4a274e158640847c29365da6791fafed1c553d72fbc221572d834ca3753291b7",
+        "src/cachetools/__init__.py": "4464e8d8d635e9bb115624f41b1b63794d766eee5215375aeee1adb7ab7e4626",
+        "src/cachetools/__init__.pyi": "62991313784fdb5f156a964988df908fd86bbfa45dd703b5df576e9072be11b5",
+        "src/cachetools/_cached.py": "6383295e33b69737d46cb30e9dd06d3e8cb7df851d0b0e2cf9b0d6d990feeaa9",
+        "src/cachetools/_cachedmethod.py": "f08ad3d9fa6f91a0a11172573825f460b323e47f9518838698ca0546061e1494",
+        "src/cachetools/_decorator.py": "8209ace6b20016327fd57aca97544d7ba774c9a0c3a62fc5c70aa219b2172962",
+        "src/cachetools/_descriptor.py": "0169b07f1f6e75fe637822740dafb1009bf38f0d5e723f12aa278d949e2238f9",
+        "src/cachetools/func.py": "87724e4fc82303fd5172cc9fd03c7aaf6a767c6c477f3cb74a245fc45ebf7816",
+        "src/cachetools/func.pyi": "f2ee087107e5d8a46f204828892751cc1c01aeccb2976519974f4ece8d747df2",
+        "src/cachetools/keys.py": "335731b45dcff3a4569e7a490818636266498933d414994d6f39253d52274e7b",
+        "src/cachetools/keys.pyi": "594a1166a9c399a375b6095ee1b38408f44b7d7c8b7b57685caab85b4598a24c",
+        "src/cachetools/py.typed": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "tests/__init__.py": "01504c124b96d9d677db220bd1346437051fdf547731191c5f8905e35b5cf5c1",
+        "tests/test_cache.py": "dbdf81b02f344a0e62a5dcf2364be7e135e2511e765e93b43864aeb7aa3b115c",
+        "tests/test_cached.py": "a540b152d774bd570df68de069ff6d310f74f2d4cf62d5360aaf983a0686f08b",
+        "tests/test_cachedmethod.py": "ecbe35f45ab9b93c1a78cbbf6dbdd95643e4f20e392a64331aa06c6687da07b8",
+        "tests/test_fifo.py": "c6134627b4d9daab20e67b27fe2ff8d7e225116ae46d6a0e79b2c9b620d25941",
+        "tests/test_func.py": "d2c816949ab337d18d6fa5105693d02b4481a1466ea6d137d693f851ab26463d",
+        "tests/test_keys.py": "e4e7855553ec09b8fd4864f57b3ac7e4094a4a28b960ee1517a2bd8adfa9354a",
+        "tests/test_lfu.py": "1a94216847c04e48d72ce71e6e592b52cdc6c3309707ec6e5d4efb8dca502dba",
+        "tests/test_lru.py": "dbfd53eb372f24571f70d739faeb6c4963f79c80ef18228f44b38b1112bf1a6c",
+        "tests/test_rr.py": "995ee7555ebe96c8b4f988c23a8923de980b5f0c42ca073906988e28dd773ec2",
+        "tests/test_threading.py": "8d2e53ee065976ce9caf2964a64dd4b3d47bbe3337bb84eb763103f7710ec032",
+        "tests/test_tlru.py": "9013925418f7e8c21061ad6e576695cc752f926aa1b1e19a7b0dc1feb472723d",
+        "tests/test_ttl.py": "8afc4404c5089ebb519bfcde0661da8c79da23f394b5ae88503dd3c40fa4dc76"
+      },
+      "execution_record": "# Fresh forward execution record\n2026-11-16; reviewer/author: Codex onboarding evaluation agent.\n\nScope is the entire source-only fixture, not one batch. Original inputs preserved in original-inputs.json (26 files). Source was read directly; no sibling fixture artifacts consulted. Installed helper and installed Skill references were used from onboarding-defaults-fix/skills; toolkit code was not changed.\n\nActions: inspected target inventory, pyproject, production modules/stubs/marker and original tests; Python 3.12.14 and Codex CLI 0.167.0-alpha.4 observed. command -v openspec returned no executable: native setup/validation NOT_RUN, no package installation. No Git/CI/remote required or configured. No existing authoritative docs/specs, so automatic openspec/specs root selected without prompting.\n\nRan installed scripts/initialize.py TARGET --agents codex --ci none: scaffold PASS; local hack/ai/ark.py installed, no duplicate target Skills. Ran baseline inventory (31 initial files incl generated entrance/process assets). Ran PYTHONPATH=src python -m unittest discover -s tests -t .: 416 tests, OK. Correct top-level discovery is needed because original tests use relative imports. Confirmed equivalent argv-only policy unit command that inserts src and checks imported package path.\n\nAuthored seven capability specs, contracts, case tables, runtime/support module explanations, source-derived capability map, preservation analysis and project context/entry facts. First entry refresh rejected pyproject evidence end line beyond file; correcting to actual range before refresh. This is an evidence authoring correction, not a source edit.\n\nRemaining at this checkpoint: finalize entrance, register baseline/promotions/coverage, perform mandatory fresh source audit plus post-fix source recheck, run current statuses/checks, verify original hashes. Runtime hook/Skill live loading/trust remains unverified; static/lint/type/matrix and packaging build remain NOT_RUN (README.rst missing in original fixture).\n\n## Final checkpoint\n\nSeven full capability specs/contracts/case sets were authored for mapping, eviction, expiration, keys, memoization, instance methods and convenience wrappers. Two module explanations cover all production files and original test/build/typing support. The capability map covers 13 production/build/config inputs (12 original plus generated .gitignore); supporting stubs/marker/build are explicit, not invented product contracts. All seven contracts were registered/promoted with actual Agent preservation analysis. No owner approval was invented.\n\nIndependent source-first reviewer persisted reviewer-first-pass.json before changes (AUD-001 unusable raw command rendering; AUD-002 missing RuntimeError/partial insertion boundary). Fixes were applied to documentation only. The next refresh unexpectedly replaced seven generated entrance sections when an outside command note was interpreted as native authority. Reviewer persisted reviewer-recheck.json with AUD-003 open before correction. Target workaround: authored seven coherent native project sections above unchanged managed integration; refresh now preserves them. reviewer-final-recheck.json closed all three after reopening actual source/config/entrance. source-audit.json aggregates the real first findings (including the supplemental persisted AUD-003 observation) and final recheck, preserving all raw reports. baseline audit-record/audit-status PASS for declared scope/freshness; this is not zero-defect certification. Three explicit quality topics reviewed; project-entry remains PENDING for real external verification gaps, while capability coverage and spec self-containment pass declared review.\n\nPost-fix original test suite: 416 OK. A separate direct probe verified functions/methods in both info modes: unrelated Lock/Condition causes RuntimeError after insertion and subsequent cache hit returns the inserted value. Evidence: post-fix-results.json. This did not modify original tests or source.\n\nCurrent actual results are preserved in final-status.json: baseline status/validate/spec-status/coverage-status/audit-status PASS; doctor and structure PASS. spec-status verification PASS means check mapping, not independently executed acceptance coverage. Unit execution is separately evidenced by command-results.json and post-fix-results.json. Entry/onboarding remain PENDING/PARTIAL because build/static/native OpenSpec/live runtime trust checks are unavailable/unperformed. `ark check` FAIL (no-Git unchanged original files classified as untracked behavior changes, no business check executed); `verify --phase specification` FAIL without Change ID. No fake Change/Git/CI was introduced. Native OpenSpec setup/validation NOT_RUN because CLI absent. Missing original README prevents asserting distributable package readiness. No packages installed.\n\nAll 26 original source/test/build/license inputs remain byte-identical (hash comparison in final-status.json). Toolkit code was not changed by this evaluation agent. runtime-identity.json records the exact originally vendored runtime SHA256. The full model onboarding run used that runtime and did not exercise the parent's later renderer fix or upgrade paths. No remaining source capability batch is pending; remaining work is only these explicit verification/tooling gaps and any separate parent toolkit fixes/qualification.\n"
+    },
+    {
+      "fixture": "onboarding-mapped-eval",
+      "source": "examples/event-journal copied with explicit human doc/specs authority and REQ-JOURNAL-001",
+      "spec_root": "doc/specs",
+      "change_root": "doc/changes",
+      "parent_actual_test": {
+        "command": "python -m unittest discover -s tests",
+        "count": 14,
+        "status": "PASS"
+      },
+      "model_runtime_sha256": "92480dbb6eb3387388587e937bd429d4343f9b64cb50b5b662b3156f8f8db23a",
+      "final_installed_runtime_quality": {
+        "entry status": {
+          "exit_code": 2,
+          "result": {
+            "findings": [
+              {
+                "code": "project-entry-gaps",
+                "gaps": [
+                  "Minimum Python version and release process are not declared.",
+                  "Hardware/power-loss durability and concurrent writers are not validated."
+                ],
+                "message": "Project-specific facts remain unresolved.",
+                "status": "PENDING"
+              }
+            ],
+            "meaning": "Declared project-specific entry review and currency, not semantic certification.",
+            "status": "PENDING"
+          }
+        },
+        "baseline coverage-status": {
+          "exit_code": 0,
+          "result": {
+            "capabilities": [
+              {
+                "id": "journal-append",
+                "kind": "business",
+                "requirements": [
+                  "REQ-JOURNAL-001"
+                ],
+                "source_files": 1,
+                "status": "specified"
+              },
+              {
+                "id": "journal-replay",
+                "kind": "business",
+                "requirements": [
+                  "REQ-JOURNAL-002"
+                ],
+                "source_files": 1,
+                "status": "specified"
+              },
+              {
+                "id": "test-support",
+                "kind": "supporting",
+                "requirements": [],
+                "source_files": 0,
+                "status": "excluded"
+              },
+              {
+                "id": "local-runtime-ignore",
+                "kind": "supporting",
+                "requirements": [],
+                "source_files": 1,
+                "status": "excluded"
+              }
+            ],
+            "findings": [],
+            "mapped_files": 2,
+            "meaning": "Declared source/capability/current-requirement coverage; counts and mappings do not prove semantic completeness or assertion quality.",
+            "production_files": 2,
+            "status": "PASS",
+            "unmapped_files": 0
+          }
+        },
+        "baseline spec-status": {
+          "exit_code": 0,
+          "result": {
+            "contracts": [
+              "docs/baseline/contract.md"
+            ],
+            "findings": [],
+            "meaning": "Declared contract/spec links and verification mappings only; not semantic completeness, owner approval or executed business tests.",
+            "requirements": [
+              "REQ-JOURNAL-001",
+              "REQ-JOURNAL-002"
+            ],
+            "specification_status": "PASS",
+            "status": "PASS",
+            "verification_status": "PASS"
+          }
+        },
+        "baseline audit-status": {
+          "exit_code": 0,
+          "result": {
+            "findings": [],
+            "meaning": "Checks declared source-first/recheck coverage, dispositions and freshness; cannot prove rereading occurred or certify semantic correctness/zero defects.",
+            "reports": [
+              {
+                "artifacts": [
+                  ".ai/policy.json",
+                  ".ai/project-entry.json",
+                  "AGENTS.md",
+                  "doc/specs/journal/spec.md",
+                  "docs/baseline/capabilities.json",
+                  "docs/baseline/cases.md",
+                  "docs/baseline/contract.md",
+                  "docs/baseline/journal.md",
+                  "docs/baseline/preservation.md",
+                  "docs/baseline/questions.json",
+                  "docs/project-context.md"
+                ],
+                "files": [
+                  ".gitignore",
+                  "journal.py",
+                  "tests/test_journal.py",
+                  "tests/test_journal_contract.py"
+                ],
+                "inputs": {
+                  ".ai/policy.json": "f9308f7aaf286cbb34a0e08aaa401e7f9e81033bd0e7551aa1cda41b228c8895",
+                  ".ai/project-entry.json": "945fe44b5f7352aa9d06f249048428a0662936c6bcc4e60d2377372d04a66c16",
+                  ".gitignore": "13e78b172a43adbbb328e4498f43c7cc161ca79b441359ac3328742a483609e1",
+                  "AGENTS.md": "1466e36f4926432d533a932c094c1fc38f79d644a9b75c590037f79d86529072",
+                  "doc/specs/journal/spec.md": "1198ec6c16b1e866e76ed6a07b860fe7673ec92b7996bfa74d017e41ff1cc92a",
+                  "docs/baseline/capabilities.json": "04636a7cbf0d3a5b786a6ca11038d09e442c090b55e1d2d4f356dcc37b2a5e6b",
+                  "docs/baseline/cases.md": "d1f47208f5cb4445f2f968140b86f310626d172280e61d257053d4a4ec1cadc3",
+                  "docs/baseline/contract.md": "ccfec59f2e627906574ec33dd637a4f1e0f9666bf131e88eb5b30676c69d6700",
+                  "docs/baseline/journal.md": "6b6fac233f3b2f42aa5d96ca6961676f43a14a554bc1d5360c0e9a969f5bdd30",
+                  "docs/baseline/preservation.md": "55081f06aa4fae90eacb963c8f9abdaa83c0cffe70cc3e37ab7104e53309ffd7",
+                  "docs/baseline/questions.json": "0d534c6fb97f1a79237890116e28ef81b2a760b3deef8f6907881696468e9669",
+                  "docs/baseline/source-audit.json": "c620520623c09e0f90ba3ec4ac31df66fb0472624cdb58d424b63bcb14e46f6e",
+                  "docs/project-context.md": "bdb812e2b8e48dba27f64f1cf39ded20bfedb3a271375d72eb004fbf8c58384f",
+                  "journal.py": "91716921ecd8a3cafe172be63bd8ade6e6fc3571f7e8f4972f1da83fd7bcb9b5",
+                  "tests/test_journal.py": "6e284eee9f52521b9346cb018091db41baf1132f38008d7d91490967ad873509",
+                  "tests/test_journal_contract.py": "40e59d893dac54936c90f8fa79b9544ac0c91f1f51e5622e67b0c1976a6af6a5"
+                },
+                "level": "agent-declared-source-audit",
+                "open_findings": [],
+                "recorded_at": "2026-11-16T11:31:24+00:00",
+                "report": "docs/baseline/source-audit.json",
+                "review_mode": "same-agent-separate-pass",
+                "reviewer": "Codex"
+              }
+            ],
+            "status": "PASS"
+          }
+        },
+        "onboarding-status": {
+          "exit_code": 2,
+          "result": {
+            "audit_status": "PASS",
+            "completion": "PARTIAL",
+            "coverage": {
+              "capabilities": [
+                {
+                  "id": "journal-append",
+                  "kind": "business",
+                  "requirements": [
+                    "REQ-JOURNAL-001"
+                  ],
+                  "source_files": 1,
+                  "status": "specified"
+                },
+                {
+                  "id": "journal-replay",
+                  "kind": "business",
+                  "requirements": [
+                    "REQ-JOURNAL-002"
+                  ],
+                  "source_files": 1,
+                  "status": "specified"
+                },
+                {
+                  "id": "test-support",
+                  "kind": "supporting",
+                  "requirements": [],
+                  "source_files": 0,
+                  "status": "excluded"
+                },
+                {
+                  "id": "local-runtime-ignore",
+                  "kind": "supporting",
+                  "requirements": [],
+                  "source_files": 1,
+                  "status": "excluded"
+                }
+              ],
+              "findings": [],
+              "mapped_files": 2,
+              "meaning": "Declared source/capability/current-requirement coverage; counts and mappings do not prove semantic completeness or assertion quality.",
+              "production_files": 2,
+              "status": "PASS",
+              "unmapped_files": 0
+            },
+            "entry_status": "PENDING",
+            "execution": "Not assessed by this quality declaration; cite actual build/test/external runs separately. Compilation is not business testing.",
+            "findings": [
+              {
+                "code": "project-entry-gaps",
+                "gaps": [
+                  "Minimum Python version and release process are not declared.",
+                  "Hardware/power-loss durability and concurrent writers are not validated."
+                ],
+                "message": "Project-specific facts remain unresolved.",
+                "status": "PENDING"
+              },
+              {
+                "code": "onboarding-quality-unreviewed",
+                "message": "Explicitly review project-specific entry, major capability omissions and whether specs are independently usable without Baseline.",
+                "status": "PENDING",
+                "topics": [
+                  "project-entry"
+                ]
+              }
+            ],
+            "meaning": "Current declared onboarding quality and coverage, not zero defects or runtime verification. init-report.json is a historical setup snapshot.",
+            "specification_status": "PASS",
+            "status": "PENDING",
+            "verification_mapping_status": "PASS"
+          }
+        }
+      },
+      "audit": {
+        "mode": "same-agent-separate-pass",
+        "pass_kinds": [
+          "source-first",
+          "source-recheck"
+        ],
+        "final_findings": [
+          {
+            "id": "AUD-J-001",
+            "issue": "Generated replay/no-newline acceptance explanation omitted append-after-replay corruption interaction; new reference-mutation fixture accidentally triggers it.",
+            "evidence": "journal.py:L12-L13",
+            "status": "fixed",
+            "resolution": "Corrected module/contract/spec and added dedicated regression; mutation test fixture now ends in newline. Actual source preserved; the behavior defect remains open separately as GAP-JOURNAL-001."
+          },
+          {
+            "id": "AUD-J-002",
+            "issue": "Generated module cites tests/test_journal_contract.py through line 91 although initial added source ends at 74.",
+            "evidence": "tests/test_journal_contract.py:L65-L74",
+            "status": "fixed",
+            "resolution": "Corrected source range to actual tests/test_journal_contract.py:L1-L82, reopened the file and checked all references against its 82 lines."
+          }
+        ]
+      },
+      "artifacts": {
+        "AGENTS.md": {
+          "sha256": "1466e36f4926432d533a932c094c1fc38f79d644a9b75c590037f79d86529072"
+        },
+        ".ai/project-entry.json": {
+          "sha256": "945fe44b5f7352aa9d06f249048428a0662936c6bcc4e60d2377372d04a66c16"
+        },
+        "docs/baseline/capabilities.json": {
+          "sha256": "04636a7cbf0d3a5b786a6ca11038d09e442c090b55e1d2d4f356dcc37b2a5e6b"
+        },
+        "docs/baseline/source-audit.json": {
+          "sha256": "c620520623c09e0f90ba3ec4ac31df66fb0472624cdb58d424b63bcb14e46f6e"
+        },
+        "doc/specs/journal/spec.md": {
+          "sha256": "1198ec6c16b1e866e76ed6a07b860fe7673ec92b7996bfa74d017e41ff1cc92a"
+        }
+      },
+      "preservation": {
+        "original_source_and_six_test_file": "byte-identical",
+        "human_AGENTS_opening": "retained",
+        "REQ-JOURNAL-001": "original title/body/scenario retained",
+        "parallel_openspec_tree": false
+      },
+      "execution_record": "# Event journal onboarding result\n\nSetup is installed and whole production source is explained/specified; overall onboarding is PARTIAL/PENDING, not complete.\n\n## Scope and preservation\nInspected all original project inputs: journal.py, tests/test_journal.py, human AGENTS.md and doc/specs/journal/spec.md. Production journal.py and original six-test file are byte-for-byte unchanged (hashes in verification.json). Human AGENTS opening and REQ-JOURNAL-001 title/text/original scenario are retained. Authority remains doc/specs, lifecycle mapping doc/changes; no parallel openspec tree, Git, remote or hosted CI created.\n\n## Installed assets\nLocal runtime hack/ai/ark.py; .ai policy/manifest/project observations; .codex/hooks.json; local templates and engineering standard. Runtime Codex selected, installed Skills reused without duplicate target Skill installation. Added project-specific seven-section native entrance, context, baseline module/contract/cases/preservation, capability map, current replay spec REQ-JOURNAL-002 and eight additional characterization tests.\n\n## Semantic result and actual checks\nAppend and replay capabilities cover the entire first-party production module; .gitignore is supporting generated-evidence ignore policy and tests are supporting verification. Coverage status: PASS, 2/2 production/support inventory files mapped, zero unmapped production files. Baseline freshness/validate: PASS. Current specification and verification mapping status: PASS, two requirements. These declarations are separate from execution: original 6 tests passed before onboarding; final suite passed all 14 tests on Python 3.12.14. Additional tests observe Unicode/flush/fsync ordering, error propagation, partial failure, replay boundaries and reference sharing. Doctor and structure verification PASS.\n\nDefault two-pass same-agent source-first audit and post-fix reread completed; audit-status PASS. AUD-J-001 corrected an omitted missing-newline interaction and test fixture assumption; AUD-J-002 corrected an out-of-range source citation. They are artifact findings closed after recheck, not proof the source has no defects. Audit mode is explicitly not independent. Final status and complete command outputs: final-status.json; actual unit/doctor/structure execution: verification.json; semantic evidence: source-audit.json and immutable raw snapshots.\n\n## Actual limitations and remaining scope\nNo source batch remains uninspected. Entry/onboarding remain PENDING/PARTIAL because minimum Python version/release policy are undeclared, physical power-loss durability and concurrency are unvalidated, and project-entry quality explicitly retains those gaps. Hardware, disk-full/short-write and multiwriter experiments are NOT_RUN. Native OpenSpec executable is absent: initialization/validation NOT_RUN; file-based specs are substantive at existing mapped authority. Codex executable exists, hooks are CONFIGURATION_ONLY, live loading/trust NOT_VERIFIED.\n\nGAP-JOURNAL-001 remains an open behavior decision in the single questions.json ledger: replay accepts a complete final JSON record without newline; the next append returns True but concatenates JSON and breaks later replay. A dedicated regression captures this without altering production. Future repair versus rejection needs a separate compatibility change; corruption was not promoted as a desired requirement.\n\nDelivery verification requires --change ID. ark check in this non-Git baseline context flags journal/test files as untracked behavior and executes zero business checks; final-status.json preserves its FAIL result. Direct configured unittest execution passed. No fake Change or Git history was created to force this separate delivery gate to pass. Next work, when requested: decide GAP-JOURNAL-001, provide project release/version facts, and validate deployment-specific durability/runtime trust.\n"
+    }
+  ],
+  "limits": [
+    "These tasks test default orchestration on two public/local fixtures, not semantic completeness for every private repository/model.",
+    "Native OpenSpec CLI absent in model environment: native initialization/validation NOT_RUN; compatible-installed-CLI Skill branch is not claimed exercised by these model runs.",
+    "Both no-Git source-baseline runs recorded ark check candidate-delivery FAIL (untracked behavior, zero checks executed). Direct project checks were run separately; no fictitious Change/Git was created.",
+    "No hardware power-loss, live Hook trust, cross-version application matrix, packaging/static checks were inferred from unit tests."
+  ]
+}

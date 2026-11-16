@@ -1,7 +1,8 @@
 # Check the actual onboarding result
 
 Assess artifacts in the target repository before claiming completion. Work only within the
-real requested scope. Do not substitute directory counts or checker success for content review.
+real requested scope (whole repository for a bare invocation). A batch/vertical slice does
+not redefine completion scope; continue remaining batches without routine approval. Do not substitute directory counts or checker success for content review.
 
 - Verify project identity, module boundaries, build/test commands and external assumptions
   against source/configuration. Include build scripts, lockfiles, resources and runtime-read

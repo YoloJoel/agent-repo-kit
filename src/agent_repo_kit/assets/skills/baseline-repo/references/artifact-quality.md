@@ -29,7 +29,9 @@ Run `baseline coverage-record --document <map.json> --reviewer <actual identity>
 These are declared coverage, not proof of semantics. Independently reconstruct the capability
 checklist from source during audit; do not just approve the author's map. Report total production
 inputs, mapped/reviewed scope, excluded reasons and each unfinished capability. Large scopes
-proceed by module with checkpoints. Never say full onboarding is done after a small partial pass.
+proceed by module with checkpoints, automatically continuing the remaining batches. A bare
+invocation retains whole-repository scope; do not ask the user which slice to start or whether
+to continue normal work. Never say full onboarding is done after a small partial pass.
 
 ## 2. Specs stand on their own
 
