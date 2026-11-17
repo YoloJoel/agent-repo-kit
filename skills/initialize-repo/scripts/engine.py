@@ -24,7 +24,7 @@ from datetime import date, datetime, timezone
 import uuid
 import xml.etree.ElementTree as ET
 
-VERSION = "0.2.5"
+VERSION = "0.2.6"
 ASSETS = Path(__file__).parent / "assets"
 POLICY = ".ai/policy.json"
 MANIFEST = ".ai/manifest.json"
@@ -479,7 +479,7 @@ def entry_status(root, p):
 def fingerprint(root, p, change=None):
     files = inventory_files(root, p)
     # Configuration/contract inputs are always bound, even if excluded from inventory.
-    required = [POLICY, MANIFEST, "AGENTS.md", ".ai/project-entry.json", ".ai/project-entry-review.json", ".ai/capability-coverage-review.json"]
+    required = [POLICY, MANIFEST, "AGENTS.md", ".ai/project-entry.json", ".ai/project-entry-review.json", ".ai/capability-coverage-review.json", "openspec/config.yaml", ".ai/openspec-review.json", p["paths"]["baseline"] + "/README.md"]
     spec_root = safe(root, p["paths"]["specs"])
     if spec_root.exists():
         required += [f.relative_to(root).as_posix() for f in spec_root.rglob("*.md") if f.is_file()]
@@ -646,6 +646,11 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
                 destination = p["paths"]["templates"] + "/" + path.relative_to(ASSETS / "templates").as_posix()
                 if not safe(root, destination).exists() or destination in owned:
                     managed(destination, path.read_bytes())
+        config_path = safe(root, "openspec/config.yaml")
+        if openspec_applicable(root, p) and (not config_path.exists() or not config_path.read_bytes().strip()):
+            config = openspec_config_text(root, p, read_json(safe(root, ".ai/project-entry.json"), {"stack": ", ".join(profile["languages"])}))
+            writes["openspec/config.yaml"] = config
+            writes[".ai/openspec-generated.json"] = dump({"sha256": digest(config.encode())})
         defaults = {
             context_path: project_context(profile),
             standard_path: (ASSETS / "engineering-standard.md").read_text(encoding="utf-8").replace("docs/project-context.md", context_path),
@@ -849,6 +854,7 @@ def knowledge_record(root, p, kind, document, files, reviewer):
         writes[snapshot + "/record.json"] = dump(record)
         writes[snapshot + "/document.md"] = text
     transact(root, writes)
+    baseline_index_refresh(root, p)
     return {"status": "PASS", "meaning": "Static declaration recorded; case execution and semantic review are separate", "document": document, "snapshot": snapshot}
 
 
@@ -1029,16 +1035,254 @@ def coverage_status(root, p):
             "meaning": "Declared source/capability/current-requirement coverage; counts and mappings do not prove semantic completeness or assertion quality."}
 
 
-def onboarding_status(root, p):
+
+def openspec_applicable(root, p):
+    return under(p["paths"]["specs"], "openspec") or safe(root, "openspec/config.yaml").exists()
+
+
+def openspec_config_text(root, p, facts):
+    """Generate the supported schema using JSON-quoted YAML scalars; no guessed product facts."""
+    context = [f"Project: {root.name}"]
+    for name in ("purpose", "stack", "boundaries", "constraints", "workflow", "precedence"):
+        context.append(f"{name}: {facts.get(name, 'Not established; source review required.')}")
+    context += [f"Current specifications: {p['paths']['specs']}", f"Engineering authority: {p['paths'].get('standard', 'docs/engineering-standard.md')}",
+                "Source/Baseline are evidence. Current specifications state accepted observable behavior. Active deltas are proposed changes."]
+    rules = {
+        "proposal": ["Explain why, changed behavior, included/excluded scope, impact and compatibility; cite actual evidence and relevant decisions."],
+        "specs": ["Preserve existing requirement IDs; state observable normative behavior with concrete normal/error/boundary scenarios.",
+                  "Necessary contracts must be defined in current normative artifacts; Baseline/Source citations do not replace the behavior definition."],
+        "design": ["Document implementation for new dependencies, concurrency/data models and cross-module interfaces; preserve consequential decisions in ADRs."],
+        "tasks": ["Include applicable characterization/regression/acceptance, actual verification evidence and native specification synchronization/archive; missing execution stays pending."]}
+    lines = ["# Project configuration; source/content review is recorded separately.", "schema: spec-driven", "", "context: |"]
+    for value in context:
+        lines.extend("  " + line for line in value.splitlines())
+    lines += ["", "rules:"]
+    for kind, values in rules.items():
+        lines.append("  " + kind + ":")
+        lines.extend("    - " + json.dumps(value, ensure_ascii=False) for value in values)
+    return "\n".join(lines) + "\n"
+
+
+def openspec_sections(text):
+    # A bounded content guard, not a general YAML parser. Native CLI validation is separate.
+    lines = text.splitlines()
+    keys = [(i, m.group(1)) for i, line in enumerate(lines) if (m := re.match(r"^([A-Za-z][\w-]*):", line))]
+    result = {}
+    for n, (start, key) in enumerate(keys):
+        end = keys[n + 1][0] if n + 1 < len(keys) else len(lines)
+        if key in result:
+            raise KitError("Duplicate OpenSpec top-level key: " + key)
+        result[key] = "\n".join(lines[start:end])
+    return result
+
+
+def openspec_config_findings(root, p):
+    if not openspec_applicable(root, p):
+        return []
+    path = safe(root, "openspec/config.yaml")
+    def issue(code, message):
+        return {"status": "PENDING", "code": code, "path": "openspec/config.yaml", "message": message}
+    if not path.is_file() or not path.read_bytes().strip():
+        return [issue("openspec-config-missing", "Write project schema, context and artifact rules; an unavailable CLI does not exempt configuration content.")]
+    text = path.read_text(encoding="utf-8")
+    try:
+        sections = openspec_sections(text)
+    except KitError as exc:
+        return [issue("openspec-config-content", str(exc))]
+    missing = []
+    for key in ("schema", "context", "rules"):
+        value = sections.get(key, "").split(":", 1)[-1]
+        content = "\n".join(line for line in value.splitlines() if line.strip() and not line.lstrip().startswith("#")).strip()
+        if content in {"", "|", ">", "{}", "[]", "null", "~", "''", '\"\"'} or FILL in content or re.search(r"\{\{\w+\}\}|<project[-_]name>|YOUR_PROJECT", content):
+            missing.append(key)
+    if missing:
+        return [issue("openspec-config-content", "Fill substantive project configuration: " + ", ".join(missing))]
+    context_lines = sections["context"].split(":", 1)[-1].splitlines()
+    substantive = [line.strip().strip("\"'") for line in context_lines
+                   if line.strip() and line.strip() not in {"|", ">", "|-", ">-"} and not line.lstrip().startswith("#")]
+    if substantive and all(re.match(r"(?i)^(?:language|framework|schema|locale|stack|technology|语言|框架|技术栈)\s*:", line) for line in substantive):
+        return [issue("openspec-config-content", "Framework/language alone is not project context; explain actual project responsibility, boundaries and authority.")]
+    findings = []
+    if re.search(r"^schema:\s*['\"]?spec-driven['\"]?\s*(?:#.*)?$", sections.get("schema", ""), re.MULTILINE):
+        for key in ("proposal", "specs", "design", "tasks"):
+            if not re.search(r"(?m)^\s+" + key + r":\s*\n\s+-\s*\S", sections["rules"]):
+                findings.append(issue("openspec-config-rules", "Review actual spec-driven artifact rules for " + key))
+    record = read_json(safe(root, ".ai/openspec-review.json"), {})
+    if not record:
+        findings.append(issue("openspec-config-unreviewed", "Review configuration against current project facts/rules; record actual review, not merely CLI initialization."))
+    elif any(not safe(root, name).is_file() or digest(safe(root, name).read_bytes()) != expected for name, expected in record.get("inputs", {}).items()):
+        findings.append(issue("openspec-config-stale", "Configuration, project facts, authority or policy changed; reconcile and re-review."))
+    return findings
+
+
+def openspec_record(root, p, reviewer):
+    if not openspec_applicable(root, p):
+        raise KitError("No OpenSpec authority/configuration is established; preserve the existing mapped workflow")
+    if not reviewer.strip():
+        raise KitError("Name the actual configuration reviewer")
+    issues = openspec_config_findings(root, p)
+    blocking = [x for x in issues if x["code"] not in {"openspec-config-unreviewed", "openspec-config-stale"}]
+    if blocking:
+        raise KitError(blocking[0]["message"])
     entry = entry_status(root, p)
+    if any(x["code"] != "project-entry-gaps" for x in entry["findings"]):
+        raise KitError("Review current source-backed project facts before reviewing OpenSpec configuration")
+    facts = read_json(safe(root, ".ai/project-entry.json"))
+    paths = ["openspec/config.yaml", "AGENTS.md", ".ai/project-entry.json", POLICY, p["paths"].get("standard", "docs/engineering-standard.md"), *facts["source_evidence"]]
+    record = {"reviewer": reviewer, "recorded_at": now(), "inputs": {name: digest(safe(root, name).read_bytes()) for name in paths},
+              "level": "agent-declared-configuration-content-review", "native_validation": "NOT_ASSESSED",
+              "meaning": "Actual Agent must check YAML syntax, schema compatibility, factual context and consistency with authority; bounded guards/hashes cannot certify those semantics."}
+    transact(root, {".ai/openspec-review.json": dump(record)})
+    return {"status": "PASS", **record}
+
+
+def openspec_refresh(root, p):
+    if not openspec_applicable(root, p):
+        raise KitError("Preserve the established non-OpenSpec workflow; no OpenSpec configuration is applicable")
+    path = safe(root, "openspec/config.yaml")
+    owned = read_json(safe(root, ".ai/openspec-generated.json"), {})
+    if path.exists() and path.read_bytes().strip() and digest(path.read_bytes()) != owned.get("sha256"):
+        raise KitError("Existing native/human OpenSpec configuration preserved. Reconcile it in place, retaining schema/rules/comments, then use openspec record --reviewer; do not overwrite or ask a routine tooling-choice question.")
+    facts = read_json(safe(root, ".ai/project-entry.json"))
+    if not facts:
+        raise KitError("Curate project-entry facts before configuration refresh")
+    # Validate facts and their currency before writing configuration.
+    if any(x["code"] != "project-entry-gaps" for x in entry_status(root, p)["findings"]):
+        raise KitError("Refresh reviewed project-entry evidence first")
+    text = openspec_config_text(root, p, facts)
+    transact(root, {"openspec/config.yaml": text, ".ai/openspec-generated.json": dump({"sha256": digest(text.encode())})})
+    return {"status": "PENDING", "path": "openspec/config.yaml", "meaning": "Configuration generated from project facts; inspect syntax/schema/context/rules against project authority, then openspec record --reviewer with the actual reviewer. Native validation is separate."}
+
+
+def baseline_orphan_findings(root, p, scope=None):
+    """Discover current contract files and referenced contracts independently of the registry."""
+    base = p["paths"]["baseline"]
+    registered = read_json(safe(root, base + "/knowledge.json"), {"documents": {}})["documents"]
+    candidates, referenced = set(), set()
+    for path in safe(root, base).rglob("*.md"):
+        name = path.relative_to(root).as_posix()
+        if under(name, base + "/raw") or under(name, evidence_root(p)) or path.name.lower() == "readme.md":
+            continue
+        text = safe(root, name).read_text(encoding="utf-8")
+        front = re.match(r"\A---\s*\n(.*?)\n---", text.lstrip("\ufeff"), re.DOTALL)
+        native_contract = bool(front and re.search(r"(?m)^kind:\s*['\"]?contract['\"]?\s*$", front.group(1)))
+        if under(name, base + "/contracts") or native_contract or knowledge_sections_present(p, "contract", text):
+            candidates.add(name)
+    for spec in safe(root, p["paths"]["specs"]).rglob("*.md"):
+        for value in re.findall(r"(?im)^(?:Baseline|Source):\s*`?([^\s`]+)", spec.read_text(encoding="utf-8")):
+            value = re.sub(r":L\d+(?:-L\d+)?$", "", value.split("#", 1)[0])
+            if under(value, base) and safe(root, value).is_file() and value.endswith(".md"):
+                text = safe(root, value).read_text(encoding="utf-8")
+                if under(value, base + "/contracts") or knowledge_sections_present(p, "contract", text):
+                    candidates.add(value)
+                    referenced.add(value)
+    return [{"status": "FAIL" if name in referenced else "PENDING", "code": "baseline-contract-unregistered", "path": name,
+             "message": "Current specification references an unregistered contract; register and source-audit it." if name in referenced else "Contract exists outside the declared knowledge registry; explain/register its scope before claiming whole coverage."}
+            for name in sorted(candidates - set(registered)) if not scope or any(under(name, prefix) for prefix in scope)]
+
+
+BASELINE_INDEX_START = "<!-- agent-repo-kit:baseline-index:start -->"
+BASELINE_INDEX_END = "<!-- agent-repo-kit:baseline-index:end -->"
+
+
+def baseline_index_text(root, p):
+    documents = knowledge_status(root, p)["documents"]
+    lines = [BASELINE_INDEX_START, "## Current source-backed knowledge", "", "Generated navigation from current declarations and file freshness. Static review is not business-test execution.", "", "| Document | Kind | State | Evidence freshness | Current requirements |", "| --- | --- | --- | --- | --- |"]
+    for item in sorted(documents, key=lambda x: x["document"]):
+        link = os.path.relpath(item["document"], p["paths"]["baseline"]).replace(os.sep, "/")
+        lines.append(f"| [{Path(item['document']).name}](<{link}>) | {item['kind']} | {item['state']} | {item['freshness']} | {', '.join(item.get('promoted_to', [])) or '—'} |")
+    if not documents:
+        lines.append("| No knowledge registered | — | pending | — | — |")
+    lines += ["", "Unregistered contract scope:"]
+    lines += ["- `" + item["path"] + "`: " + item["status"] for item in baseline_orphan_findings(root, p)] or ["- None discovered by the bounded contract scan; semantic capability completeness still requires source review."]
+    lines += ["", "Current specifications: `" + p["paths"]["specs"] + "`. Use baseline spec-status / coverage-status / audit-status and onboarding-status --record after final edits.", BASELINE_INDEX_END]
+    return "\n".join(lines) + "\n"
+
+
+def baseline_index_refresh(root, p):
+    path = safe(root, p["paths"]["baseline"] + "/README.md")
+    old = path.read_bytes().decode("utf-8") if path.is_file() else "# Baseline\n\n"
+    scaffold = "# Baseline\n\n" + ("Existing repository: inventory is pending review. Use baseline-repo; inventory alone is not an approved baseline.\n" if p["mode"] == "existing" else "New repository: no historical system is asserted. Build specifications from real requirements.\n")
+    if old == scaffold:
+        old = "# Baseline\n\n"
+    if old.count(BASELINE_INDEX_START) != old.count(BASELINE_INDEX_END) or old.count(BASELINE_INDEX_START) > 1:
+        raise KitError("Malformed Baseline navigation markers; preserve/merge human content before refresh")
+    content = baseline_index_text(root, p)
+    if BASELINE_INDEX_START in old:
+        updated = old[:old.index(BASELINE_INDEX_START)] + content.rstrip("\n") + old[old.index(BASELINE_INDEX_END) + len(BASELINE_INDEX_END):]
+    else:
+        updated = old + ("\n" if old and not old.endswith("\n") else "") + "\n" + content
+    transact(root, {p["paths"]["baseline"] + "/README.md": updated})
+    return {"status": "PASS", "meaning": "Navigation refreshed; no new semantic review/test execution asserted."}
+
+
+def baseline_index_findings(root, p):
+    path = safe(root, p["paths"]["baseline"] + "/README.md")
+    text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    expected = baseline_index_text(root, p).strip()
+    if text.count(BASELINE_INDEX_START) != 1 or text.count(BASELINE_INDEX_END) != 1 or expected not in text:
+        return [{"status": "PENDING", "code": "baseline-index-stale", "message": "Refresh Baseline navigation against actual current/retired/stale and unregistered knowledge; preserve native prose."}]
+    return []
+
+
+def onboarding_inputs(root, p):
+    paths = {POLICY, MANIFEST, "AGENTS.md", ".ai/project-entry.json", ".ai/project-entry-review.json", ".ai/capability-coverage-review.json", ".ai/openspec-review.json", "openspec/config.yaml", p["paths"]["baseline"] + "/README.md", p["paths"]["baseline"] + "/knowledge.json", p["paths"]["baseline"] + "/audits.json"}
+    paths.update(capability_sources(root, p))
+    paths.update(read_json(safe(root, MANIFEST), {}).get("files", {}))
+    paths.update([p["paths"].get("standard", "docs/engineering-standard.md"), p["paths"].get("context", "docs/project-context.md")])
+    for review in (".ai/project-entry-review.json", ".ai/openspec-review.json"):
+        paths.update(read_json(safe(root, review), {}).get("inputs", {}))
+    paths.update(path.relative_to(root).as_posix() for path in safe(root, p["paths"]["specs"]).rglob("*.md"))
+    for item in knowledge_status(root, p)["documents"]:
+        paths.update([item["document"], *item["sources"]])
+        if item.get("decision"): paths.add(item["decision"])
+    for item in baseline_orphan_findings(root, p): paths.add(item["path"])
+    ledger = read_json(safe(root, p["paths"]["baseline"] + "/audits.json"), {"reports": {}})
+    for report, item in ledger["reports"].items():
+        paths.add(report)
+        paths.update(item.get("inputs", {}))
+    for name in inventory_files(root, p):
+        if any(under(name, prefix) for prefix in p["test_paths"]): paths.add(name)
+    return {name: digest(safe(root, name).read_bytes()) for name in sorted(paths) if safe(root, name).is_file()}
+
+
+def finish_onboarding(root, p, result, record, initial_inputs):
+    inputs = onboarding_inputs(root, p)
+    findings = result["findings"]
+    if inputs != initial_inputs:
+        findings.append({"status": "PENDING", "code": "onboarding-inputs-changed", "message": "Inputs changed during the final declaration check; inspect and rerun."})
+    final = read_json(safe(root, ".ai/runtime/final-onboarding.json"), {})
+    if not record and (not final or final.get("inputs") != inputs):
+        findings.append({"status": "PENDING", "code": "onboarding-final-check-stale" if final else "onboarding-final-check-missing", "message": "Run onboarding-status --record after final configuration, navigation, source-audit registration and artifact edits. This rechecks structure/content declarations, not business execution."})
+    result["status"] = overall(findings, [])
+    if "completion" in result:
+        result["completion"] = "PARTIAL" if findings else "COMPLETE_DECLARED"
+    result["structure_rechecked"] = True
+    result["behavior_verification"] = "NOT_ASSESSED"
+    if record:
+        snapshot = {"created_at": now(), "kit_version": VERSION, "inputs": inputs, "result": result,
+                    "scope": "Final asset/configuration/specification/registry/navigation/source-audit declaration checks; no business tests or native CLI executed."}
+        transact(root, {".ai/runtime/final-onboarding.json": dump(snapshot)})
+    return result
+
+
+def onboarding_status(root, p, record=False):
+    initial_inputs = onboarding_inputs(root, p)
+    entry = entry_status(root, p)
+    configuration = openspec_config_findings(root, p)
     if p["mode"] == "new":
-        return {"status": entry["status"], "entry": entry, "baseline": "NOT_APPLICABLE", "meaning": "No legacy baseline asserted; initial goals/specs/implementation require their own delivery verification."}
+        findings = entry["findings"] + configuration + structure_findings(root, p)
+        result = {"status": overall(findings, []), "entry": entry, "configuration_status": overall(configuration, []), "findings": findings, "baseline": "NOT_APPLICABLE", "meaning": "No legacy baseline asserted; initial goals/specs/implementation require their own delivery verification."}
+        return finish_onboarding(root, p, result, record, initial_inputs)
     coverage = coverage_status(root, p)
     specs = baseline_spec_status(root, p)
     audits = baseline_audit_status(root, p)
-    expected = {"AGENTS.md"} | {path.relative_to(root).as_posix() for path in safe(root, p["paths"]["specs"]).glob("**/*.md")}
+    expected = {"AGENTS.md", p["paths"]["baseline"] + "/README.md"} | {path.relative_to(root).as_posix() for path in safe(root, p["paths"]["specs"]).glob("**/*.md")}
     if safe(root, ".ai/project-entry.json").is_file():
         expected.add(".ai/project-entry.json")
+    if openspec_applicable(root, p):
+        expected.add("openspec/config.yaml")
+    expected.update(item["path"] for item in baseline_orphan_findings(root, p))
     for item in knowledge_status(root, p)["documents"]:
         if item["state"] != "obsolete":
             expected.add(item["document"])
@@ -1063,19 +1307,22 @@ def onboarding_status(root, p):
     if required_topics - topics:
         findings.append({"status": "PENDING", "code": "onboarding-quality-unreviewed", "topics": sorted(required_topics - topics), "message": "Explicitly review project-specific entry, major capability omissions and whether specs are independently usable without Baseline."})
     verification = current_test_findings(root, p)
-    overall_findings = entry["findings"] + coverage["findings"] + specs["findings"] + audits["findings"] + findings + verification
-    return {"status": overall(overall_findings, []), "completion": "COMPLETE_DECLARED" if not overall_findings else "PARTIAL",
-            "entry_status": entry["status"], "coverage": coverage, "specification_status": specs["specification_status"],
+    overall_findings = entry["findings"] + configuration + baseline_orphan_findings(root, p) + baseline_index_findings(root, p) + structure_findings(root, p) + coverage["findings"] + specs["findings"] + audits["findings"] + findings + verification
+    result = {"status": overall(overall_findings, []), "completion": "COMPLETE_DECLARED" if not overall_findings else "PARTIAL",
+            "entry_status": entry["status"], "configuration_status": overall(configuration, []), "coverage": coverage, "specification_status": specs["specification_status"],
             "audit_status": audits["status"], "verification_mapping_status": overall(verification, []), "findings": overall_findings,
             "execution": "Not assessed by this quality declaration; cite actual build/test/external runs separately. Compilation is not business testing.",
+            "verification_gaps": {"missing_mapping_count": len(verification), "missing_mapping_by_spec": {path: sum(item.get("path") == path for item in verification) for path in sorted({item.get("path", "") for item in verification})}},
+            "structure_rechecked": True, "behavior_verification": "NOT_ASSESSED",
             "meaning": "Current declared onboarding quality and coverage, not zero defects or runtime verification. init-report.json is a historical setup snapshot."}
+    return finish_onboarding(root, p, result, record, initial_inputs)
 
 
 def baseline_spec_status(root, p, scope=None):
     """Check declared contract-to-current-spec handoff; never infer semantics from code."""
     documents = [item for item in knowledge_status(root, p, scope)["documents"]
                  if item["kind"] == "contract" and item["state"] != "obsolete"]
-    findings, linked = [], set()
+    findings, linked = baseline_orphan_findings(root, p, scope), set()
     records = [{**item, "path": path.relative_to(root).as_posix()}
                for path in sorted(safe(root, p["paths"]["specs"]).glob("**/*.md"))
                for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name)]
@@ -1108,6 +1355,7 @@ def baseline_spec_status(root, p, scope=None):
     return {"status": overall(findings + verification, []), "specification_status": overall(findings, []),
             "verification_status": overall(verification, []), "contracts": [item["document"] for item in documents],
             "requirements": sorted(linked), "findings": findings + verification,
+            "scope": "Registered contracts plus independently discovered contract files/current-spec contract references; test mapping is not execution.",
             "meaning": "Declared contract/spec links and verification mappings only; not semantic completeness, owner approval or executed business tests."}
 
 
@@ -1140,6 +1388,7 @@ def knowledge_transition(root, p, document, reviewer, decision, requirements=Non
     event = {"document": document, "record": item, "decision_text": artifact.read_text(encoding="utf-8"), "recorded_at": now(), "meaning": "Recorded decision; authority and semantic quality require review"}
     event_path = evidence_root(p) + "/transitions/" + digest(dump(event).encode()) + ".json"
     transact(root, {base + "/knowledge.json": dump(index), event_path: dump(event)})
+    baseline_index_refresh(root, p)
     return {"status": "PASS", "state": item["state"], "document": document, "meaning": event["meaning"]}
 
 
@@ -1903,6 +2152,9 @@ def verify(root, p, phase="structure", change=None, base=None, selected=None, pe
     if fingerprint(root, p, change) != start_fingerprint:
         findings.append({"status": "FAIL", "code": "inputs-changed", "message": "Verification inputs changed while checks were running; inspect generated files and rerun."})
     report = {"schema_version": 1, "run_id": run_id, "phase": phase, "change": change, "created_at": now(), "kit_version": VERSION, "python": sys.version.split()[0], "platform": sys.platform, "source_ref": (git(root, "rev-parse", "HEAD", optional=True) or b"").decode().strip() or None, "fingerprint": start_fingerprint, "base": base, "findings": findings, "checks": checks, "status": overall(findings, checks)}
+    if phase == "structure":
+        report["scope"] = "Asset integrity and declared specification structure/mapping only; empty specifications do not establish onboarding completion."
+        report["onboarding_complete"] = False
     if change and metadata.get("origin") == "files":
         report["specification_state"] = "current-after-archive" if change_at(root, p, change)[0].parent.name == "archive" else "proposed; native tool owns synchronization and archive"
     if change:
@@ -2334,7 +2586,13 @@ def parser():
     entry = sub.add_parser("entry").add_subparsers(dest="operation", required=True)
     entry.add_parser("refresh")
     entry.add_parser("status")
-    sub.add_parser("onboarding-status")
+    onboarding = sub.add_parser("onboarding-status")
+    onboarding.add_argument("--record", action="store_true", help="Persist a fresh final declaration check after all artifact/audit edits; does not run business tests")
+    openspec = sub.add_parser("openspec").add_subparsers(dest="operation", required=True)
+    openspec.add_parser("refresh")
+    openspec.add_parser("status")
+    openspec_review = openspec.add_parser("record")
+    openspec_review.add_argument("--reviewer", required=True)
     ctx = sub.add_parser("context")
     ctx.add_argument("--session", default="default")
     affected = sub.add_parser("impact")
@@ -2348,6 +2606,7 @@ def parser():
     review.add_argument("--reviewer", required=True)
     baseline.add_parser("validate")
     baseline.add_parser("status")
+    baseline.add_parser("index-refresh")
     coverage = baseline.add_parser("coverage-record")
     coverage.add_argument("--document", required=True)
     coverage.add_argument("--reviewer", required=True)
@@ -2473,7 +2732,15 @@ def main(argv=None):
                 with lock(root):
                     result = entry_refresh(root, p) if args.operation == "refresh" else entry_status(root, p)
             elif args.command == "onboarding-status":
-                result = onboarding_status(root, p)
+                with lock(root):
+                    result = onboarding_status(root, p, args.record)
+            elif args.command == "openspec":
+                with lock(root):
+                    if args.operation == "refresh": result = openspec_refresh(root, p)
+                    elif args.operation == "record": result = openspec_record(root, p, args.reviewer)
+                    else:
+                        findings = openspec_config_findings(root, p)
+                        result = {"status": overall(findings, []), "applicable": openspec_applicable(root, p), "findings": findings, "native_validation": "NOT_ASSESSED", "meaning": "Bounded content guards and declared source-backed configuration currency; not a YAML parser or proof native CLI read/validation ran."}
             elif args.command == "context":
                 result = context(root, p, args.session)
             elif args.command == "impact":
@@ -2506,6 +2773,10 @@ def main(argv=None):
                         result = baseline_review(root, p, args.document, args.files, args.reviewer) if args.kind == "module" else knowledge_record(root, p, args.kind, args.document, args.files, args.reviewer)
                     elif args.operation == "status":
                         result = knowledge_status(root, p)
+                        result["orphan_findings"] = baseline_orphan_findings(root, p)
+                        result["status"] = overall(result["orphan_findings"] + [{"status": result["status"]}], [])
+                    elif args.operation == "index-refresh":
+                        result = baseline_index_refresh(root, p)
                     elif args.operation == "coverage-record":
                         result = coverage_record(root, p, args.document, args.reviewer)
                     elif args.operation == "coverage-status":
@@ -2519,7 +2790,7 @@ def main(argv=None):
                     elif args.operation in {"promote", "retire"}:
                         result = knowledge_transition(root, p, args.document, args.reviewer, args.decision, getattr(args, "requirements", None), obsolete=args.operation == "retire")
                     else:
-                        findings = baseline_findings(root, p)
+                        findings = baseline_findings(root, p) + baseline_orphan_findings(root, p) + baseline_index_findings(root, p)
                         findings += [{"status": "PENDING", "code": "knowledge-stale", "message": f"Refresh affected knowledge: {item['document']} ({item['changed']})"} for item in knowledge_status(root, p)["documents"] if item["freshness"] == "stale"]
                         result = {"status": overall(findings, []), "findings": findings, "meaning": "Static evidence freshness only; not proof of complete behavioral understanding."}
             elif args.command == "decision":

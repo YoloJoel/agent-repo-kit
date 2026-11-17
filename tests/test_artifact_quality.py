@@ -162,7 +162,9 @@ class ArtifactQualityTests(RepositoryCase):
         mapping = 'manual/capabilities.json'
         self.write(mapping, kit.dump({'capabilities': [{'id': 'lookup', 'kind': 'business', 'purpose': 'Existing-key result and missing-key error.', 'sources': ['app.py'], 'status': 'specified', 'requirements': ['REQ-LOOKUP-001']}]}))
         self.assertEqual(kit.coverage_record(self.root, p, mapping, 'agent')['status'], 'PASS')
-        artifacts = ['AGENTS.md', '.ai/project-entry.json', mapping, spec, contract, 'docs/baseline/module.md', 'manual/preserve.md']
+        kit.openspec_refresh(self.root, p)
+        kit.openspec_record(self.root, p, 'agent')
+        artifacts = ['openspec/config.yaml', 'docs/baseline/README.md', 'AGENTS.md', '.ai/project-entry.json', mapping, spec, contract, 'docs/baseline/module.md', 'manual/preserve.md']
         sources = [{'path': 'app.py', 'evidence': 'app.py:L1-L2', 'checked': 'Stored result, missing-key exception and no mutation confirmed from direct indexing.'}]
         reviewed = [{'path': name, 'checked': 'Reviewed against dictionary lookup scope, explicit outputs/errors and current project facts.'} for name in artifacts]
         report = {'review_mode': 'same-agent-separate-pass', 'passes': [
@@ -175,7 +177,7 @@ class ArtifactQualityTests(RepositoryCase):
         report['quality_checks'] = [{'topic': topic, 'status': 'PASS', 'checked': 'Project facts match the source; all lookup responsibility is mapped; spec alone describes concrete return/error/state cases.'} for topic in ('project-entry', 'capability-coverage', 'spec-self-containment')]
         self.write('manual/audit.json', kit.dump(report))
         kit.baseline_audit_record(self.root, p, 'manual/audit.json', ['app.py'], artifacts, 'agent')
-        result = kit.onboarding_status(self.root, p)
+        result = kit.onboarding_status(self.root, p, record=True)
         self.assertEqual(result['status'], 'PASS', result)
         self.assertEqual(result['completion'], 'COMPLETE_DECLARED')
         self.assertIn('Not assessed', result['execution'])

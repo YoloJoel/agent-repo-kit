@@ -1,6 +1,7 @@
 # Compatibility and deployment status
 
-Documentation checked: 2026-11-13. Product version: 0.2.1. A declared API shape,
+Current product: 0.2.6. Configuration/content/final-state changes are documented in docs/repairs/onboarding-completeness-0.2.6.md.
+Historical compatibility matrix checked: 2026-11-13, against product 0.2.1; environment-specific live trust is not inferred for later versions. A declared API shape,
 generated config, a protocol test and a live trusted runtime are different claims.
 
 | Surface | Shipped behavior | Local validation | Environment-specific follow-through |

@@ -31,10 +31,12 @@
    Agent 自动判定规格路径：保留已有权威路径（包括 doc/specs），没有时采用 OpenSpec 默认布局。
    已安装且兼容的 CLI 在缺少原生配置时自动按本机帮助非交互初始化；已有配置和人工规则保持不动。
    CLI 缺失或无法安全初始化时记录 NOT_RUN，继续生成实际 Spec，不因此暂停，也不假报原生初始化成功。
+   配置内容仍需补齐：schema、项目化 context 与适用 artifact rules。生成后实际审查，再通过
+   ark openspec record 登记；原生语法/读取/验证结果另列。保留原有 schema、人工规则与注释。
 5. 日常只补齐受影响范围。缺少 DT 时，先在原版本实际运行必要的特征/契约用例，再修改实现。
 6. 交付分别查看保留行为回归和目标行为验收。缺少环境、外部检查、有效证据时保留 PENDING。
 
-Agent 最后运行 onboarding-status：汇总当前项目入口、全仓覆盖和规格/审计质量；
+Agent 刷新 baseline index-refresh、完成最终源码审计及审计登记后，运行 onboarding-status --record：汇总当前项目入口、全仓覆盖和规格/审计质量；
 只分析部分模块或只生成生命周期规格时，明确报告 PARTIAL/PENDING 和剩余范围。
 init-report.json 是初始化时的历史快照，不与后续运行结果混作同一结论；
 编译通过不代表业务测试通过。没有 Change 目录本身不代表 Baseline 接入失败。

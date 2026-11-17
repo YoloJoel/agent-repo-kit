@@ -73,7 +73,12 @@ and ADR to their implementation/specification outcome. Do not duplicate competin
 5. Inspect implementation/design/spec consistency and meaningful failure/boundary assertions.
 6. Run `python hack/ai/ark.py check --base <revision>` locally. Active deltas are proposed
    behavior; native archive owns synchronization, followed by current-spec verification.
-7. Keep actual results, risk, missing conditions and next steps in the repository. A phase
+7. Keep actual results, risk, missing conditions and next steps in the repository.
+   On onboarding, complete actual project configuration, discover unregistered contract files,
+   refresh Baseline navigation, audit all final artifacts and run onboarding-status --record.
+   This final snapshot checks current declarations/structure and their input currency, not
+   execution of business tests. Structure PASS can legitimately have an empty spec tree; it
+   cannot establish semantic onboarding or behavior verification. A phase
    such as specification review is distinct from implementation delivery or archive.
 
 A required missing/unrun/partial check is PENDING; failures are FAIL. PASS requires actual

@@ -96,10 +96,12 @@ from source directories/call paths and compare to current specs. Read each spec 
 hidden: can concrete inputs/assertions/error and side-effect checks be written from the spec
 alone? Open the source afterward to prove those details, not to excuse their omission from spec.
 Also review AGENTS as a project-specific entrance rather than a tool operation list. Include
-AGENTS, .ai/project-entry.json, the capability map and all claimed artifacts in audit scope.
+AGENTS, .ai/project-entry.json, applicable OpenSpec config, current Baseline README, the capability
+map and all claimed artifacts in audit scope. Discover contract files/references from disk, not
+just the registry; an unregistered referenced contract cannot disappear from expected audit scope.
 Record these actual checks in report.quality_checks, using one object per topic:
 `{"topic":"project-entry|capability-coverage|spec-self-containment","status":"PASS|PENDING","checked":"Actual inspected scope, evidence and result"}`.
 Each object uses one actual topic/status value, not the pipe-separated example. Mark quality
 PENDING and record findings for omissions or unverifiable details. These are review declarations,
-not machine semantic certification. After recording run onboarding-status; do not equate a
+not machine semantic certification. After final audit registration and all edits run onboarding-status --record; do not equate a
 selected spec's format/link PASS or an initial empty-spec run with whole-repository completion.

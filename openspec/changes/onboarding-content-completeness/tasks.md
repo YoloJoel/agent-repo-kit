@@ -1,0 +1,6 @@
+- [x] Add configuration content generation, safe native reconciliation and review currency.
+- [x] Discover orphan contracts, require their audit scope, derive current Baseline navigation.
+- [x] Record fresh final declarations, explicit missing test mappings and limited structure scope.
+- [x] Add counterexamples and regenerate native distribution/workflow documentation.
+- [x] Run final source and actual built-wheel suites; perform fresh and existing-upgrade qualification.
+- [ ] Publish actual evidence, pass final-head native/cross-platform CI and merge.

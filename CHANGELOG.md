@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.6 — 2026-11-17
+
+- Generate/reconcile source-backed OpenSpec context/rules with separate actual review and native-validation status.
+- Discover orphan contracts independently of registrations; include referenced artifacts in final source-audit scope.
+- Refresh Baseline navigation from current/retired/stale declarations, preserving native prose.
+- Record a fresh final onboarding declaration against actual inputs after final audit registration; expose missing test mappings and limited structure-check scope.
+- Clarify current versus historical version/qualification documents.
+
+## 0.2.5 — 2026-11-16
+
+- Bare onboarding targets the whole repository, chooses batches and continues automatically.
+- Resolve authoritative spec paths; initialize compatible available native tools without a routine tooling-choice prompt.
+- Preserve generated project sections after outside human notes on refresh/reinitialization.
+
 ## 0.2.4 — 2026-11-16
 
 - Render a curated project-specific seven-section AGENTS entrance; preserve human/native rules and keep manifest inventories in context.

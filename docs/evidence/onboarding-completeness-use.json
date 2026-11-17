@@ -1,0 +1,423 @@
+{
+  "kit_version": "0.2.6",
+  "final_source_native_wheel_runtime_sha256": "4a978bd9c8aada19be74bb68c52010d5015e136305fe4673d22faade475ebfca",
+  "checks": {
+    "source_tests": 156,
+    "actual_installed_wheel_tests": 156,
+    "native_resources": "PASS",
+    "skill_formats": "both PASS"
+  },
+  "cases": [
+    {
+      "fixture": "completeness-fresh-eval",
+      "runtime_sha256": "4a978bd9c8aada19be74bb68c52010d5015e136305fe4673d22faade475ebfca",
+      "original_source_test_hashes": {
+        "journal.py": "91716921ecd8a3cafe172be63bd8ade6e6fc3571f7e8f4972f1da83fd7bcb9b5",
+        "tests/test_journal.py": "6e284eee9f52521b9346cb018091db41baf1132f38008d7d91490967ad873509"
+      },
+      "current": {
+        "openspec status": {
+          "exit_code": 0,
+          "status": "PASS",
+          "findings": []
+        },
+        "baseline status": {
+          "exit_code": 0,
+          "status": "PASS",
+          "findings": []
+        },
+        "baseline spec-status": {
+          "exit_code": 2,
+          "status": "PENDING",
+          "findings": [
+            {
+              "code": "current-requirement-test",
+              "line": 58,
+              "message": "REQ-JOURNAL-004 needs a test-source reference or explicit required delivery check mapping; textual references do not certify assertion quality.",
+              "path": "openspec/specs/journal/spec.md",
+              "status": "PENDING"
+            }
+          ]
+        },
+        "baseline coverage-status": {
+          "exit_code": 0,
+          "status": "PASS",
+          "findings": []
+        },
+        "baseline audit-status": {
+          "exit_code": 0,
+          "status": "PASS",
+          "findings": []
+        },
+        "onboarding-status": {
+          "exit_code": 2,
+          "status": "PENDING",
+          "findings": [
+            {
+              "code": "project-entry-gaps",
+              "gaps": [
+                "No declared supported Python range or release process.",
+                "Crash durability, I/O failure injection and concurrent-writer behavior are not verified."
+              ],
+              "message": "Project-specific facts remain unresolved.",
+              "status": "PENDING"
+            },
+            {
+              "code": "current-requirement-test",
+              "line": 58,
+              "message": "REQ-JOURNAL-004 needs a test-source reference or explicit required delivery check mapping; textual references do not certify assertion quality.",
+              "path": "openspec/specs/journal/spec.md",
+              "status": "PENDING"
+            },
+            {
+              "code": "current-requirement-test",
+              "line": 58,
+              "message": "REQ-JOURNAL-004 needs a test-source reference or explicit required delivery check mapping; textual references do not certify assertion quality.",
+              "path": "openspec/specs/journal/spec.md",
+              "status": "PENDING"
+            },
+            {
+              "code": "current-requirement-test",
+              "line": 58,
+              "message": "REQ-JOURNAL-004 needs a test-source reference or explicit required delivery check mapping; textual references do not certify assertion quality.",
+              "path": "openspec/specs/journal/spec.md",
+              "status": "PENDING"
+            }
+          ]
+        }
+      },
+      "artifacts": {
+        "AGENTS.md": {
+          "sha256": "473b91b03c0bbbc982f1ec4c73fdb2225a01b6f2816baa42965b4bb108b46163"
+        },
+        "openspec/config.yaml": {
+          "sha256": "4e017701a22b0736f8c3c374a9214f0c54fcc12d7fd67b5619b4af6ebf130023"
+        },
+        "docs/baseline/README.md": {
+          "sha256": "5a96334dc5852074da1c0adad905c9a82844e4593b1844acaeadb19fb4ad70d6"
+        },
+        "docs/baseline/knowledge.json": {
+          "sha256": "43559f1bf05debcde0936fb45c2d4f0eeaf6027b3a4b33f278d5f8f870f844a9"
+        },
+        "docs/baseline/capabilities.json": {
+          "sha256": "76e9bc337e3ae4b74245a3a16237bb98f2ae9df3b4a4e41b2f2d46038a8e63a9"
+        },
+        ".ai/runtime/final-onboarding.json": {
+          "sha256": "9a8cb07932dc5a8e70ad62ed4e1db5565b01582e6dd01da76c65a008c32398fc"
+        }
+      },
+      "yaml_syntax": "PASS (PyYAML developer-environment parse; not native OpenSpec validation)",
+      "onboarding": {
+        "audit_status": "PASS",
+        "behavior_verification": "NOT_ASSESSED",
+        "completion": "PARTIAL",
+        "configuration_status": "PASS",
+        "coverage": {
+          "capabilities": [
+            {
+              "id": "replay",
+              "kind": "business",
+              "requirements": [
+                "REQ-JOURNAL-001"
+              ],
+              "source_files": 1,
+              "status": "specified"
+            },
+            {
+              "id": "append",
+              "kind": "business",
+              "requirements": [
+                "REQ-JOURNAL-002",
+                "REQ-JOURNAL-003",
+                "REQ-JOURNAL-004"
+              ],
+              "source_files": 1,
+              "status": "specified"
+            },
+            {
+              "id": "original-tests",
+              "kind": "supporting",
+              "requirements": [],
+              "source_files": 0,
+              "status": "excluded"
+            },
+            {
+              "id": "engineering-guidance",
+              "kind": "supporting",
+              "requirements": [],
+              "source_files": 1,
+              "status": "excluded"
+            }
+          ],
+          "findings": [],
+          "mapped_files": 2,
+          "meaning": "Declared source/capability/current-requirement coverage; counts and mappings do not prove semantic completeness or assertion quality.",
+          "production_files": 2,
+          "status": "PASS",
+          "unmapped_files": 0
+        },
+        "entry_status": "PENDING",
+        "execution": "Not assessed by this quality declaration; cite actual build/test/external runs separately. Compilation is not business testing.",
+        "findings": [
+          {
+            "code": "project-entry-gaps",
+            "gaps": [
+              "No declared supported Python range or release process.",
+              "Crash durability, I/O failure injection and concurrent-writer behavior are not verified."
+            ],
+            "message": "Project-specific facts remain unresolved.",
+            "status": "PENDING"
+          },
+          {
+            "code": "current-requirement-test",
+            "line": 58,
+            "message": "REQ-JOURNAL-004 needs a test-source reference or explicit required delivery check mapping; textual references do not certify assertion quality.",
+            "path": "openspec/specs/journal/spec.md",
+            "status": "PENDING"
+          },
+          {
+            "code": "current-requirement-test",
+            "line": 58,
+            "message": "REQ-JOURNAL-004 needs a test-source reference or explicit required delivery check mapping; textual references do not certify assertion quality.",
+            "path": "openspec/specs/journal/spec.md",
+            "status": "PENDING"
+          },
+          {
+            "code": "current-requirement-test",
+            "line": 58,
+            "message": "REQ-JOURNAL-004 needs a test-source reference or explicit required delivery check mapping; textual references do not certify assertion quality.",
+            "path": "openspec/specs/journal/spec.md",
+            "status": "PENDING"
+          }
+        ],
+        "meaning": "Current declared onboarding quality and coverage, not zero defects or runtime verification. init-report.json is a historical setup snapshot.",
+        "specification_status": "PASS",
+        "status": "PENDING",
+        "structure_rechecked": true,
+        "verification_gaps": {
+          "missing_mapping_by_spec": {
+            "openspec/specs/journal/spec.md": 1
+          },
+          "missing_mapping_count": 1
+        },
+        "verification_mapping_status": "PENDING"
+      },
+      "config_excerpt": "# Project configuration; source/content review is recorded separately.\nschema: spec-driven\n\ncontext: |\n  Project: completeness-fresh-eval\n  purpose: Offline single-writer JSON-lines event journal with replay, idempotent append and conflict rejection. No service or device integration is present.\n  stack: Python standard library json/os/pathlib; no manifest or declared minimum Python version. Observed local Python 3.12.14; unittest suite executed.\n  boundaries: journal.py owns the in-memory event map and one caller-selected file; tests/test_journal.py exercises the public API. No package/build/deployment configuration exists.\n  constraints: Use a single writer. Preserve original source/tests and JSON-lines id/payload compatibility. fsync precedes in-memory update; no file locking, automatic recovery, retry or directory creation.\n  workflow: Run python -m unittest discover -s tests -v locally. Read current specifications and Baseline before behavior changes; keep validation gaps explicit. Release and review policy are not established. No Git/remote/CI is required for this source-only project.\n  precedence: Explicit user scope and existing human instructions take priority. Source and executed tests establish facts; current specs record preserved promises, Baseline explains observations, and unresolved choices use the single questions ledger.\n  Current specifications: openspec/specs\n  Engineering authority: docs/engineering-standard.md\n  Source/Baseline are evidence. Current specifications state accepted observable behavior. Active deltas are proposed changes.\n\nrules:\n  proposal:\n    - \"Explain why, changed behavior, included/excluded scope, impact and compatibility; cite actual evidence and relevant decisions.\"\n  specs:\n    - \"Preserve existing requirement IDs; state observable normative behavior with concrete normal/error/boundary scenarios.\"\n    - \"Necessary contracts must be defined in current normative artifacts; Baseline/Source citations do not replace the behavior definition.\"\n  design:\n    - \"Document implementation for new dependencies, concurrency/data models and cross-module interfaces; preserve consequential decisions in ADRs.\"\n  tasks:\n    - \"Include applicable characterization/regression/acceptance, actual verification evidence and native specification synchronization/archive; missing execution stays pending.\"\n",
+      "navigation_excerpt": "# Baseline\n\n\n<!-- agent-repo-kit:baseline-index:start -->\n## Current source-backed knowledge\n\nGenerated navigation from current declarations and file freshness. Static review is not business-test execution.\n\n| Document | Kind | State | Evidence freshness | Current requirements |\n| --- | --- | --- | --- | --- |\n| [journal.md](<cases/journal.md>) | cases | reviewed | current | — |\n| [journal.md](<contracts/journal.md>) | contract | promoted | current | REQ-JOURNAL-001, REQ-JOURNAL-002, REQ-JOURNAL-003, REQ-JOURNAL-004 |\n| [journal.md](<modules/journal.md>) | module | reviewed | current | — |\n\nUnregistered contract scope:\n- None discovered by the bounded contract scan; semantic capability completeness still requires source review.\n\nCurrent specifications: `openspec/specs`. Use baseline spec-status / coverage-status / audit-status and onboarding-status --record after final edits.\n<!-- agent-repo-kit:baseline-index:end -->\n",
+      "scope": "Source-only public examples/event-journal; fresh bare initialize-repo task.",
+      "actual_test_count": 6,
+      "execution_record": "# initialize-repo result — source-only journal\n\nPerformed 2026-11-17 by Codex / completeness_fresh_use. Scope is the whole supplied local project; no Git repository, remote or CI was created. Original journal.py and tests/test_journal.py are unchanged (SHA256 below).\n\nSetup installed with supplied initialize-repo helper for Codex; explicit upgrades refreshed only managed runtime/assets. Final runtime hack/ai/ark.py SHA256: 4a978bd9c8aada19be74bb68c52010d5015e136305fe4673d22faade475ebfca. Final upgrade output: final-upgrade.json. No toolkit sources or outside evaluation fixtures were modified/read.\n\nCreated project-specific seven-section AGENTS, source-backed project context/facts, confirmed unit command, OpenSpec schema/context/rules, complete replay/append capability map, module explanation, contract, eleven case records and four current requirements. Existing test files were preserved. Original source hashes: journal.py 91716921ecd8a3cafe172be63bd8ade6e6fc3571f7e8f4972f1da83fd7bcb9b5; tests/test_journal.py 6e284eee9f52521b9346cb018091db41baf1132f38008d7d91490967ad873509.\n\nTwo actual same-agent source passes are recorded in source-audit.json. First-pass finding AUD-JOURNAL-001 corrected missing valid-final-line/no-newline and UTF-8/path-read boundary details in generated artifacts; second pass reopened complete source and tests and checked adjacent branches. Audit is not independent certification. It includes entrance, facts, config, capability map, Baseline navigation, module/contract/cases, preservation reasoning and current spec. Baseline status, validate, coverage-status and audit-status PASS. Coverage declares both runtime capabilities with zero unmapped production files; tooling counts .gitignore as supporting production input alongside journal.py. OpenSpec content review PASS, YAML parsed using installed PyYAML; native OpenSpec CLI absent, native initialization/validation NOT_RUN.\n\nActual command `python -m unittest discover -s tests -v`: six original business tests PASS before and after authoring. Execution-results.json contains exact final argv, exit codes, stdout and stderr. No compilation result is being called a test. The original suite does not assert every requirement branch. REQ-JOURNAL-001 lacks executed equal-duplicate/empty/shape/read-error fixtures. REQ-JOURNAL-003 lacks isolated memory-publication/raw Unicode-escaping assertions. REQ-JOURNAL-004 has no failure-injection tests/check mapping. Crash recovery, mutation/normalization and concurrent writers are unverified; concurrency/crash-proof guarantees are excluded rather than invented.\n\nFinal doctor, structure and spec-status are PENDING due REQ-JOURNAL-004's missing executable verification mapping; specification_status itself PASS and verification_status PENDING. Project entrance and current onboarding are PENDING due explicit supported-Python/release unknowns and durability/failure test gaps. Those facts remain in gaps and single questions ledger GAP-JOURNAL-001; no invented owner decision or manual verification exception was used. Full verified onboarding is not claimed. Live Codex hook loading/trust remain NOT_VERIFIED despite configuration presence. Hosted required checks are outside scope.\n\nNext useful work, when authorized, is meaningful fsync/write/close failure and replay-boundary characterization without changing original behavior, plus establishing Python support/release policy from actual owner authority. No production capability remains uninspected; remaining scope is verification/authority uncertainty, not another hidden source batch. Current command output is docs/baseline/final-onboarding-status.json; init-report is historical setup only.\n"
+    },
+    {
+      "fixture": "completeness-upgrade-eval",
+      "runtime_sha256": "4a978bd9c8aada19be74bb68c52010d5015e136305fe4673d22faade475ebfca",
+      "original_source_test_hashes": {
+        "journal.py": "91716921ecd8a3cafe172be63bd8ade6e6fc3571f7e8f4972f1da83fd7bcb9b5",
+        "tests/test_journal.py": "6e284eee9f52521b9346cb018091db41baf1132f38008d7d91490967ad873509"
+      },
+      "current": {
+        "openspec status": {
+          "exit_code": 0,
+          "status": "PASS",
+          "findings": []
+        },
+        "baseline status": {
+          "exit_code": 0,
+          "status": "PASS",
+          "findings": []
+        },
+        "baseline spec-status": {
+          "exit_code": 0,
+          "status": "PASS",
+          "findings": []
+        },
+        "baseline coverage-status": {
+          "exit_code": 0,
+          "status": "PASS",
+          "findings": []
+        },
+        "baseline audit-status": {
+          "exit_code": 2,
+          "status": "PENDING",
+          "findings": [
+            {
+              "changed": [
+                ".ai/policy.json",
+                "doc/specs/journal/spec.md",
+                "docs/baseline/cases.md",
+                "docs/baseline/contract.md",
+                "docs/baseline/journal.md"
+              ],
+              "code": "source-audit-stale",
+              "message": "Source, generated artifacts or audit report changed; recheck the affected scope and record fresh evidence.",
+              "path": "docs/baseline/source-audit.json",
+              "status": "PENDING"
+            }
+          ]
+        },
+        "onboarding-status": {
+          "exit_code": 2,
+          "status": "PENDING",
+          "findings": [
+            {
+              "code": "project-entry-gaps",
+              "gaps": [
+                "Minimum Python version and release process are not declared.",
+                "Hardware/power-loss durability and concurrent writers are not validated."
+              ],
+              "message": "Project-specific facts remain unresolved.",
+              "status": "PENDING"
+            },
+            {
+              "changed": [
+                ".ai/policy.json",
+                "doc/specs/journal/spec.md",
+                "docs/baseline/cases.md",
+                "docs/baseline/contract.md",
+                "docs/baseline/journal.md"
+              ],
+              "code": "source-audit-stale",
+              "message": "Source, generated artifacts or audit report changed; recheck the affected scope and record fresh evidence.",
+              "path": "docs/baseline/source-audit.json",
+              "status": "PENDING"
+            },
+            {
+              "code": "onboarding-quality-unreviewed",
+              "message": "Explicitly review project-specific entry, major capability omissions and whether specs are independently usable without Baseline.",
+              "status": "PENDING",
+              "topics": [
+                "project-entry"
+              ]
+            }
+          ]
+        }
+      },
+      "artifacts": {
+        "AGENTS.md": {
+          "sha256": "1466e36f4926432d533a932c094c1fc38f79d644a9b75c590037f79d86529072"
+        },
+        "openspec/config.yaml": {
+          "sha256": "feb87d79819713c1b79efc649c27d100dc1ce5ad2bde7bad6f69eff0b180ce4b"
+        },
+        "docs/baseline/README.md": {
+          "sha256": "5ede305e5bc3c4ae9fb05746489dadd4c1549fa2e19f07bc3933dac8e282d8db"
+        },
+        "docs/baseline/knowledge.json": {
+          "sha256": "0d72344e64c1bbbfc95ce59bbc3807bd1944710b63fe02be4be0a1d8fc7a73bd"
+        },
+        "docs/baseline/capabilities.json": {
+          "sha256": "04636a7cbf0d3a5b786a6ca11038d09e442c090b55e1d2d4f356dcc37b2a5e6b"
+        },
+        ".ai/runtime/final-onboarding.json": {
+          "sha256": "b13c1ec9b82aee043a7035f0c222614c03d771a7a93cbd8fdf556673ae4bae3e"
+        }
+      },
+      "yaml_syntax": "PASS (PyYAML developer-environment parse; not native OpenSpec validation)",
+      "onboarding": {
+        "audit_status": "PENDING",
+        "behavior_verification": "NOT_ASSESSED",
+        "completion": "PARTIAL",
+        "configuration_status": "PASS",
+        "coverage": {
+          "capabilities": [
+            {
+              "id": "journal-append",
+              "kind": "business",
+              "requirements": [
+                "REQ-JOURNAL-001"
+              ],
+              "source_files": 1,
+              "status": "specified"
+            },
+            {
+              "id": "journal-replay",
+              "kind": "business",
+              "requirements": [
+                "REQ-JOURNAL-002"
+              ],
+              "source_files": 1,
+              "status": "specified"
+            },
+            {
+              "id": "test-support",
+              "kind": "supporting",
+              "requirements": [],
+              "source_files": 0,
+              "status": "excluded"
+            },
+            {
+              "id": "local-runtime-ignore",
+              "kind": "supporting",
+              "requirements": [],
+              "source_files": 1,
+              "status": "excluded"
+            }
+          ],
+          "findings": [],
+          "mapped_files": 2,
+          "meaning": "Declared source/capability/current-requirement coverage; counts and mappings do not prove semantic completeness or assertion quality.",
+          "production_files": 2,
+          "status": "PASS",
+          "unmapped_files": 0
+        },
+        "entry_status": "PENDING",
+        "execution": "Not assessed by this quality declaration; cite actual build/test/external runs separately. Compilation is not business testing.",
+        "findings": [
+          {
+            "code": "project-entry-gaps",
+            "gaps": [
+              "Minimum Python version and release process are not declared.",
+              "Hardware/power-loss durability and concurrent writers are not validated."
+            ],
+            "message": "Project-specific facts remain unresolved.",
+            "status": "PENDING"
+          },
+          {
+            "changed": [
+              ".ai/policy.json",
+              "doc/specs/journal/spec.md",
+              "docs/baseline/cases.md",
+              "docs/baseline/contract.md",
+              "docs/baseline/journal.md"
+            ],
+            "code": "source-audit-stale",
+            "message": "Source, generated artifacts or audit report changed; recheck the affected scope and record fresh evidence.",
+            "path": "docs/baseline/source-audit.json",
+            "status": "PENDING"
+          },
+          {
+            "code": "onboarding-quality-unreviewed",
+            "message": "Explicitly review project-specific entry, major capability omissions and whether specs are independently usable without Baseline.",
+            "status": "PENDING",
+            "topics": [
+              "project-entry"
+            ]
+          }
+        ],
+        "meaning": "Current declared onboarding quality and coverage, not zero defects or runtime verification. init-report.json is a historical setup snapshot.",
+        "specification_status": "PASS",
+        "status": "PENDING",
+        "structure_rechecked": true,
+        "verification_gaps": {
+          "missing_mapping_by_spec": {},
+          "missing_mapping_count": 0
+        },
+        "verification_mapping_status": "PASS"
+      },
+      "config_excerpt": "# Native team note: preserve this comment and the mapped specification authority.\nschema: spec-driven\ncontext: |\n  Language: Chinese\n  Project: Single-writer offline JSON Lines event journal implemented in journal.py.\n  Runtime: Python standard library only (json, os, pathlib); Python 3.12.14 was executed.\n  No packaging/build manifest or declared minimum Python version is present.\n  Boundary: Journal owns an in-memory ID/payload index and a caller-selected local UTF-8 file.\n  There is no service, network, database, background worker or external dependency.\n  Append validates nonempty string IDs, handles duplicates using Python equality, serializes\n  before opening the file, and writes/flushes/fsyncs/closes before committing memory and returning True.\n  Constructor replay is strict about malformed/conflicting records and does not repair tails.\n  Single-writer use is required; no locking or concurrent-writer guarantee exists.\n  Current authority: doc/specs; lifecycle changes: doc/changes. Preserve REQ-JOURNAL-001 and REQ-JOURNAL-002.\n  Human AGENTS instructions and docs/engineering-standard.md govern local work.\n  Baseline: docs/baseline; evidence and the single questions ledger remain in that native tree.\n  GAP-JOURNAL-001 tracks append-after-unterminated-record corruption; do not silently repair or endorse it.\n  Confirmed business check: python -m unittest discover -s tests (14 tests passed in this environment).\n  Physical power-loss, full-disk/short-write and concurrent-writer behavior have not been validated.\n  Native OpenSpec executable is unavailable; native initialization/validation is NOT_RUN.\nrules:\n  proposal:\n    - State concrete observable differences, preserved contracts, scope and unresolved compatibility choices.\n    - Reuse doc/specs and doc/changes; preserve existing paths, requirement IDs, human rules and accepted history.\n  specs:\n    - Describe inputs, outputs, exceptions, state and durability ordering with independently testable scenarios.\n    - Keep REQ-JOURNAL-001 Durable append and REQ-JOURNAL-002 Strict replay identifiers and accepted meaning.\n    - Cite registered Baseline contracts and actual source evidence; Baseline links do not replace normative detail.\n    - Keep known defects and unknown decisions in docs/baseline/questions.json rather than promoting them as promises.\n  design:\n    - Document compatibility, recovery and migration for file-format changes or changes to append/replay ordering.\n    - Require design for concurrency, data models, external interfaces or substantial cross-module work.\n    - Use ADRs under docs/adr ",
+      "navigation_excerpt": "# Baseline\n\n本项目的当前规范权威为 `../../doc/specs/journal/spec.md`（REQ-JOURNAL-001/002），生产范围是 `../../journal.py` 的 append 与 replay；测试和 `.gitignore` 是支持范围。单写者、原始人工规则、规范路径和编号均保留。\n\n- [journal.md](journal.md)：正常、错误、边界和状态流程。\n- [contract.md](contract.md)、[cases.md](cases.md)：已登记契约和可执行用例导航。\n- [capabilities.json](capabilities.json)：完整生产能力与支持范围。\n- [questions.json](questions.json)：唯一问题源；GAP-JOURNAL-001 保持开放，未更改生产行为。\n- [preservation.md](preservation.md)：既有兼容性分析；`raw/` 保存不可变历史快照。\n- [onboarding-summary.md](onboarding-summary.md)、[verification.json](verification.json)：2026-11-16 历史结果。\n- [upgrade-summary.md](upgrade-summary.md)、[upgrade-verification.json](upgrade-verification.json)：2026-11-17 接续升级的实际动作、检查与限制。\n\n升级配置和文件接入不等于业务验证；缺失最低 Python 版本、发布流程、硬件持久性验证和运行时信任时，保留 PENDING。\n\n\n<!-- agent-repo-kit:baseline-index:start -->\n## Current source-backed knowledge\n\nGenerated navigation from current declarations and file freshness. Static review is not business-test execution.\n\n| Document | Kind | State | Evidence freshness | Current requirements |\n| --- | --- | --- | --- | --- |\n| [cases.md](<cases.md>) | cases | reviewed | current | — |\n| [contract.md](<contract.md>) | contract | promoted | current | REQ-JOURNAL-001, REQ-JOURNAL-002 |\n| [journal.md](<journal.md>) | module | reviewed | current | — |\n\nUnregistered contract scope:\n- None discovered by the bounded contract scan; semantic capability completeness still requires source review.\n\nCurrent specifications: `doc/specs`. Use baseline spec-status / coverage-status / audit-status and onboarding-status --record after final edits.\n<!-- agent-repo-kit:baseline-index:end -->\n",
+      "scope": "Actual 0.2.5 governed journal fixture with native doc/specs authority, plus an explicitly partial native config added to exercise in-place upgrade/reconciliation.",
+      "original_extra_test_sha256": "40e59d893dac54936c90f8fa79b9544ac0c91f1f51e5622e67b0c1976a6af6a5",
+      "original_raw_snapshot_files_preserved": 13,
+      "actual_test_count": 14,
+      "execution_record": "# 2026-11-17 接入资产升级与接续记录\n\n本次通过已安装 initialize-repo 的 --upgrade 将本地运行时从 0.2.5 更新至 0.2.6，并接续既有全仓接入。范围为 journal.py 的 append/replay 及支持性测试、项目规则、配置和知识资产。生产源代码、原始测试、现有用例、REQ-JOURNAL-001/002、doc/specs/doc/changes 映射、人工规则、问题编号和不可变 raw 历史均保留；未创建 Git、远程、CI 或虚假 Change。\n\n已重读生产源码与两份测试，运行真实 14 项 unittest；补充原有 OpenSpec 配置的项目上下文和 proposal/specs/design/tasks 规则，保留 schema、Language 和原始人工注释。通过 PyYAML 解析核对结构；native CLI 不可用，原生初始化/校验 NOT_RUN。刷新原有 Baseline 首页及原生七节工程入口，保留入口中真实未决事实。\n\n独立初审发现 Python/JSON 表示转换边界遗漏，已补充 tuple→list、整数键→字符串及重开后原 Python payload 冲突的说明和临时文件实测用例；保留原有规范承诺文本与编号，未增加或修改生产测试。独立审查员重新从源码检查解释、当前规范、契约、用例、入口、能力图、配置和导航，保存初审发现后再处理并重读源代码复审。实际检查输出见 upgrade-verification.json；最终输入绑定声明由 onboarding-status --record 记录；最终各阶段输出见 upgrade-final-status.json。历史 onboarding-summary.md、verification.json、source-audit.json 与 raw 快照继续作为历史证据，不重写旧结论。\n\n接入资产已升级，生产 append/replay 规范和验证映射覆盖保留；整体接入仍为 PARTIAL/PENDING：最低 Python 版本与发布流程无来源，电源故障/满盘/短写和多写者未验证，Codex hooks 仅配置级，live loading/trust 未验证。GAP-JOURNAL-001 保持开放：无末尾换行记录可重放，但随后 append 会拼接 JSON，下一次重放失败；本次不作生产语义选择。未来先确认兼容性处理方案，再通过独立行为变更修复。原生 OpenSpec CLI 验证和部署特定持久性/运行时信任验证仍待具备对应条件。\n\n历史审计不删除、不覆盖；聚合 audit-status 会同时检查旧报告，旧报告若因升级而过期，应与本次新审计报告的单独结果分别解释，不能以本次复审替换历史结论。\n"
+    }
+  ],
+  "limits": [
+    "This qualifies shipped orchestration and bounded guards on public/local fixtures, not semantic completeness of the unavailable private business repository.",
+    "Content guards and review hash records are not a general YAML/custom-schema validator or proof of actual rereading.",
+    "Parent independently ran the original six-test suite and retained fourteen-test suite. Native CLI reading is qualified in final CI, not inferred locally.",
+    "Upgrade keeps stale historical audit registrations. A fresh independent current audit passes; aggregate audit remains PENDING instead of deleting history to force green.",
+    "Missing mappings stay non-PASS, execution remains NOT_ASSESSED by quality declarations, and known runtime/environment/project-fact gaps remain explicit."
+  ]
+}

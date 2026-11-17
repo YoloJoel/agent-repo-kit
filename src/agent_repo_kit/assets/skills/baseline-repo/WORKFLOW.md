@@ -21,7 +21,9 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
    inventory/capability map as the denominator unless the user explicitly limited scope.
    Derive a complete business/supporting capability map from actual production/build/config
    sources, not from already generated specs. Record it with baseline coverage-record;
-   uninspected capabilities remain pending. Do not present lifecycle-only or a partial module
+   uninspected capabilities remain pending. Inspect actual contract files and current-spec
+   references independently of the registry; source-review/register all in-scope contracts,
+   including any currently referenced but unregistered file. Do not present lifecycle-only or a partial module
    pass as whole-repository completion. Preserve explicit exclusions and their reasons.
 3. Read `references/analysis.md`. Trace full normal/error paths, branch conditions, state,
    side effects, concurrency/recovery and compatibility. Explain what happens and why;
@@ -60,18 +62,28 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
 9. Recheck project-specific AGENTS facts/commands and use initialize-repo project-entry guidance
    with `entry refresh` if necessary. Explicitly audit the three quality topics from
    references/artifact-quality.md: project-entry, capability-coverage, spec-self-containment.
-   Include AGENTS, .ai/project-entry.json, the capability map, module/contract/case artifacts
+   Refresh `baseline index-refresh` before final source audit; preserve native prose and
+   check its real links/current states. Complete initialize-repo configuration.md when OpenSpec
+   is applicable. Include openspec/config.yaml and the actual Baseline README,
+   AGENTS, .ai/project-entry.json, the capability map, module/contract/case artifacts
    and current specs in the actual source-audit scope. After these edits refresh audit records;
    do not use an old audit on changed artifacts.
 10. Run `ark baseline status`, `ark baseline validate` and `ark baseline spec-status`
    (use --scope <source/document paths> for an explicitly limited task). Execute real project checks.
    Report specification creation separately from verification: missing tests/check mappings
-   keep verification PENDING, never relabel them manual merely to pass. A planned or empty
+   keep verification PENDING and explicitly enumerate affected requirements/specs and test-less
+   language/runtime ranges; this blocks verified-completion claims. Never relabel them manual merely to pass. A planned or empty
    specs directory is not a completed baseline. Respect an explicit analysis-only user scope
    and report that specification is not performed rather than claiming full onboarding.
-   Run `ark baseline coverage-status` and `ark onboarding-status`. Report uncovered production
+   Run `ark baseline coverage-status` and, after final audit registration and artifact edits,
+   `ark onboarding-status --record`. It rechecks live structure/declarations; an earlier
+   empty-spec structure PASS never establishes current onboarding or business verification. Report uncovered production
    scope and pending capabilities even if the selected specs validate. A few cross-cutting
    capabilities or valid links cannot establish full project coverage.
+   For baseline-only onboarding without a candidate Change, execute confirmed project checks
+   directly using their actual argv/cwd. `ark check` is a candidate-delivery gate and may flag
+   an unversioned source snapshot as untracked; preserve that result separately, do not create
+   fake Git/Changes or call an unexecuted business check PASS.
    Report source/module/contract/case coverage separately from executed tests. Explain
    uninspected, uncertain and unavailable ranges. Save progress for large scopes and
    continue the next available pending batch automatically. Genuine blockers remain PENDING;
