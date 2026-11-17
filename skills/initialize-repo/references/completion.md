@@ -38,7 +38,11 @@ verification. It does not depend on hosted CI, a particular daily Skill, or iden
 
 ## Project artifact quality
 
-Run onboarding-status, not just doctor/structure. Require a curated project-specific entrance,
+Run onboarding-status --record after all final artifact and audit-registration edits, not just doctor/structure.
+Require project-specific OpenSpec schema/context/rules when applicable (configuration.md);
+CLI absence does not exempt configuration content. Inspect actual contract files and current
+spec references independently of the registry. Register/source-audit orphan contracts before
+claiming full scope. Refresh Baseline navigation and include config/index in source audit. Require a curated project-specific entrance,
 full declared production capability coverage with explicit supporting/excluded scope, current
 specs and source audit of all claimed artifacts. Explicitly review spec-self-containment with
 Baseline hidden. Requirement/scenario counts alone are not acceptance. Compilation-only

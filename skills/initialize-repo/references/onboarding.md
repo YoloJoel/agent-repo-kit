@@ -71,6 +71,13 @@ another material owner decision. State the concrete conflict; a missing CLI, fir
 or recoverable checkpoint alone is not such a decision. Explicit user requests to install a
 native tool or migrate authority are separate authorization and take priority.
 
+## Configuration content is required
+
+Use configuration.md to generate/reconcile schema, source-backed context and artifact rules
+without overwriting native/human configuration. A native init, an available CLI, an empty
+config or schema-only config is not evidence of project-specific content. Run the final
+input-bound declaration check after audit registration, not just an early structure check.
+
 ## Project facts and local operation
 
 Read .ai/project.json and the context document mapped by policy.paths.context (default docs/project-context.md). Verify observed languages, build manifests, declared versions and test roots against actual files. Fill real project boundaries and command knowledge; retain explicit unknowns. Existing human context is preserved. The engineering standard defines risk-appropriate assets and stage completion.

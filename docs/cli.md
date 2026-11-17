@@ -246,3 +246,14 @@ audit artifacts and explicit project-entry/capability-coverage/spec-self-contain
 Missing, stale, unreviewed or partial scope stays PENDING. It reports verification mappings
 separately and does not infer that compilation means business tests executed. Historical
 initialization snapshots retain their stage/time; early empty-spec PASS is not current proof.
+
+## Configuration and final onboarding in 0.2.6
+
+- `ark openspec refresh`: generate owned/empty spec-driven config from current reviewed entry facts; returns PENDING until actual content review. Native/human/edited config is preserved for in-place reconciliation.
+- `ark openspec record --reviewer <identity>` and `ark openspec status`: bind actual source-backed config review/current facts/authority; bounded content guards are not a YAML parser or native-execution evidence.
+- `ark baseline index-refresh`: derive current knowledge/navigation while preserving native prose; registration/promotion/retirement also refresh the view.
+- `ark baseline status/spec-status/validate`: discover unregistered contracts independently of the registry, including current-spec references. Referenced orphans block completion and remain expected audit artifacts.
+- `ark onboarding-status --record`: recheck live structure, config, contract registry, navigation, coverage, specs and audit declarations after final edits; store final input hashes. Later source/config/test/audit/registry edits invalidate it. This does not execute business checks or native CLI.
+- Mapping status and actual execution remain separate. Missing automated mappings stay PENDING and are counted by spec; absence of a test directory is not an exemption. Structure PASS explicitly states its limited scope and cannot certify onboarding.
+
+Historical versioned sections above describe their respective releases, not the current product version.

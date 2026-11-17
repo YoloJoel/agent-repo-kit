@@ -1,4 +1,5 @@
-Current execution records are under docs/iterations/. The following is the historical 0.1 verification record.
+Current release qualification is indexed by docs/repairs/onboarding-completeness-0.2.6.md and its PR.
+Previous execution records are under docs/iterations/ and docs/repairs/. The following is the historical 0.1 verification record.
 
 # Verification record — 0.1.0
 

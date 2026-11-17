@@ -37,6 +37,10 @@ def qualify(root):
         return {"status": report["status"], "run_id": report.get("run_id"), "checks": [{"name": x["name"], "status": x["status"]} for x in report.get("checks", [])]}
     def work(name, description, capability, block):
         native("new", "change", name, "--json")
+        instructions = native("instructions", "proposal", "--change", name, "--json")
+        consumed = json.dumps(json.loads(instructions), ensure_ascii=False)
+        assert "Source/Baseline are evidence" in consumed, "Native instructions omitted generated project context"
+        assert "Explain why, changed behavior" in consumed, "Native instructions omitted configured proposal rules"
         write(f"openspec/changes/{name}/proposal.md", f"## Why\n{description}\n## What Changes\n{description}\n## Capabilities\n### New Capabilities\n- {capability}: {description}\n### Modified Capabilities\nNone.\n## Impact\nUpdate `journal.py` and `tests/`.\n")
         write(f"openspec/changes/{name}/tasks.md", "## Implementation\n- [x] Implement and verify observable scenarios.\n")
         write(f"openspec/changes/{name}/specs/{capability}/spec.md", "## ADDED Requirements\n\n" + block)

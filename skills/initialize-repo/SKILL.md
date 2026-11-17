@@ -32,7 +32,9 @@ choose doc/specs versus OpenSpec. Honor an explicitly narrower user request.
    execution before adding them to `checks`. Candidates are suggestions, not gates.
    Read `references/onboarding.md` for configuration, discovery and upgrade details.
    Read `references/project-entry.md` and curate .ai/project-entry.json from source evidence,
-   then run `entry refresh`. Produce a project-specific seven-section AGENTS entrance, not
+   then run `entry refresh`. Read `references/configuration.md`; generate or reconcile
+   the actual OpenSpec schema/context/rules and record source-backed configuration review.
+   CLI setup or spec-file creation alone does not complete project configuration. Produce a project-specific seven-section AGENTS entrance, not
    a tool manual or build-file dump. Preserve native/human entry structure without duplicating it.
 5. For existing code, continue with **baseline-repo**: explain behavior, cite evidence,
    complete the coverage/gap ledger and create/reuse source-backed current behavior specs.
@@ -50,7 +52,8 @@ choose doc/specs versus OpenSpec. Honor an explicitly narrower user request.
    Diagnose live skill/hook loading when the corresponding runtime is available.
 8. Report installed assets, semantic coverage, checks executed, runtime loading/trust
    and optional remote required-check configuration separately. No CI is required; enable hosted CI only when explicitly requested. Configuration-only is not live PASS.
-   Run `onboarding-status` for current scope/quality; init-report.json is a dated setup snapshot,
+   After final asset/navigation edits and source-audit registration, run
+   `onboarding-status --record` for a fresh input-bound scope/quality result; init-report.json is a dated setup snapshot,
    not the current conclusion. Compilation does not establish business-test execution.
    Before claiming onboarding complete, use `references/completion.md` to assess actual
    content and executable checks. An initialized scaffold alone is only setup complete.
