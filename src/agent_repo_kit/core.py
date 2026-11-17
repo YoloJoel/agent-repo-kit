@@ -10,21 +10,24 @@ import argparse
 import contextlib
 import fnmatch
 import hashlib
+import io
 import json
 import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
 import shlex
+import signal
 import subprocess
 import sys
 import tempfile
 import time
+import tokenize
 from datetime import date, datetime, timezone
 import uuid
 import xml.etree.ElementTree as ET
 
-VERSION = "0.2.6"
+VERSION = "0.3.0"
 ASSETS = Path(__file__).parent / "assets"
 POLICY = ".ai/policy.json"
 MANIFEST = ".ai/manifest.json"
@@ -249,6 +252,10 @@ def policy_at(root):
             raise KitError(f"Invalid requirement verification mapping: {requirement}")
         if not isinstance(mapping.get("checks", []), list) or any(name not in names for name in mapping.get("checks", [])):
             raise KitError(f"Unknown requirement check mapping: {requirement}")
+        if not isinstance(mapping.get("targets", {}),dict): raise KitError("Requirement targets must map actual Change IDs")
+        for change,target in mapping.get("targets",{}).items():
+            if not isinstance(change,str) or not ID.fullmatch(change) or not isinstance(target,dict) or target.get("type") not in {"automated","manual","external"} or not isinstance(target.get("checks"),list) or any(name not in names for name in target["checks"]):
+                raise KitError(f"Invalid target verification mapping: {requirement}/{change}")
     associations = p.get("change_associations", {})
     if not isinstance(associations, dict):
         raise KitError("policy.change_associations must map concrete path prefixes to change IDs")
@@ -480,6 +487,8 @@ def fingerprint(root, p, change=None):
     files = inventory_files(root, p)
     # Configuration/contract inputs are always bound, even if excluded from inventory.
     required = [POLICY, MANIFEST, "AGENTS.md", ".ai/project-entry.json", ".ai/project-entry-review.json", ".ai/capability-coverage-review.json", "openspec/config.yaml", ".ai/openspec-review.json", p["paths"]["baseline"] + "/README.md"]
+    behavior_review = read_json(safe(root, ".ai/behavior-review.json"), {})
+    required += [".ai/behavior-review.json", *behavior_review.get("inputs", {})]
     spec_root = safe(root, p["paths"]["specs"])
     if spec_root.exists():
         required += [f.relative_to(root).as_posix() for f in spec_root.rglob("*.md") if f.is_file()]
@@ -1036,6 +1045,390 @@ def coverage_status(root, p):
 
 
 
+BEHAVIOR_DIMENSIONS = {"normal", "negative", "boundary", "recovery", "concurrency", "resources", "compatibility"}
+BEHAVIOR_SURFACES = {"api", "messages", "configuration", "lifecycle", "computation", "upgrade", "storage", "background"}
+
+
+def behavior_data(root, p):
+    record = read_json(safe(root, ".ai/behavior-review.json"), {})
+    data = read_json(safe(root, record["document"]), {}) if record and safe(root, record["document"]).is_file() else {}
+    return record, data
+
+
+def behavior_impact(root, p, changed):
+    """Declared dependency closure, not a language-specific inferred call graph."""
+    _, data = behavior_data(root, p)
+    units = data.get("units", [])
+    def matches(path):
+        return bool(path) and any(under(path, name) for name in changed)
+    affected = {u["id"] for u in units if any(matches(e.get("path")) for e in u.get("evidence", []))
+                or any(matches(t.get("path")) for t in u.get("tests", []))
+                or matches(u.get("spec_path"))}
+    direct = sorted(affected)
+    while True:
+        expanded = affected | {u["id"] for u in units if set(u.get("depends_on", [])) & affected}
+        if expanded == affected: break
+        affected = expanded
+    return {"direct": direct, "transitive": sorted(affected - set(direct)), "units": sorted(affected),
+            "requirements": sorted({u["requirement"] for u in units if u["id"] in affected and u.get("requirement")}),
+            "meaning": "Declared behavior/source/test/spec dependency candidates; inspect callers and runtime configuration for missing edges."}
+
+
+def behavior_anchor(root, entry):
+    if not isinstance(entry, dict) or not all(isinstance(entry.get(k), str) and entry[k].strip() for k in ("path", "reference", "role", "explains")):
+        return False
+    path = safe(root, entry["path"])
+    return path.is_file() and source_reference_valid(entry["reference"], entry["path"], path.read_bytes())
+
+
+def behavior_assertion_valid(root, test):
+    if not behavior_anchor(root,test) or test["role"] != "assertion" or Path(test["path"]).suffix.lower() not in TEST_SOURCE_SUFFIXES:
+        return False
+    if not all(isinstance(test.get(k),str) and test[k].strip() for k in ("input","expected","assertion","detects")): return False
+    lines = safe(root,test["path"]).read_text(encoding="utf-8").splitlines()
+    ranges = re.findall(re.escape(test["path"]) + r":L(\d+)(?:-L?(\d+))?\b",test["reference"])
+    selected = "\n".join(line for a,b in ranges for line in lines[int(a)-1:int(b or a)])
+    executable = selected
+    if Path(test["path"]).suffix.lower()==".py":
+        tokens=[]
+        try:
+            for token in tokenize.generate_tokens(io.StringIO(selected).readline):
+                tokens.append(token._replace(string="") if token.type==tokenize.COMMENT else token)
+        except (tokenize.TokenError,IndentationError): pass
+        executable=tokenize.untokenize(tokens)
+    elif Path(test["path"]).suffix.lower() in {".c",".h",".cpp",".cc",".cxx",".hpp",".java",".js",".ts",".cs",".go",".rs"}:
+        executable=re.sub(r'''"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|//[^\n]*|/\*.*?\*/''',lambda m:"" if m.group().startswith(("//","/*")) else m.group(),selected,flags=re.S)
+    return test["assertion"] in executable and not re.match(r"\s*(#|//|/\*|\*)",test["assertion"])
+
+
+def behavior_inventory_findings(root, p, data):
+    """Check explicit evidence obligations. The reviewer supplies semantics; no semantic PASS is inferred."""
+    if not isinstance(data, dict) or data.get("schema_version") != 1:
+        raise KitError("Behavior inventory schema_version must be 1")
+    if data.get("scope") not in {"whole", "limited"} or not isinstance(data.get("scope_reason"), str) or not data["scope_reason"].strip():
+        raise KitError("Declare whole/limited behavior scope with a concrete rationale")
+    if not isinstance(data.get("discovery"), dict) or not all(isinstance(data["discovery"].get(k), str) and data["discovery"][k].strip() for k in ("method", "source_first", "independence")):
+        raise KitError("Describe actual source-first discovery separately from the generated spec outline")
+    sources, units, surfaces = data.get("sources"), data.get("units"), data.get("surfaces")
+    if not isinstance(sources, list) or not sources or not all(isinstance(x, str) and safe(root, x).is_file() for x in sources):
+        raise KitError("Behavior inventory needs actual source/build/configuration inputs")
+    if len(sources) != len(set(sources)):
+        raise KitError("Duplicate inventory source")
+    if not isinstance(units, list) or not units or not all(isinstance(u, dict) and isinstance(u.get("id"), str) and u["id"].strip() for u in units):
+        raise KitError("Enumerate observable behavior units with stable IDs before writing specs")
+    identities = [u["id"] for u in units]
+    if len(identities) != len(set(identities)):
+        raise KitError("Duplicate behavior ID")
+    findings = []
+    def add(code, message, identity=None, status="PENDING"):
+        findings.append({"status": status, "code": code, "unit": identity, "message": message})
+    if data["scope"] == "limited": add("behavior-limited", "Limited inventory cannot establish whole-repository behavior coverage")
+    elif set(sources) != set(capability_sources(root, p)):
+        add("behavior-source-scope", "Whole behavior inventory must reconcile every current production/build/config input")
+    records = [{**r, "path": path.relative_to(root).as_posix()} for path in sorted(safe(root, p["paths"]["specs"]).rglob("*.md"))
+               for r in spec_records(path.read_text(encoding="utf-8"), path.parent.name)]
+    requirements = {r["id"]: r for r in records}
+    if not isinstance(surfaces, dict) or set(surfaces) != BEHAVIOR_SURFACES:
+        raise KitError("Explicitly inspect api/messages/configuration/lifecycle/computation/upgrade/storage/background applicability")
+    for name, surface in surfaces.items():
+        if not isinstance(surface, dict) or surface.get("status") not in {"applicable", "not-applicable", "unknown"} or not str(surface.get("reason", "")).strip():
+            raise KitError("Each cross-cutting surface needs applicability and source-based reasoning")
+        evidence = surface.get("evidence", [])
+        if not isinstance(evidence, list) or not evidence or not all(behavior_anchor(root, e) and e["path"] in sources for e in evidence):
+            raise KitError("Surface applicability needs real in-scope source evidence")
+        links = surface.get("units", [])
+        if not isinstance(links, list) or not set(links).issubset(identities): raise KitError("Unknown behavior in surface map")
+        if surface["status"] == "unknown" or surface["status"] == "applicable" and not links:
+            add("behavior-surface-gap", f"Inspect or enumerate {name} behavior; directory coverage is insufficient")
+    facts, mapped, quoted = {}, set(), {}
+    for unit in units:
+        identity = unit["id"]
+        for key in ("capability", "trigger", "condition", "outcome", "owner"):
+            if not isinstance(unit.get(key), str) or not unit[key].strip(): raise KitError(f"{identity}: describe {key}")
+        if unit.get("confidence") not in {"verified", "inferred", "unknown", "defect"} or unit.get("disposition") not in {"current", "baseline", "gap"}:
+            raise KitError("Separate verified/inferred/unknown/defect evidence from current/baseline/gap disposition")
+        if not isinstance(unit.get("reason"), str) or not unit["reason"].strip(): raise KitError("Every preservation/exclusion/gap needs reasoning")
+        dependencies = unit.get("depends_on", [])
+        if not isinstance(dependencies, list) or not set(dependencies).issubset(identities) or identity in dependencies:
+            raise KitError("Behavior dependencies must name other known behavior units")
+        evidence = unit.get("evidence", [])
+        if not isinstance(evidence, list) or not evidence or not all(behavior_anchor(root, e) and e["path"] in sources for e in evidence):
+            raise KitError(f"{identity}: missing/invalid actual source anchors")
+        if any(e["role"] not in {"entry", "branch", "call", "effect", "definition", "config-use"} for e in evidence):
+            raise KitError("Source role must distinguish definition from executed branch/call/use/effect")
+        roles = {e["role"] for e in evidence}
+        if not roles & {"entry", "call", "config-use"} or not roles & {"branch", "effect"}:
+            add("behavior-evidence-chain", "Trace trigger/caller/use through branch/effect; definitions and same-name symbols are insufficient", identity)
+        dimensions = unit.get("dimensions", {})
+        if not isinstance(dimensions, dict) or set(dimensions) != BEHAVIOR_DIMENSIONS:
+            raise KitError(f"{identity}: explicitly assess all behavior dimensions")
+        for name, detail in dimensions.items():
+            if not isinstance(detail, dict) or detail.get("status") not in {"reviewed", "not-applicable", "unknown"} or not str(detail.get("reason", "")).strip():
+                raise KitError("Each dimension needs reviewed/not-applicable/unknown and concrete reasoning")
+            if detail["status"] == "unknown": add("behavior-dimension-gap", f"Unresolved {name} behavior", identity)
+        requirement = unit.get("requirement")
+        if unit["disposition"] == "current":
+            if unit["confidence"] != "verified": add("behavior-unverified-promise", "Inferred/unknown/defect observations cannot become current normative promises", identity, "FAIL")
+            if requirement not in requirements:
+                add("behavior-spec-gap", "Current unit needs an existing authoritative requirement", identity)
+            else:
+                spec = requirements[requirement]
+                mapped.add(requirement)
+                quote = unit.get("normative_quote", "")
+                if unit.get("spec_path") != spec["path"] or not isinstance(quote, str) or not quote.strip() or quote not in spec["body"]:
+                    add("behavior-claim-drift", "Bind the actual normative clause, not merely a requirement ID", identity)
+                else: quoted.setdefault(requirement, []).append(quote)
+        elif requirement:
+            add("behavior-gap-promoted", "Baseline/gap observations must not masquerade as current promises", identity, "FAIL")
+        if unit["disposition"] == "gap" or unit["confidence"] in {"inferred", "unknown"}:
+            add("behavior-unresolved", unit["reason"], identity)
+        challenge = unit.get("challenge", {})
+        if not isinstance(challenge, dict) or not all(isinstance(challenge.get(k), str) and challenge[k].strip() for k in ("counterexample", "alternative", "reason")) or challenge.get("result") not in {"supported", "contradicted", "unknown"}:
+            raise KitError("Each unit needs an attempted counterexample, competing explanation and actual disposition")
+        if challenge["result"] != "supported":
+            add("behavior-counterexample", "Counterexample/alternative is unresolved; do not close this behavior", identity,
+                "FAIL" if challenge["result"] == "contradicted" and unit["disposition"] == "current" else "PENDING")
+        contract_facts = unit.get("contract_facts", [])
+        if not isinstance(contract_facts, list): raise KitError("contract_facts must be a list")
+        for fact in contract_facts:
+            if not isinstance(fact, dict) or not all(isinstance(fact.get(k), str) and fact[k].strip() for k in ("key", "condition")) or "value" not in fact:
+                raise KitError("Canonical contract facts need key, effective condition and typed value")
+            if unit["disposition"] == "current":
+                key = (fact["key"], fact["condition"])
+                value = json.dumps(fact["value"], sort_keys=True, ensure_ascii=False)
+                if key in facts and facts[key][0] != value:
+                    add("behavior-contract-conflict", f"Conflicting {key} with {facts[key][1]}; reconcile actual applicability/contract", identity, "FAIL")
+                else: facts[key] = (value, identity)
+        verification = unit.get("verification", "unverified")
+        if verification not in {"automated", "manual", "external", "unverified"}: raise KitError("Unknown assertion verification mode")
+        tests = unit.get("tests", [])
+        if not isinstance(tests, list): raise KitError("Assertion tests must be a list")
+        if unit["disposition"] == "current":
+            if requirement in requirements:
+                declared = re.search(r"(?im)^Verification:\s*(automated|manual|external)\b", requirements[requirement]["body"])
+                if declared and verification != declared.group(1).lower():
+                    add("behavior-verification-conflict", "Assertion mode conflicts with authoritative Spec", identity, "FAIL")
+            checks = {c["name"] for c in p["checks"] if c.get("required", True) and "delivery" in c.get("phases", ["ready", "delivery"])
+                      and c.get("type", "command") == ("command" if verification == "automated" else verification)}
+            if verification == "automated" and not tests:
+                add("behavior-assertion-missing", "Automated claim needs an actual test assertion, input and expected outcome", identity)
+            if verification == "unverified": add("behavior-verification-gap", "No actual verification method established", identity)
+            if verification in {"manual", "external"} and (not str(unit.get("verification_reason", "")).strip() or not set(unit.get("checks", [])) or not set(unit["checks"]).issubset(checks)):
+                add("behavior-manual-gap", "Manual/external claims need justified method and required evidence check; a mock limitation is not validation", identity)
+            for test in tests:
+                if not behavior_anchor(root, test) or not any(under(test["path"], prefix) for prefix in p["test_paths"]):
+                    raise KitError("Assertion evidence needs valid actual test-source lines under mapped test roots")
+                if Path(test["path"]).suffix.lower() not in TEST_SOURCE_SUFFIXES:
+                    raise KitError("Assertion references cannot be README/fixture/coverage tables")
+                if not all(isinstance(test.get(k), str) and test[k].strip() for k in ("input", "expected", "assertion", "detects")):
+                    raise KitError("Describe actual test input/expected/assertion and why a wrong implementation would fail")
+                if not behavior_assertion_valid(root,test):
+                    add("behavior-test-comment", "Assertion must occur in the selected executable lines; an ID/comment is only navigation", identity)
+                if not isinstance(test.get("checks"), list) or not test["checks"] or not set(test["checks"]).issubset(checks):
+                    add("behavior-test-command", "Assertion needs actual required automated command mapping", identity)
+    for identifier in sorted(set(requirements) - mapped):
+        add("behavior-requirement-unmapped", f"Current requirement {identifier} lacks a behavior/claim review")
+        findings[-1]["path"] = requirements[identifier]["path"]
+    for identifier in sorted(mapped):
+        for clause in re.findall(r"(?im)^[^\n]*\b(?:SHALL|MUST)\b[^\n]*", requirements[identifier]["body"]):
+            if not any(clause.strip() in quote for quote in quoted.get(identifier, [])):
+                add("behavior-clause-unmapped", f"{identifier}: normative clause lacks an actual behavior review: {clause.strip()}")
+                findings[-1]["path"] = requirements[identifier]["path"]
+    return findings
+
+
+def behavior_inputs(root, p, data, document):
+    paths = set(data["sources"]) | {document, POLICY}
+    paths.update(path.relative_to(root).as_posix() for path in safe(root, p["paths"]["specs"]).rglob("*.md"))
+    for unit in data["units"]:
+        paths.update(test["path"] for test in unit.get("tests", []))
+    return {name: digest(safe(root, name).read_bytes()) if safe(root, name).is_file() else None for name in sorted(paths)}
+
+
+def behavior_record(root, p, document, reviewer):
+    if not reviewer.strip(): raise KitError("Identify the actual behavior reviewer")
+    data = read_json(safe(root, document))
+    findings = behavior_inventory_findings(root, p, data)
+    previous, _ = behavior_data(root, p)
+    transitions = []
+    old_units = previous.get("unit_states", {})
+    for unit in data["units"]:
+        prior = old_units.get(unit["id"])
+        if prior and prior.get("verification") == "automated" and unit.get("verification") != "automated":
+            transition = unit.get("verification_change", {})
+            if not isinstance(transition, dict) or not all(isinstance(transition.get(k), str) and transition[k].strip() for k in ("reason", "alternatives", "remaining_gap", "reviewer")):
+                raise KitError("Automated verification downgrade needs reason, attempted alternatives, remaining gap and actual reviewer")
+            transitions.append({"id": unit["id"], "from": "automated", "to": unit.get("verification"), **transition})
+    removed = sorted(set(old_units) - {u["id"] for u in data["units"]})
+    if removed:
+        dispositions = data.get("removed_units", {})
+        if not isinstance(dispositions, dict) or any(not isinstance(dispositions.get(i), str) or not dispositions[i].strip() for i in removed):
+            raise KitError("Removed behavior units need explicit dispositions; do not shrink the coverage denominator silently")
+    record = {"schema_version": 1, "document": document, "reviewer": reviewer, "recorded_at": now(),
+              "source_revision": (git(root, "rev-parse", "HEAD", optional=True) or b"").decode().strip() or None,
+              "production_sources": capability_sources(root, p), "inputs": behavior_inputs(root, p, data, document),
+              "unit_states": {u["id"]: {"verification": u.get("verification"), "disposition": u["disposition"]} for u in data["units"]},
+              "verification_changes": transitions, "previous_record": digest(dump(previous).encode()) if previous else None,
+              "level": "declared-behavior-evidence-review"}
+    snapshot = evidence_root(p) + "/behaviors/" + digest(dump(record).encode())
+    transact(root, {".ai/behavior-review.json": dump(record), snapshot + "/record.json": dump(record), snapshot + "/inventory.json": dump(data)})
+    return behavior_status(root, p)
+
+
+def behavior_status(root, p):
+    record, data = behavior_data(root, p)
+    if not record or not data:
+        return {"status": "PENDING", "findings": [{"status": "PENDING", "code": "behavior-inventory-missing", "message": "Discover behavior units from source, then map claims/branches/tests; a file/capability map is insufficient."}],
+                "coverage": {"discovered_units": 0, "reviewed_units": 0, "ratio": None}, "execution": "NOT_ASSESSED"}
+    changed = [name for name, expected in record["inputs"].items() if not safe(root, name).is_file() or digest(safe(root, name).read_bytes()) != expected]
+    try:
+        findings = behavior_inventory_findings(root, p, data)
+    except KitError as exc:
+        findings = [{"status": "PENDING" if changed else "FAIL", "code": "behavior-evidence-invalid", "message": str(exc)}]
+    if changed or record["production_sources"] != capability_sources(root, p):
+        findings.append({"status": "PENDING", "code": "behavior-evidence-stale", "changed": changed,
+                         "message": "Source/spec/test/policy/inventory changed or production files added/removed; re-open affected evidence before recording again."})
+    pending = {x.get("unit") for x in findings}
+    total = len(data["units"])
+    reviewed = sum(u["confidence"] in {"verified", "defect"} and u["disposition"] != "gap" and u["id"] not in pending for u in data["units"])
+    if changed or any(x["code"] == "behavior-evidence-stale" for x in findings): reviewed = 0
+    return {"status": overall(findings, []), "findings": findings, "source_revision": record["source_revision"],
+            "coverage": {"discovered_units": total, "reviewed_units": reviewed, "ratio": reviewed / total,
+                         "current_units": sum(u["disposition"] == "current" for u in data["units"]),
+                         "unresolved_units": sum(u["disposition"] == "gap" or u["confidence"] in {"unknown", "inferred"} for u in data["units"])},
+            "verification_changes": record.get("verification_changes", []), "execution": "NOT_ASSESSED",
+            "meaning": "Coverage of the declared source-derived inventory only; neither complete behavior discovery, semantic certification nor executed assertion coverage. Review actual assertion quality and run native checks separately."}
+
+
+def behavior_candidate_inputs(root, p, change, report):
+    record, data = behavior_data(root, p)
+    return {"fingerprint": fingerprint(root, p, change), "report_sha256": digest(safe(root, report).read_bytes()),
+            "baseline_review_sha256": digest(dump(record).encode()),
+            "baseline_inventory_sha256": digest(dump(data).encode())}
+
+
+def behavior_candidate_record(root, p, change, report, reviewer):
+    """A reviewed active delta may intentionally differ from the unarchived current spec."""
+    directory, metadata = change_at(root, p, change)
+    if not reviewer.strip() or directory.parent.name == "archive": raise KitError("Review an actual active change")
+    audits = baseline_audit_status(root, p, report)
+    if audits["status"] != "PASS": raise KitError("Candidate review requires a current closed two-pass source audit")
+    data = read_json(safe(root, report))
+    review = data.get("behavior_change", {})
+    rows = review.get("units", [])
+    record, inventory = behavior_data(root, p)
+    if not record or not isinstance(rows, list) or not rows: raise KitError("Review affected and newly discovered units explicitly")
+    affected = set(behavior_impact(root, p, metadata["scope"])["units"])
+    if any(not isinstance(row, dict) or not isinstance(row.get("id"), str) for row in rows): raise KitError("Candidate units need IDs")
+    if len({row["id"] for row in rows}) != len(rows) or not affected.issubset({row["id"] for row in rows}):
+        raise KitError("Candidate review must retain every affected/transitive behavior unit")
+    source_scope = {name for name in capability_sources(root, p) if any(under(name, path) for path in metadata["scope"])}
+    source_scope.update(e["path"] for u in inventory.get("units", []) if u["id"] in affected for e in u.get("evidence", []) if safe(root, e["path"]).is_file())
+    source_scope.update(t["path"] for u in inventory.get("units", []) if u["id"] in affected for t in u.get("tests", []) if safe(root,t["path"]).is_file())
+    if not source_scope.issubset(set(audits["reports"][0]["files"])): raise KitError("Candidate audit omits affected/new production sources")
+    targets = review.get("targets", [])
+    if not isinstance(targets, list) or not targets or not all(isinstance(path, str) and safe(root,path).is_file() and under(path, directory.relative_to(root).as_posix()) for path in targets):
+        raise KitError("Candidate review needs actual native Change target artifacts")
+    actual_targets = {path.relative_to(root).as_posix() for path in directory.glob('specs/**/*.md')}
+    actual_targets.update((directory/name).relative_to(root).as_posix() for name in ('proposal.md','design.md','tasks.md') if (directory/name).is_file())
+    if not actual_targets.issubset(set(targets)): raise KitError("Review ALL actual native proposal/design/tasks/delta targets, including newly added targets")
+    required_artifacts = set(targets) | {record["document"]} | {u["spec_path"] for u in inventory.get("units", []) if u["id"] in affected and u.get("spec_path")}
+    if not required_artifacts.issubset(set(audits["reports"][0]["artifacts"])): raise KitError("Audit actual targets, current affected specs and behavior inventory")
+    if not str(review.get("contract_consistency", "")).strip(): raise KitError("Review current/target canonical contract differences explicitly")
+    pending, evidence_sources = [], set()
+    old_units={u["id"]:u for u in inventory.get("units",[])}
+    deltas=[r for path in directory.glob('specs/**/*.md') for r in spec_records(path.read_text(encoding='utf-8'),path.parent.name)]
+    for row in rows:
+        if row.get("outcome") not in {"preserved", "intentional-change", "new", "removed", "unresolved"} or not all(isinstance(row.get(k),str) and row[k].strip() for k in ("reason", "counterexample", "assertion_review")):
+            raise KitError("Candidate behavior needs preservation/target disposition, counterexample and actual assertion review")
+        evidence = row.get("evidence", [])
+        if not isinstance(evidence,list) or not evidence or not all(behavior_anchor(root,e) for e in evidence): raise KitError("Candidate units need actual effective-path anchors")
+        roles={e["role"] for e in evidence}
+        if row["outcome"]!="removed" and (not roles & {"entry","call","config-use"} or not roles & {"branch","effect"}): raise KitError("Candidate review needs actual entry/use and branch/effect evidence")
+        evidence_sources.update(e["path"] for e in evidence)
+        tests=row.get("tests",[])
+        old=old_units.get(row["id"],{})
+        if row["outcome"] in {"removed","intentional-change"} and old.get("requirement"):
+            if not any(r["id"]==old["requirement"] and r["section"] in ({"REMOVED"} if row["outcome"]=="removed" else {"MODIFIED","REMOVED"}) for r in deltas):
+                raise KitError("Removal/intentional change of a current promise needs its actual native delta")
+        verification=row.get("verification",old.get("verification","automated"))
+        if row["outcome"] == "unresolved":
+            pending.append(row["id"])
+            continue
+        if row["outcome"] != "removed" and verification=="automated":
+            if not isinstance(tests,list) or not tests or not all(behavior_assertion_valid(root,t) and any(under(t["path"],prefix) for prefix in p["test_paths"]) for t in tests):
+                raise KitError("Candidate assertions need actual current test snippets, stimuli and expected outcomes")
+            checks={c["name"] for c in p["checks"] if c.get("type","command")=="command" and c.get("required",True) and "delivery" in c.get("phases",["ready","delivery"])}
+            if any(not isinstance(t.get("checks"),list) or not t["checks"] or not set(t["checks"]).issubset(checks) for t in tests): raise KitError("Map actual candidate assertions to required native delivery checks")
+            if not {t["path"] for t in tests}.issubset(set(audits["reports"][0]["files"])): raise KitError("Audit actual candidate test sources in both passes")
+        elif row["outcome"] != "removed" and verification in {"manual","external"}:
+            checks={c["name"] for c in p["checks"] if c.get("type")==verification and c.get("required",True) and "delivery" in c.get("phases",["ready","delivery"])}
+            if not str(row.get("verification_reason","")).strip() or not row.get("checks") or not set(row["checks"]).issubset(checks): raise KitError("Manual/external candidate review needs justified required delivery checks")
+            evidence=row.get("verification_artifacts",[])
+            if not isinstance(evidence,list) or not evidence or not set(evidence).issubset(set(audits["reports"][0]["artifacts"])): raise KitError("Audit actual manual/external procedure/evidence artifacts")
+            if old.get("verification")=="automated":
+                transition=row.get("verification_change",{})
+                if not all(isinstance(transition.get(k),str) and transition[k].strip() for k in ("reason","alternatives","remaining_gap","reviewer")): raise KitError("Candidate verification downgrade needs actual reason, alternatives, remaining gap and reviewer")
+        elif row["outcome"] != "removed": pending.append(row["id"])
+    new_sources = (source_scope & set(capability_sources(root,p))) - set(record["production_sources"])
+    if not new_sources.issubset(evidence_sources): raise KitError("Discover observable behavior in newly added sources")
+    result = {"schema_version":1,"change":change,"report":report,"reviewer":reviewer,"pending_units":pending,
+              "inputs":behavior_candidate_inputs(root,p,change,report),"recorded_at":now(),
+              "meaning":"Declared candidate source/target/assertion review; actual delivery tests remain mandatory. Refresh current baseline after native synchronization/archive."}
+    transact(root,{(directory/'behavior-review.json').relative_to(root).as_posix():dump(result)})
+    return {"status":"PENDING" if pending else "PASS",**result}
+
+
+def behavior_scope_findings(root, p, scope, change=None):
+    record, data = behavior_data(root,p)
+    if not record: return []  # Explicit upgrade/onboarding introduces this protocol; no implicit asset rewrite.
+    status = behavior_status(root,p)
+    affected = set(behavior_impact(root,p,scope)["units"])
+    def matches(path): return any(under(path,s) for s in scope)
+    production = capability_sources(root,p)
+    changed_sources = {name for name in set(production)|set(record["production_sources"]) if production.get(name)!=record["production_sources"].get(name) and matches(name)}
+    if change:
+        directory,_=change_at(root,p,change)
+        candidate=read_json(directory/'behavior-review.json',{})
+        if candidate and safe(root,candidate["report"]).is_file() and not candidate.get("pending_units"):
+            if candidate.get("inputs")==behavior_candidate_inputs(root,p,change,candidate["report"]) and baseline_audit_status(root,p,candidate["report"])["status"]=="PASS":
+                return []
+    findings = [item for item in status["findings"] if item.get("unit") in affected or item.get("path") and matches(item["path"]) or item["code"]=="behavior-evidence-invalid"]
+    stale = [item for item in status["findings"] if item["code"] == "behavior-evidence-stale"]
+    if changed_sources or affected and stale:
+        findings.append({"status":"PENDING","code":"behavior-impact-stale","paths":sorted(changed_sources),
+                         "message":"Review affected/new behavior from source. Refresh current baseline, or record a two-pass candidate target review before delivery; native archive owns current-spec synchronization."})
+    return findings
+
+
+def engineering_status(root, p):
+    """Read-only readiness, not dependency installation or a successful build declaration."""
+    inventory = inventory_files(root, p)
+    stacks = {"C/C++": {".c", ".cpp", ".cc", ".cxx"}, "Java": {".java"}, "Python": {".py"}}
+    ranges = []
+    for name, suffixes in stacks.items():
+        source = [path for path in inventory if Path(path).suffix.lower() in suffixes and not any(under(path, t) for t in p["test_paths"])]
+        tests = [path for path in inventory if Path(path).suffix.lower() in suffixes and any(under(path, t) for t in p["test_paths"])]
+        if source: ranges.append({"stack": name, "source_files": len(source), "test_source_files": len(tests), "test_roots": p["test_paths"]})
+    commands = []
+    for check in p["checks"]:
+        argv = check.get("argv", [])
+        executable = argv[0].replace("{python}", sys.executable) if argv else None
+        location = shutil.which(executable) if executable else None
+        if executable and ("/" in executable or "\\" in executable):
+            candidate = Path(executable) if Path(executable).is_absolute() else safe(root, check.get("cwd", ".")) / executable
+            location = str(candidate) if candidate.is_file() else location
+        commands.append({"name": check["name"], "type": check.get("type", "command"), "argv": argv,
+                         "cwd": check.get("cwd", "."), "executable_available": bool(location),
+                         "required": check.get("required", True), "execution": "NOT_RUN"})
+    findings = [{"status": "PENDING", "code": "engineering-test-stack-gap", "message": f"No mapped executable test sources for {r['stack']}; inspect native/custom test roots and behavior needs"} for r in ranges if not r["test_source_files"]]
+    findings += [{"status": "PENDING", "code": "engineering-command-unavailable", "message": c["name"]} for c in commands if c["type"] == "command" and not c["executable_available"]]
+    if not commands: findings.append({"status": "PENDING", "code": "engineering-checks-missing", "message": "Confirm native commands; suggested commands are not verification"})
+    return {"status": overall(findings, []), "ranges": ranges, "checks": commands, "findings": findings,
+            "python": sys.version.split()[0], "platform": sys.platform, "execution": "NOT_RUN",
+            "meaning": "Mapped source/test/tool readiness only. Redis/DB/network/native libraries, command semantics, build patches and actual execution need separate reproducible evidence."}
+
+
 def openspec_applicable(root, p):
     return under(p["paths"]["specs"], "openspec") or safe(root, "openspec/config.yaml").exists()
 
@@ -1050,6 +1443,7 @@ def openspec_config_text(root, p, facts):
     rules = {
         "proposal": ["Explain why, changed behavior, included/excluded scope, impact and compatibility; cite actual evidence and relevant decisions."],
         "specs": ["Preserve existing requirement IDs; state observable normative behavior with concrete normal/error/boundary scenarios.",
+                  "Discover observable cross-module behavior before selecting spec boundaries; require effective source-path evidence, attempted counterexamples and actual assertion mappings. Unknowns/defects do not automatically become current promises.",
                   "Necessary contracts must be defined in current normative artifacts; Baseline/Source citations do not replace the behavior definition."],
         "design": ["Document implementation for new dependencies, concurrency/data models and cross-module interfaces; preserve consequential decisions in ADRs."],
         "tasks": ["Include applicable characterization/regression/acceptance, actual verification evidence and native specification synchronization/archive; missing execution stays pending."]}
@@ -1228,6 +1622,9 @@ def baseline_index_findings(root, p):
 def onboarding_inputs(root, p):
     paths = {POLICY, MANIFEST, "AGENTS.md", ".ai/project-entry.json", ".ai/project-entry-review.json", ".ai/capability-coverage-review.json", ".ai/openspec-review.json", "openspec/config.yaml", p["paths"]["baseline"] + "/README.md", p["paths"]["baseline"] + "/knowledge.json", p["paths"]["baseline"] + "/audits.json"}
     paths.update(capability_sources(root, p))
+    behavior_review, _ = behavior_data(root, p)
+    paths.add(".ai/behavior-review.json")
+    paths.update(behavior_review.get("inputs", {}))
     paths.update(read_json(safe(root, MANIFEST), {}).get("files", {}))
     paths.update([p["paths"].get("standard", "docs/engineering-standard.md"), p["paths"].get("context", "docs/project-context.md")])
     for review in (".ai/project-entry-review.json", ".ai/openspec-review.json"):
@@ -1275,6 +1672,7 @@ def onboarding_status(root, p, record=False):
         result = {"status": overall(findings, []), "entry": entry, "configuration_status": overall(configuration, []), "findings": findings, "baseline": "NOT_APPLICABLE", "meaning": "No legacy baseline asserted; initial goals/specs/implementation require their own delivery verification."}
         return finish_onboarding(root, p, result, record, initial_inputs)
     coverage = coverage_status(root, p)
+    behaviors = behavior_status(root, p)
     specs = baseline_spec_status(root, p)
     audits = baseline_audit_status(root, p)
     expected = {"AGENTS.md", p["paths"]["baseline"] + "/README.md"} | {path.relative_to(root).as_posix() for path in safe(root, p["paths"]["specs"]).glob("**/*.md")}
@@ -1291,6 +1689,9 @@ def onboarding_status(root, p, record=False):
     coverage_recorded = read_json(safe(root, ".ai/capability-coverage-review.json"), {})
     if coverage_recorded:
         expected.add(coverage_recorded["document"])
+    behavior_review, _ = behavior_data(root, p)
+    if behavior_review:
+        expected.add(behavior_review["document"])
     audited, topics, findings = set(), set(), []
     for item in audits["reports"]:
         if any(not safe(root, name).is_file() or digest(safe(root, name).read_bytes()) != sha for name, sha in item["inputs"].items()):
@@ -1307,9 +1708,9 @@ def onboarding_status(root, p, record=False):
     if required_topics - topics:
         findings.append({"status": "PENDING", "code": "onboarding-quality-unreviewed", "topics": sorted(required_topics - topics), "message": "Explicitly review project-specific entry, major capability omissions and whether specs are independently usable without Baseline."})
     verification = current_test_findings(root, p)
-    overall_findings = entry["findings"] + configuration + baseline_orphan_findings(root, p) + baseline_index_findings(root, p) + structure_findings(root, p) + coverage["findings"] + specs["findings"] + audits["findings"] + findings + verification
+    overall_findings = entry["findings"] + configuration + baseline_orphan_findings(root, p) + baseline_index_findings(root, p) + structure_findings(root, p) + coverage["findings"] + behaviors["findings"] + specs["findings"] + audits["findings"] + findings + verification
     result = {"status": overall(overall_findings, []), "completion": "COMPLETE_DECLARED" if not overall_findings else "PARTIAL",
-            "entry_status": entry["status"], "configuration_status": overall(configuration, []), "coverage": coverage, "specification_status": specs["specification_status"],
+            "entry_status": entry["status"], "configuration_status": overall(configuration, []), "coverage": coverage, "behavior_review": behaviors, "specification_status": specs["specification_status"],
             "audit_status": audits["status"], "verification_mapping_status": overall(verification, []), "findings": overall_findings,
             "execution": "Not assessed by this quality declaration; cite actual build/test/external runs separately. Compilation is not business testing.",
             "verification_gaps": {"missing_mapping_count": len(verification), "missing_mapping_by_spec": {path: sum(item.get("path") == path for item in verification) for path in sorted({item.get("path", "") for item in verification})}},
@@ -1645,7 +2046,7 @@ def specification_findings(root, p, paths=None):
     return findings
 
 
-def requirement_test_findings(root, p, records, current=False):
+def requirement_test_findings(root, p, records, current=False, change=None):
     """Check every effective promise, including ones absent from the selected delta."""
     findings = []
     tests = "\n".join(safe(root, name).read_text(encoding="utf-8", errors="replace")
@@ -1657,6 +2058,8 @@ def requirement_test_findings(root, p, records, current=False):
         identifier = item["id"]
         declared = re.search(r"(?im)^Verification:\s*(automated|manual|external)\b", item["body"])
         mapping = p.get("requirements", {}).get(identifier, {})
+        if not current and change:
+            mapping = mapping.get("targets",{}).get(change,mapping)
         kind = mapping.get("type", declared.group(1).lower() if declared else "automated")
         if declared and kind != declared.group(1).lower():
             findings.append({"status": "FAIL", "code": "requirement-verification", "path": item.get("path"),
@@ -1943,6 +2346,7 @@ def change_findings(root, p, change, phase):
         findings += baseline_findings(root, p, list(established_behavior(root, p, metadata, change))) if established_behavior(root, p, metadata, change) else []
     findings += behavior_findings(root, p, change, phase)
     if phase == "delivery":
+        findings += behavior_scope_findings(root, p, metadata["scope"], change)
         findings += delivery_knowledge_findings(root, p, metadata["scope"])
         tasks = directory / "tasks.md"
         if tasks.is_file() and re.search(r"^\s*- \[ \]", tasks.read_text(encoding="utf-8"), re.MULTILINE):
@@ -1952,7 +2356,7 @@ def change_findings(root, p, change, phase):
         for requirement in metadata.get("requirements", []):
             if requirement not in declared:
                 findings.append({"status": "FAIL", "code": "requirement-spec", "message": f"{requirement} has no specification reference."})
-        findings += requirement_test_findings(root, p, records)
+        findings += requirement_test_findings(root, p, records, change=change)
         if deltas and metadata.get("origin") == "files" and directory.parent.name == "archive":
             current_blocks = {re.sub(r"\s+", " ", block).strip() for path in safe(root, p["paths"]["specs"]).glob("**/*.md")
                               for block in requirement_blocks(path.read_text(encoding="utf-8"))}
@@ -2086,13 +2490,18 @@ def run_check(root, check, run_dir):
         with log.open("wb") as stream:
             completed = subprocess.run(argv, cwd=cwd, stdout=stream, stderr=subprocess.STDOUT, timeout=check.get("timeout", 300), check=False, env={**os.environ, "ARK_VERIFY_ACTIVE": "1", "PYTHONPYCACHEPREFIX": str(run_dir / "bytecode")})
         result.update(status="PASS" if completed.returncode == 0 else "FAIL", exit_code=completed.returncode)
+        if completed.returncode < 0:
+            try: result["termination"] = signal.Signals(-completed.returncode).name
+            except ValueError: result["termination"] = "unknown-signal"
     except FileNotFoundError as exc:
         result.update(status="NOT_RUN", reason=str(exc))
     except subprocess.TimeoutExpired:
         result.update(status="FAIL", reason="timeout")
     except OSError as exc:
         result.update(status="NOT_RUN", reason=str(exc))
-    result.update(duration_seconds=round(time.monotonic() - started, 3), finished_at=now(), log=log.relative_to(root).as_posix())
+    result.update(duration_seconds=round(time.monotonic() - started, 3), finished_at=now(), log=log.relative_to(root).as_posix(),
+                  log_sha256=digest(log.read_bytes()) if log.is_file() else None,
+                  environment={"platform": sys.platform, "python": sys.version.split()[0]})
     return result
 
 
@@ -2342,6 +2751,7 @@ def context(root, p, session="default"):
         resume = (directory / "checkpoint.md").relative_to(root).as_posix()
     return {"project": str(root), "mode": p["mode"], "active_change": change, "declared_change": declared,
             "selection": selection, "affected_knowledge": knowledge_navigation(root, p, selection["changed_files"]),
+            "behavior_impact": behavior_impact(root, p, selection["changed_files"]),
             "routing": {"facts": p["paths"]["baseline"], "behavior": p["paths"]["specs"], "decisions": p["paths"]["adr"], "work": p["paths"]["changes"]},
             "workflow": "Use OpenSpec, another development tool or direct conversation. Read relevant rules/evidence; run local checks before claiming delivery. No daily toolkit Skill or activation is required.",
             "resume": f"Read {resume} and actual diff." if resume else "Inspect candidate work and actual diff; overlapping scope stays ambiguous. No task is guessed from modification time.",
@@ -2353,7 +2763,7 @@ def impact(root, p, base=None):
     affected = set(knowledge_navigation(root, p, selection["changed_files"]))
     documents = [item for item in knowledge_status(root, p)["documents"] if item["document"] in affected]
     result = {"status": "PENDING" if selection["ambiguous"] or any(item["freshness"] == "stale" for item in documents) else "PASS",
-              "base": base, "selection": selection, "knowledge": documents, "created_at": now(),
+              "base": base, "selection": selection, "knowledge": documents, "behavior": behavior_impact(root, p, selection["changed_files"]), "created_at": now(),
               "meaning": "Path/hash impact candidates require semantic review; no automatic business conclusion"}
     atomic(safe(root, ".ai/runtime/last-impact.json"), dump(result))
     return result
@@ -2367,6 +2777,11 @@ def local_check(root, p, base=None, local=True):
     result["business_checks_executed"] = bool(result.get("executed_check_count", 0))
     changed = changed_files(root, base)
     result["knowledge_review_candidates"] = knowledge_navigation(root, p, changed)
+    result["behavior_review_candidates"] = behavior_impact(root, p, changed)
+    if safe(root, ".ai/behavior-review.json").is_file() and not result.get("changes"):
+        scoped = behavior_scope_findings(root, p, changed)
+        result["findings"].extend(scoped)
+        result["status"] = overall([{"status": result["status"]}, *scoped], [])
     result["stage"] = "candidate-delivery" if result.get("behavior_files") or result.get("lightweight_files") else "structure-or-documents"
     atomic(safe(root, ".ai/runtime/last-check.json"), dump(result))
     return result
@@ -2611,6 +3026,14 @@ def parser():
     coverage.add_argument("--document", required=True)
     coverage.add_argument("--reviewer", required=True)
     baseline.add_parser("coverage-status")
+    behavior = baseline.add_parser("behavior-record")
+    behavior.add_argument("--document", required=True)
+    behavior.add_argument("--reviewer", required=True)
+    baseline.add_parser("behavior-status")
+    candidate = baseline.add_parser("behavior-change-record")
+    candidate.add_argument("--change", required=True)
+    candidate.add_argument("--report", required=True)
+    candidate.add_argument("--reviewer", required=True)
     spec_status = baseline.add_parser("spec-status")
     spec_status.add_argument("--scope", nargs="+", help="Limit contract source/document scope; omitted means all registered contracts")
     audit = baseline.add_parser("audit-record")
@@ -2704,6 +3127,7 @@ def parser():
     hk = sub.add_parser("hook")
     hk.add_argument("action", choices=["session", "stop"])
     hk.add_argument("--agent", choices=["codex", "claude"], required=True)
+    sub.add_parser("engineering-status")
     return ap
 
 
@@ -2728,6 +3152,8 @@ def main(argv=None):
                 result = hook(root, p, args.action, args.agent, payload)
             elif args.command == "doctor":
                 result = doctor(root, p)
+            elif args.command == "engineering-status":
+                result = engineering_status(root, p)
             elif args.command == "entry":
                 with lock(root):
                     result = entry_refresh(root, p) if args.operation == "refresh" else entry_status(root, p)
@@ -2781,6 +3207,12 @@ def main(argv=None):
                         result = coverage_record(root, p, args.document, args.reviewer)
                     elif args.operation == "coverage-status":
                         result = coverage_status(root, p)
+                    elif args.operation == "behavior-record":
+                        result = behavior_record(root, p, args.document, args.reviewer)
+                    elif args.operation == "behavior-status":
+                        result = behavior_status(root, p)
+                    elif args.operation == "behavior-change-record":
+                        result = behavior_candidate_record(root, p, args.change, args.report, args.reviewer)
                     elif args.operation == "spec-status":
                         result = baseline_spec_status(root, p, args.scope)
                     elif args.operation == "audit-record":

@@ -49,3 +49,9 @@ Baseline hidden. Requirement/scenario counts alone are not acceptance. Compilati
 checks do not count as business tests. init-report.json is a historical initialization snapshot;
 current summaries cite the actual phase/run/time/scope and PENDING gaps. An absent Change
 directory during source-baseline authoring is not itself an error; do not create empty artifacts.
+
+Require source-derived behavior inventory (baseline-repo behavior-model.md), per-clause
+branch/effect/counterexample evidence, cross-spec contract consistency and actual assertion
+mapping. Run baseline behavior-status; files/capabilities and comment-level test references
+cannot close existing-repository onboarding. Upgrade preserves old assets and exposes missing
+behavior review as PENDING. Record native execution separately with engineering-verification.md.

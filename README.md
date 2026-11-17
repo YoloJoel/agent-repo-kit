@@ -2,6 +2,11 @@
 
 一次接入仓库工程规范。初始化和现状分析使用 Skill；日常开发自由使用 OpenSpec、其他 Skills 或直接对话。
 
+当前版本 **0.3.0**。本轮增加独立的可观察行为清单、横切面适用性、分支/生效点证据、
+逐条反证、契约一致性和断言追溯，避免以文件数、常量定义、REQ 注释或格式通过宣称语义完成。
+已有 0.2.x 资产保留；显式升级后补行为复核，缺失保持待定，不自动认证旧产物。
+详见 [本轮工作包](docs/iterations/IT-08.md) 和 [质量评测协议](docs/evaluation.md)。
+
 ## 安装与首次接入
 
 Claude Code 原生 Plugin：
@@ -75,6 +80,8 @@ python -m unittest discover -s tests -v
 [架构](docs/architecture.md) · [CLI](docs/cli.md) · [支持状态](docs/compatibility.md) · [迭代计划](docs/roadmap.md) · [执行记录](docs/iterations/IT-01.md)
 
 ## 完成状态与使用说明
+
+以下为历史版本能力记录；当前版本为 0.3.0，新增行为证据与评测边界见上方链接。
 
 0.2.4 默认只提供两个接入 Skill。日常开发入口自由，本地检查是基础；Plugin/Skills 安装、
 原生 OpenSpec 两次交付与归档、存量 Java/Maven 仓的实施前验证和回归、0.1 升级均有实际记录。

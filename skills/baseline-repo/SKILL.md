@@ -10,6 +10,10 @@ and subsequent batches yourself; do not ask the user to choose ordering or appro
 continuation. Explicit user limits take priority. Checkpoints preserve progress while work
 continues; they do not shrink the completion scope or end the task after one slice.
 
+Read `references/behavior-model.md` before selecting capability/spec boundaries. Build the independent
+observable-unit inventory FIRST; use actual trigger/branch/effect evidence, unresolved gaps,
+per-claim counterexamples and assertions. Modules are navigation, not the generation unit.
+
 Use the supplied initialize-repo helper if project rules/runtime are absent. Run the target's
 `python hack/ai/ark.py` for command examples written as `ark`. No package or global CLI is needed.
 
@@ -39,6 +43,10 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
    Resolve accessible facts yourself. Keep questions in the single ledger with
    `ark decision add/resolve/list` for its JSON format, or preserve/update an existing mapped native ledger through its original workflow; generated views are not separately maintained truth.
    Prepare concrete options/recommendations only for real unresolved owner decisions.
+Record the source-derived behavior inventory using `baseline behavior-record`; current promises
+require verified evidence, actual normative clauses and separately reviewed assertion mappings.
+Do not upgrade inferred behavior into SHALL/MUST or omit cross-module flows.
+
 7. By default, continue from Baseline to current behavior specifications; do not stop at
    explanations, inventory or contract documents. Read `references/specification.md`.
    Write/reuse current specs under policy.paths.specs for verified observable behavior,
@@ -68,6 +76,10 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
    AGENTS, .ai/project-entry.json, the capability map, module/contract/case artifacts
    and current specs in the actual source-audit scope. After these edits refresh audit records;
    do not use an old audit on changed artifacts.
+Include the behavior inventory, canonical contract consistency and per-claim counterexamples
+in both final audit passes. Check `baseline behavior-status`; file counts and test ID comments
+cannot close it. Runtime records declarations and does not certify their semantic truth.
+
 10. Run `ark baseline status`, `ark baseline validate` and `ark baseline spec-status`
    (use --scope <source/document paths> for an explicitly limited task). Execute real project checks.
    Report specification creation separately from verification: missing tests/check mappings

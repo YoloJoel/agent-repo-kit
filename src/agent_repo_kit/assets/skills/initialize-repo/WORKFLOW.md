@@ -28,6 +28,9 @@ choose doc/specs versus OpenSpec. Honor an explicitly narrower user request.
    It creates project rules/checks and keeps using the installed Skills without duplicating
    them in the target. For repository-generated workflows without this helper, reuse the
    target's existing `python hack/ai/ark.py` entry. Merge managed conflicts explicitly.
+Read `references/engineering-verification.md` when establishing commands, test roots and
+reproducible environment evidence. Run `engineering-status`; readiness is not execution.
+
 4. Read generated policy and observed project context. Verify project boundaries, versions and roots; fill source-backed context and explicit gaps. Reuse existing human documents. Confirm actual check commands from project configuration and
    execution before adding them to `checks`. Candidates are suggestions, not gates.
    Read `references/onboarding.md` for configuration, discovery and upgrade details.

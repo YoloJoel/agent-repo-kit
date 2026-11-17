@@ -111,6 +111,31 @@
             "items": {
               "type": "string"
             }
+          },
+          "targets": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": [
+                "type",
+                "checks"
+              ],
+              "properties": {
+                "type": {
+                  "enum": [
+                    "automated",
+                    "manual",
+                    "external"
+                  ]
+                },
+                "checks": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
           }
         }
       }

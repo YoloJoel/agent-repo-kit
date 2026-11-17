@@ -72,3 +72,21 @@ jobs:
           name: native-openspec-qualification
           path: ${{ runner.temp }}/openspec-qualification.json
           if-no-files-found: ignore
+  behavior-probes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Run actual C C++ Java Python boundary and regression probes
+        run: python tools/qualify_behavior.py --output "$RUNNER_TEMP/behavior-probes"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-behavior-probes
+          path: ${{ runner.temp }}/behavior-probes

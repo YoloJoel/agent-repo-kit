@@ -1,0 +1,748 @@
+{
+  "version": "0.3.0",
+  "runtime_sha256": "4e2fe214b6fd4d1e4a910b23b456ef1ce27354503bf00ff189fa23f1e7694d48",
+  "scope": "Public bounded examples and isolated consumers; no private business source evaluated.",
+  "local_validation": {
+    "source_suite": {
+      "tests": 187,
+      "result": "PASS",
+      "log_sha256": "b23409f9bdaf5f75998f7d60148b382484141fba404419b2a71a0afcafa9ed4e"
+    },
+    "installed_wheel": {
+      "tests": 185,
+      "additional_lifecycle_tests": 2,
+      "result": "PASS",
+      "log_sha256": "3ae3c05dd21649d32a739b32d3334087b860de51113fd76143701e41c649e9a1",
+      "additional_log_sha256": "4b394353b7c0413772ccbb13ff6ba912de3f69295eb1cd7d96faf802f44a5c91"
+    },
+    "native_build_and_both_skill_validation": "PASS"
+  },
+  "native_probes": {
+    "kit_version": "0.3.0",
+    "meaning": "Actual bounded native probes, not model semantic quality, project coverage or production compatibility",
+    "platform": "linux",
+    "results": [
+      {
+        "compiler": "/usr/bin/cc",
+        "meaning": "Observed boundary regression detection only; not exhaustive stack/project qualification",
+        "runs": [
+          {
+            "build": {
+              "argv": [
+                "/usr/bin/cc",
+                "probe.c",
+                "-o",
+                "probe"
+              ],
+              "cwd": "/tmp/ark-behavior-probe-3uxh4p6o",
+              "duration_seconds": 0.115,
+              "environment": {
+                "platform": "linux",
+                "python": "3.12.14"
+              },
+              "exit_code": 0,
+              "finished_at": "2026-11-17T13:46:10+00:00",
+              "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/C/original/build.log",
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "name": "build",
+              "required": true,
+              "started_at": "2026-11-17T13:46:10+00:00",
+              "status": "PASS",
+              "type": "command"
+            },
+            "phase": "original",
+            "source_sha256": "b4ef8510c6c37d911f10482b402c1a7f7277ac1b51d3e1c82d11ab0828ca6401",
+            "test": {
+              "argv": [
+                "/tmp/ark-behavior-probe-3uxh4p6o/probe"
+              ],
+              "cwd": "/tmp/ark-behavior-probe-3uxh4p6o",
+              "duration_seconds": 0.002,
+              "environment": {
+                "platform": "linux",
+                "python": "3.12.14"
+              },
+              "exit_code": 0,
+              "finished_at": "2026-11-17T13:46:10+00:00",
+              "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/C/original/behavior.log",
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "name": "behavior",
+              "required": true,
+              "started_at": "2026-11-17T13:46:10+00:00",
+              "status": "PASS",
+              "type": "command"
+            }
+          },
+          {
+            "build": {
+              "argv": [
+                "/usr/bin/cc",
+                "probe.c",
+                "-o",
+                "probe"
+              ],
+              "cwd": "/tmp/ark-behavior-probe-3uxh4p6o",
+              "duration_seconds": 0.064,
+              "environment": {
+                "platform": "linux",
+                "python": "3.12.14"
+              },
+              "exit_code": 0,
+              "finished_at": "2026-11-17T13:46:10+00:00",
+              "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/C/mutation/build.log",
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "name": "build",
+              "required": true,
+              "started_at": "2026-11-17T13:46:10+00:00",
+              "status": "PASS",
+              "type": "command"
+            },
+            "phase": "mutation",
+            "source_sha256": "a6ebe3f49ee2a79913cad83a07c2c381e72e2228da12272ec19864e22aa48c7f",
+            "test": {
+              "argv": [
+                "/tmp/ark-behavior-probe-3uxh4p6o/probe"
+              ],
+              "cwd": "/tmp/ark-behavior-probe-3uxh4p6o",
+              "duration_seconds": 0.004,
+              "environment": {
+                "platform": "linux",
+                "python": "3.12.14"
+              },
+              "exit_code": -6,
+              "finished_at": "2026-11-17T13:46:10+00:00",
+              "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/C/mutation/behavior.log",
+              "log_sha256": "4fe09b6e3f6854daf7084fbbfc681fd7a23e8298ef07dd84e04122b9e014f749",
+              "name": "behavior",
+              "required": true,
+              "started_at": "2026-11-17T13:46:10+00:00",
+              "status": "FAIL",
+              "termination": "SIGABRT",
+              "type": "command"
+            }
+          },
+          {
+            "build": {
+              "argv": [
+                "/usr/bin/cc",
+                "probe.c",
+                "-o",
+                "probe"
+              ],
+              "cwd": "/tmp/ark-behavior-probe-3uxh4p6o",
+              "duration_seconds": 0.115,
+              "environment": {
+                "platform": "linux",
+                "python": "3.12.14"
+              },
+              "exit_code": 0,
+              "finished_at": "2026-11-17T13:46:10+00:00",
+              "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/C/restored/build.log",
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "name": "build",
+              "required": true,
+              "started_at": "2026-11-17T13:46:10+00:00",
+              "status": "PASS",
+              "type": "command"
+            },
+            "phase": "restored",
+            "source_sha256": "b4ef8510c6c37d911f10482b402c1a7f7277ac1b51d3e1c82d11ab0828ca6401",
+            "test": {
+              "argv": [
+                "/tmp/ark-behavior-probe-3uxh4p6o/probe"
+              ],
+              "cwd": "/tmp/ark-behavior-probe-3uxh4p6o",
+              "duration_seconds": 0.002,
+              "environment": {
+                "platform": "linux",
+                "python": "3.12.14"
+              },
+              "exit_code": 0,
+              "finished_at": "2026-11-17T13:46:10+00:00",
+              "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/C/restored/behavior.log",
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "name": "behavior",
+              "required": true,
+              "started_at": "2026-11-17T13:46:10+00:00",
+              "status": "PASS",
+              "type": "command"
+            }
+          }
+        ],
+        "stack": "C",
+        "status": "PASS",
+        "version": [
+          "cc (Debian 14.2.0-19) 14.2.0"
+        ]
+      },
+      {
+        "compiler": "/usr/bin/c++",
+        "meaning": "Observed boundary regression detection only; not exhaustive stack/project qualification",
+        "runs": [
+          {
+            "build": {
+              "argv": [
+                "/usr/bin/c++",
+                "probe.cpp",
+                "-o",
+                "probe"
+              ],
+              "cwd": "/tmp/ark-behavior-probe-v7myjb81",
+              "duration_seconds": 0.474,
+              "environment": {
+                "platform": "linux",
+                "python": "3.12.14"
+              },
+              "exit_code": 0,
+              "finished_at": "2026-11-17T13:46:11+00:00",
+              "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/Cpp/original/build.log",
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "name": "build",
+              "required": true,
+              "started_at": "2026-11-17T13:46:10+00:00",
+              "status": "PASS",
+              "type": "command"
+            },
+            "phase": "original",
+            "source_sha256": "2892ce07ffefab5e8f551bd5de14084cca9a688c5c04e40b9a2726c7cf00ae2f",
+            "test": {
+              "argv": [
+                "/tmp/ark-behavior-probe-v7myjb81/probe"
+              ],
+              "cwd": "/tmp/ark-behavior-probe-v7myjb81",
+              "duration_seconds": 0.004,
+              "environment": {
+                "platform": "linux",
+                "python": "3.12.14"
+              },
+              "exit_code": 0,
+              "finished_at": "2026-11-17T13:46:11+00:00",
+              "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/Cpp/original/behavior.log",
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "name": "behavior",
+              "required": true,
+              "started_at": "2026-11-17T13:46:11+00:00",
+              "status": "PASS",
+              "type": "command"
+            }
+          },
+          {
+            "build": {
+              "argv": [
+                "/usr/bin/c++",
+                "probe.cpp",
+                "-o",
+                "probe"
+              ],
+              "cwd": "/tmp/ark-behavior-probe-v7myjb81",
+              "duration_seconds": 0.369,
+              "environment": {
+                "platform": "linux",
+                "python": "3.12.14"
+              },
+              "exit_code": 0,
+              "finished_at": "2026-11-17T13:46:11+00:00",
+              "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/Cpp/mutation/build.log",
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "name": "build",
+              "required": true,
+              "started_at": "2026-11-17T13:46:11+00:00",
+              "status": "PASS",
+              "type": "command"
+            },
+            "phase": "mutation",
+            "source_sha256": "2ab2b785158f6c695beb8367225b4357db56fc7345a1f105a30ddfb56972879c",
+            "test": {
+              "argv": [
+                "/tmp/ark-behavior-probe-v7myjb81/probe"
+              ],
+              "cwd": "/tmp/ark-behavior-probe-v7myjb81",
+              "duration_seconds": 0.009,
+              "environment": {
+                "platform": "linux",
+                "python": "3.12.14"
+              },
+              "exit_code": -6,
+              "finished_at": "2026-11-17T13:46:11+00:00",
+              "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/Cpp/mutation/behavior.log",
+              "log_sha256": "704fed8089207c5abea9295e03bd5d1a544131ea7245770b6c3183a0d0d4c31b",
+              "name": "behavior",
+              "required": true,
+              "started_at": "2026-11-17T13:46:11+00:00",
+              "status": "FAIL",
+              "termination": "SIGABRT",
+              "type": "command"
+            }
+          },
+          {
+            "build": {
+              "argv": [
+                "/usr/bin/c++",
+                "probe.cpp",
+                "-o",
+                "probe"
+              ],
+              "cwd": "/tmp/ark-behavior-probe-v7myjb81",
+              "duration_seconds": 0.42,
+              "environment": {
+                "platform": "linux",
+                "python": "3.12.14"
+              },
+              "exit_code": 0,
+              "finished_at": "2026-11-17T13:46:12+00:00",
+              "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/Cpp/restored/build.log",
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "name": "build",
+              "required": true,
+              "started_at": "2026-11-17T13:46:11+00:00",
+              "status": "PASS",
+              "type": "command"
+            },
+            "phase": "restored",
+            "source_sha256": "2892ce07ffefab5e8f551bd5de14084cca9a688c5c04e40b9a2726c7cf00ae2f",
+            "test": {
+              "argv": [
+                "/tmp/ark-behavior-probe-v7myjb81/probe"
+              ],
+              "cwd": "/tmp/ark-behavior-probe-v7myjb81",
+              "duration_seconds": 0.004,
+              "environment": {
+                "platform": "linux",
+                "python": "3.12.14"
+              },
+              "exit_code": 0,
+              "finished_at": "2026-11-17T13:46:12+00:00",
+              "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/Cpp/restored/behavior.log",
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "name": "behavior",
+              "required": true,
+              "started_at": "2026-11-17T13:46:12+00:00",
+              "status": "PASS",
+              "type": "command"
+            }
+          }
+        ],
+        "stack": "C++",
+        "status": "PASS",
+        "version": [
+          "c++ (Debian 14.2.0-19) 14.2.0"
+        ]
+      },
+      {
+        "reason": "javac/runtime unavailable; no packages installed",
+        "stack": "Java",
+        "status": "NOT_RUN"
+      },
+      {
+        "meaning": "Six actual cross-module relay tests; mutation changes offline acceptance semantics",
+        "runs": [
+          {
+            "argv": [
+              "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "tests",
+              "-v"
+            ],
+            "cwd": "/tmp/ark-relay-probe-zg6uba8w/relay",
+            "duration_seconds": 0.316,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "exit_code": 0,
+            "finished_at": "2026-11-17T13:46:12+00:00",
+            "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/python/original.log",
+            "log_sha256": "d8daa7c5093e0340842320670aa1e2d29611e88ff65cfc014ca72785b968a578",
+            "name": "original",
+            "required": true,
+            "started_at": "2026-11-17T13:46:12+00:00",
+            "status": "PASS",
+            "type": "command"
+          },
+          {
+            "argv": [
+              "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "tests",
+              "-v"
+            ],
+            "cwd": "/tmp/ark-relay-probe-zg6uba8w/relay",
+            "duration_seconds": 0.115,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "exit_code": 1,
+            "finished_at": "2026-11-17T13:46:12+00:00",
+            "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/python/mutation.log",
+            "log_sha256": "14fe698b351ce3d593d272d2533a176f7d680d2c58c8ea90a9220c5977388952",
+            "name": "mutation",
+            "required": true,
+            "started_at": "2026-11-17T13:46:12+00:00",
+            "status": "FAIL",
+            "type": "command"
+          },
+          {
+            "argv": [
+              "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "tests",
+              "-v"
+            ],
+            "cwd": "/tmp/ark-relay-probe-zg6uba8w/relay",
+            "duration_seconds": 0.115,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "exit_code": 0,
+            "finished_at": "2026-11-17T13:46:12+00:00",
+            "log": "/workspace/scratch/f2ad980ad476/behavior-native-final/python/restored.log",
+            "log_sha256": "e08ecded4aef6ce0f779e71ce2e6301f49579aa0eac07bbd78611302f374cf24",
+            "name": "restored",
+            "required": true,
+            "started_at": "2026-11-17T13:46:12+00:00",
+            "status": "PASS",
+            "type": "command"
+          }
+        ],
+        "stack": "Python",
+        "status": "PASS"
+      }
+    ],
+    "status": "PENDING"
+  },
+  "independent_runtime_review": {
+    "reviewer": "independent behavior_runtime_review agent",
+    "scope": "Current runtime and behavior-quality tests; isolated temporary consumer repositories; no tool-repository edits. No other evaluation directories or docs/evidence artifacts read.",
+    "runtime_sha256": "4e2fe214b6fd4d1e4a910b23b456ef1ce27354503bf00ff189fa23f1e7694d48",
+    "commands": [
+      {
+        "command": "PYTHONPATH=src:tests python /workspace/scratch/f2ad980ad476/behavior-runtime-review/reverify.py",
+        "cwd": "/workspace/scratch/f2ad980ad476/behavior-quality-fix",
+        "exit_code": 0,
+        "log": "/workspace/scratch/f2ad980ad476/behavior-runtime-review/reverify.log"
+      },
+      {
+        "command": "PYTHONPATH=src:tests python -m unittest test_behavior_quality -q",
+        "cwd": "/workspace/scratch/f2ad980ad476/behavior-quality-fix",
+        "exit_code": 0,
+        "log": "/workspace/scratch/f2ad980ad476/behavior-runtime-review/tests.log",
+        "result": "29 tests, OK"
+      }
+    ],
+    "executed_results": {
+      "preserved_refactor": {
+        "mutation": "app.py: value is None -> None is value",
+        "ready": "PASS",
+        "candidate": "PASS",
+        "delivery": "PASS",
+        "close": "PASS",
+        "delivery_findings": []
+      },
+      "manual_target_transition": {
+        "candidate": "PASS",
+        "delivery": "PASS",
+        "findings": [],
+        "checks": [
+          {
+            "name": "native-tests",
+            "status": "PASS"
+          },
+          {
+            "name": "inspect",
+            "status": "PASS"
+          }
+        ],
+        "native_execution_exit": 0,
+        "current_spec_unchanged": true
+      }
+    },
+    "prior_findings_revalidation": {
+      "direct_delivery_close_bypass": "Closed: delivery and close regression tests pass.",
+      "new_unmapped_production_source": "Closed: new production source regression test passes.",
+      "python_url_hash_comment_literals": "Closed: valid literal regression test passes.",
+      "candidate_audit_test_mutation_rebinding": "Closed: weakening assertions after audit is rejected.",
+      "candidate_target_omission": "Closed: new actual native delta omitted from target audit is rejected.",
+      "typescript_go_backtick_literals": "Closed: template/raw literal regression test passes.",
+      "tests_misclassified_as_new_production": "Closed: preserved refactor passes candidate after scope intersection fix.",
+      "current_vs_target_verification_mapping": "Closed: isolated manual target transition passes delivery while current spec remains automated."
+    },
+    "remaining_confirmed_findings": [],
+    "limitations": [
+      "Review and PASS certify declared protocol consistency only, not semantic completeness.",
+      "Manual target fixture executes the real native assertions and records reviewed local evidence; no remote external environment was exercised.",
+      "Archived current-spec refresh remains a documented follow-up; this run verifies close completion, not complete post-archive re-onboarding."
+    ]
+  },
+  "parent_independent_validation": {
+    "runtime_sha256": "4e2fe214b6fd4d1e4a910b23b456ef1ce27354503bf00ff189fa23f1e7694d48",
+    "runs": [
+      {
+        "target": "behavior-fresh-eval",
+        "argv": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-v"
+        ],
+        "exit_code": 0,
+        "output": "test_disconnect_releases_capacity (test_relay.RelayTests.test_disconnect_releases_capacity) ... ok\ntest_duplicate_and_capacity (test_relay.RelayTests.test_duplicate_and_capacity) ... ok\ntest_effective_limit (test_relay.RelayTests.test_effective_limit) ... ok\ntest_malformed_fields_fail_before_state_change (test_relay.RelayTests.test_malformed_fields_fail_before_state_change) ... ok\ntest_offline_acceptance_still_advances_deduplication (test_relay.RelayTests.test_offline_acceptance_still_advances_deduplication) ... ok\ntest_reconfigure_rejects_shrink_without_epoch_change (test_relay.RelayTests.test_reconfigure_rejects_shrink_without_epoch_change) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nOK\n"
+      },
+      {
+        "target": "behavior-upgrade-eval",
+        "argv": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-v"
+        ],
+        "exit_code": 0,
+        "output": "test_conflict_does_not_append_or_replace (test_journal.JournalTests.test_conflict_does_not_append_or_replace) ... ok\ntest_conflicting_replay_is_explicit_failure (test_journal.JournalTests.test_conflicting_replay_is_explicit_failure) ... ok\ntest_durable_replay_and_unicode (test_journal.JournalTests.test_durable_replay_and_unicode) ... ok\ntest_invalid_id_has_no_file_side_effect (test_journal.JournalTests.test_invalid_id_has_no_file_side_effect) ... ok\ntest_torn_record_is_explicit_failure (test_journal.JournalTests.test_torn_record_is_explicit_failure) ... ok\ntest_unserializable_payload_has_no_file_side_effect (test_journal.JournalTests.test_unserializable_payload_has_no_file_side_effect) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.002s\n\nOK\n"
+      }
+    ],
+    "configs": [
+      {
+        "target": "behavior-fresh-eval",
+        "schema": "spec-driven",
+        "context_characters": 773,
+        "rule_types": [
+          "design",
+          "proposal",
+          "specs",
+          "tasks"
+        ]
+      },
+      {
+        "target": "behavior-upgrade-eval",
+        "schema": "spec-driven",
+        "context_characters": 1457,
+        "rule_types": [
+          "design",
+          "proposal",
+          "specs",
+          "tasks"
+        ]
+      }
+    ],
+    "counterexample": {
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+        "-c",
+        "from journal import Journal; from pathlib import Path; import tempfile; x=[]; x.append(x); p=Path(tempfile.mkdtemp())/'data';\ntry: Journal(p).append('cycle',x)\nexcept Exception as e: print(type(e).__name__); print('file_exists',p.exists())"
+      ],
+      "cwd": "/workspace/scratch/f2ad980ad476/behavior-upgrade-eval",
+      "exit_code": 0,
+      "output": "ValueError\nfile_exists False\n"
+    }
+  },
+  "model_tasks": [
+    {
+      "target": "behavior-fresh-eval",
+      "final_runtime_sha256": "4e2fe214b6fd4d1e4a910b23b456ef1ce27354503bf00ff189fa23f1e7694d48",
+      "source_files": {
+        "relay.py": "09929cec7ad2f88a4af1ead4fdb882b2f01e45d1f34d5d239555238971bffa18",
+        "settings.py": "03e621a7e9db2a6ee1c7606d8f4cb50e9ca248e255edc8c8a7fff51ad63530ef",
+        "transport.py": "af962d7f2ae08230556326c147dfd8d9ccafd96b187e37ee43cb8048a5ebc9bb",
+        "tests/test_relay.py": "c10380b380bdee3d971eb0a6480d96ace13b31143fb731e42373497014facdb0"
+      },
+      "status": "PENDING",
+      "completion": "PARTIAL",
+      "behavior_review": {
+        "coverage": {
+          "current_units": 10,
+          "discovered_units": 11,
+          "ratio": 0.7272727272727273,
+          "reviewed_units": 8,
+          "unresolved_units": 0
+        },
+        "execution": "NOT_ASSESSED",
+        "findings": [
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "B-RECONFIG"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "B-TRANSPORT"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "B-INIT"
+          }
+        ],
+        "meaning": "Coverage of the declared source-derived inventory only; neither complete behavior discovery, semantic certification nor executed assertion coverage. Review actual assertion quality and run native checks separately.",
+        "source_revision": null,
+        "status": "PENDING",
+        "verification_changes": []
+      },
+      "audit_status": "PASS",
+      "discovered_units": 11,
+      "requirements": [
+        "REQ-RELAY-ACCEPT",
+        "REQ-RELAY-CAP",
+        "REQ-RELAY-CONFIG",
+        "REQ-RELAY-DISCONNECT",
+        "REQ-RELAY-DUP",
+        "REQ-RELAY-INIT",
+        "REQ-RELAY-RECONFIG",
+        "REQ-RELAY-SHRINK",
+        "REQ-RELAY-TRANSPORT",
+        "REQ-RELAY-VALIDATE"
+      ],
+      "review_mode": "same-agent-separate-pass",
+      "limitations": "Actual static review plus original six tests; no full business assertion coverage or host trust claim.",
+      "inventory_sha256": "9802bf6c6d20d5d811bfbdb3a432fc7a1424635dddac8248db0b7620453315e5",
+      "report_excerpt": "全部十条要求。\n\nOpenSpec配置有spec-driven schema、项目context、proposal/specs/design/tasks规则。实际使用已存在PyYAML safe_load成功解析并核对内容；配置review record PASS。PATH无openspec CLI，原生初始化与原生校验 **NOT_RUN**，未以包管理器/网络runner安装。没有把文件存在或review record当成原生CLI验证。Codex可执行路径在初始化diagnostics中可见，但当前host未提供本会话hook信任/加载观测，只有.codex/hooks.json配置，live loading/trust **NOT_VERIFIED**；没有声称配置即PASS。远端required checks/branch protection未请求、未设置。\n\n| 检查 | 退出码 | 当前结果 | 执行证据 |\n|---|---:|---|---|\n| unit | 0 | PASS | [原始日志](checks/unit.json) |\n| doctor | 2 | PENDING | [原始日志](checks/doctor.json) |\n| structure | 2 | PENDING | [原始日志](checks/structure.json) |\n| engineering-status | 0 | PASS | [原始日志](checks/engineering-status.json) |\n| entry-status | 2 | PENDING | [原始日志](checks/entry-status.json) |\n| configuration-status | 0 | PASS | [原始日志](checks/configuration-status.json) |\n| baseline-status | 0 | PASS | [原始日志](checks/baseline-status.json) |\n| baseline-validate | 0 | PASS | [原始日志](checks/baseline-validate.json) |\n| spec-status | 2 | PENDING | [原始日志](checks/spec-status.json) |\n| coverage-status | 0 | PASS | [原始日志](checks/coverage-status.json) |\n| behavior-status | 2 | PENDING | [原始日志](checks/behavior-status.json) |\n| audit-status | 0 | PASS | [原始日志](checks/audit-status.json) |\n| onboarding-status | 2 | PENDING | [原始日志](checks/onboarding-status.json) |\n\n最终 onboarding-status --record 在配置、入口、导航、行为与审计登记完成之后真实执行，原始结果在 [checks/onboarding-status.json](checks/onboarding-status.json)，输入绑定声明在 .ai/runtime/final-onboarding.json。init-report.json只保留历史初始化快照。最终13条machine findings包含重复汇总，实质为入口3组真实未知与3条要求测试映射/断言缺失；没有源覆盖遗漏、audit stale或未审核产物。\n\n## 未关闭范围与后续可执行步骤\n\n规格创建/源覆盖/知识登记/源码审计分别PASS；spec verification、behavior status、doctor/structure和最终onboarding保持PENDING。所有三个生产模块已阅读，没有待阅读模块或未处理正常批次。当前任务在“不改原始源码和测试”的边界内完成接入，尚不具备全业务验证完成声明。\n\n明确没有原有完整测试映射/断言的是 REQ-RELAY-RECONFIG（成功/同值配置及epoch）、REQ-RELAY-TRANSPORT（直接在线/离线返回、消息浅拷贝）、REQ-RELAY-INIT（完整初始态与实例隔离）。其余7条仅有部分实际断言：缺省/int异常、显式空设备/负seq、较小重复及不发布、满容量已有设备更新、在线消息主题/字段/epoch、缩容拒绝保持设备序号、未知disconnect/返回/epoch及同设备重接等仍PENDING。发布异常/开放Python类型及并发恢复无自动验证，不冒充手工已执行。\n\n后续开发如获修改测试的任务，可按这些具体输入/期望增补有意义的characterization，并运行原有6项及新增测试；当前不为通过而补镜像测试、删断言或降级manual。产品名称/部署/外部消费者/可靠交付与并发意图需真实来源，不能从此源码快照推断。原生OpenSpec与host加载证据可在具备实际工具/观测后独立补录。\n"
+    },
+    {
+      "target": "behavior-upgrade-eval",
+      "final_runtime_sha256": "4e2fe214b6fd4d1e4a910b23b456ef1ce27354503bf00ff189fa23f1e7694d48",
+      "source_files": {
+        "journal.py": "91716921ecd8a3cafe172be63bd8ade6e6fc3571f7e8f4972f1da83fd7bcb9b5",
+        "tests/test_journal.py": "6e284eee9f52521b9346cb018091db41baf1132f38008d7d91490967ad873509"
+      },
+      "status": "FAIL",
+      "completion": "PARTIAL",
+      "behavior_review": {
+        "coverage": {
+          "current_units": 21,
+          "discovered_units": 24,
+          "ratio": 0.375,
+          "reviewed_units": 9,
+          "unresolved_units": 0
+        },
+        "execution": "NOT_ASSESSED",
+        "findings": [
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-MISSING"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-DECODE"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-EMPTY"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-PERMISSIVE-ID"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-SHAPE"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-EXTRA"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-NEWLINE"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-READ-ERRORS"
+          },
+          {
+            "code": "behavior-counterexample",
+            "message": "Counterexample/alternative is unresolved; do not close this behavior",
+            "status": "FAIL",
+            "unit": "BEH-JOURNAL-UNSERIALIZABLE"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-ENCODE"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-PARENT"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-ROUNDTRIP"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-SYNC"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-IO-ERRORS"
+          },
+          {
+            "code": "behavior-assertion-missing",
+            "message": "Automated claim needs an actual test assertion, input and expected outcome",
+            "status": "PENDING",
+            "unit": "BEH-JOURNAL-CRASH"
+          }
+        ],
+        "meaning": "Coverage of the declared source-derived inventory only; neither complete behavior discovery, semantic certification nor executed assertion coverage. Review actual assertion quality and run native checks separately.",
+        "source_revision": null,
+        "status": "FAIL",
+        "verification_changes": []
+      },
+      "audit_status": "PENDING",
+      "discovered_units": 24,
+      "requirements": [
+        "REQ-JOURNAL-001",
+        "REQ-JOURNAL-002",
+        "REQ-JOURNAL-003",
+        "REQ-JOURNAL-004"
+      ],
+      "review_mode": "same-agent-separate-pass",
+      "limitations": "Actual static review plus original six tests; no full business assertion coverage or host trust claim.",
+      "inventory_sha256": "d0ebc1c1aa656d2d518b332d7a4919ce6f97ad52452cc282f2a11b97c7eab8c3",
+      "report_excerpt": "无未映射输入；不证明语义正确 |\n| openspec status | PASS 配置内容声明与新鲜度 |\n| doctor / verify --phase structure | PENDING：REQ-JOURNAL-004 缺测试映射 |\n| baseline spec-status | specification_status PASS；verification_status PENDING；总体 PENDING |\n| entry status | PENDING：Python/发布及验证未知项 |\n| baseline behavior-status | FAIL：反例 AUD-UPGRADE-001；另 14 个 assertion 缺口 PENDING |\n| 本次 baseline audit-status | PENDING：AUD-UPGRADE-001 未解决 |\n| onboarding-status --record | FAIL；为最终输入绑定当前快照，不能用历史 init-report 替代 |\n\n原生 OpenSpec CLI 未安装（查找无路径），原生 init/validate NOT_RUN；未为探测而安装包。Codex 可执行文件/钩子配置存在，live loading/trust 仍 NOT_VERIFIED，配置不等于运行 PASS。无托管 CI 或 required-check 配置属于本次结果。\n\n后续先对 GAP-JOURNAL-002 取得实际权威决定，再按决定收窄规范或实现有兼容性说明的异常规则，补相应回归；其余工作为可复现故障/边界断言与真实 Python/发布决策。所有产品源码已检查，没有隐藏的后续模块批次；未完成范围是规范冲突和验证/权威不确定性。\n\n## 冻结内核最终同步（本报告的最新终态）\n\n2026-11-17 再次使用同一 initialize-repo 最终 helper 显式 `--agents codex --upgrade`。最终 `hack/ai/ark.py` SHA256 为 `4e2fe214b6fd4d1e4a910b23b456ef1ce27354503bf00ff189fa23f1e7694d48`，与指定冻结值完全一致。同步输出见 `frozen-upgrade-installation.json`；影响 runtime、policy schema、工程标准资源、behavior-model、completion 和 manifest，工程标准仅追加新 active-change/candidate review 规则。实际项目没有 active Change，未引入虚构候选或绕过当前冲突。\n\n重新核对同步后标准、原源码/全部测试断言与当前规范/清单，补充 `frozen-source-audit.json` 两遍实际同 Agent 审阅，并刷新受工程标准变更影响的模块/配置内容记录与导航；旧 `upgrade-source-audit.json` 及旧审计快照全部保留。AUD-UPGRADE-001 / GAP-JOURNAL-002 与现有规范承诺未改写。\n\n重跑六项原始完整测试全部 PASS；再次执行循环 payload 临时文件探针，仍为 ValueError(\"Circular reference detected\")、file_exists=False。精确 argv、cwd、Python/OS、源码哈希与输出见 `frozen-execution-results.json`。最终完整检查见 `frozen-final-checks.json`：doctor/structure/spec verification/entry 为 PENDING，baseline status/validate/coverage、OpenSpec 内容及 readiness 为 PASS；behavior-status 和 onboarding-status --record 仍为 FAIL，当前审计 PENDING。FAIL 是保留的真实规范反例，不能用六测试通过抵消。\n\n`frozen-upgrade-result.json` 保存所有本轮影响资产的最终哈希，并确认原源码、原测试、现行 spec、旧升级审计与问题账本相对冻结前全部字节不变；冻结前的 43 个 raw 文件无任何删除/修改，原始接入前 23 个 raw 的跨轮保持不变检查见 `frozen-original-preservation-result.json`。原生 CLI 与 hook live/trust 仍未获得运行验证，未知项未关闭。\n\n最后复录曾因同时启动只读终态重录而在 baseline status/validate 捕获 mutation.lock 争用（当次 FAIL 是操作锁错误，非业务结果），完整失败输出保留于 `history/frozen-final-checks-lock-contention.json`。未删除任何运行锁；等待并发命令正常退出后按单一串行流程重跑，以最新 `frozen-final-checks.json` 为准。\n"
+    }
+  ]
+}
