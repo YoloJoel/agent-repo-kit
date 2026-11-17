@@ -105,3 +105,12 @@ Each object uses one actual topic/status value, not the pipe-separated example. 
 PENDING and record findings for omissions or unverifiable details. These are review declarations,
 not machine semantic certification. After final audit registration and all edits run onboarding-status --record; do not equate a
 selected spec's format/link PASS or an initial empty-spec run with whole-repository completion.
+
+## Behavior-level closure
+
+Use behavior-model.md for a source-derived denominator, every normative clause, effective
+branch/use/effect chains, unresolved evidence, attempted counterexamples and canonical contract
+consistency across specs. Verify tests at actual assertions, not REQ comments. Audit the final
+behavior inventory in both passes. Call baseline behavior-status separately; audit records
+and strict format validation cannot replace this semantic work. A new source/spec conflict
+takes priority over adding IDs or polishing format. Preserve actual reviewer independence.

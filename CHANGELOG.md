@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-11-17
+
+- Discover observable behavior before spec boundaries; track cross-cutting applicability, actual branch/use/effect evidence and unknowns.
+- Add input-bound behavior inventories, per-clause counterexamples, canonical contract conflict checks and assertion-level native-check mapping.
+- Preserve verification downgrades/removal dispositions and immutable history; expose transitive behavior impact and native engineering readiness.
+- Add reproducible C/C++/Java/Python positive/negative probes and isolated model qualification, with explicit untested boundaries.
+- Existing 0.2.x projects need explicit upgrade and actual behavior review; no automatic semantic certification.
+
 ## 0.2.6 — 2026-11-17
 
 - Generate/reconcile source-backed OpenSpec context/rules with separate actual review and native-validation status.

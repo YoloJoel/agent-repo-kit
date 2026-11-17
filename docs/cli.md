@@ -1,5 +1,24 @@
 # CLI reference
 
+## Behavior evidence (0.3.0)
+
+`ark baseline behavior-record --document <mapped behavior inventory> --reviewer <actual identity>`
+binds a source-derived observable-unit inventory, actual normative clauses, branch/effect evidence,
+attempted counterexamples, contract facts and assertion mappings. `ark baseline behavior-status`
+rechecks these declarations, same-condition conflicts and byte currency. Missing/unknown obligations
+stay PENDING; unverified current promises/contradictions/conflicts FAIL. This is NOT semantic truth
+inference or test execution. See the installed baseline-repo `references/behavior-model.md` protocol.
+
+`ark engineering-status` reports mapped C/C++/Java/Python source/test ranges and configured command
+availability. It never executes commands or probes network services. Native commands use argv/cwd,
+retain actual exit/signal, logs/hashes and basic environment metadata; record compiler versions,
+external prerequisites and local patches with the actual run. Other stacks use the same protocol.
+
+`ark impact` and `ark context` expose direct/transitive candidates from declared behavior dependencies.
+Knowledge-only onboarding, candidate implementation delivery and native archive remain distinct.
+New source/spec/test bytes require actual affected review before a fresh behavior record; re-recording
+hashes alone does not review semantics. Behavior ratios describe the discovered inventory only.
+
 Normal onboarding invokes the installed initialize-repo Skill, namespaced as
 `/agent-repo-kit:initialize-repo` in Claude Code. Its bundled helper needs no checkout,
 URL guide, package installation or bootstrap. It sets skill_delivery=installed and does
@@ -257,3 +276,17 @@ initialization snapshots retain their stage/time; early empty-spec PASS is not c
 - Mapping status and actual execution remain separate. Missing automated mappings stay PENDING and are counted by spec; absence of a test directory is not an exemption. Structure PASS explicitly states its limited scope and cannot certify onboarding.
 
 Historical versioned sections above describe their respective releases, not the current product version.
+
+`ark baseline behavior-change-record --change <ID> --report <two-pass report> --reviewer <identity>`
+binds active candidate semantic review to actual targets/tests/source inputs. The report's
+behavior_change section is specified in behavior-model.md. All native proposal/design/tasks/delta
+files, affected current specs/inventory and assertion sources must be audited. Reviewed deliberate
+MODIFIED/REMOVED targets do not silently rewrite current specs. Candidate declaration never replaces
+actual execution or native archive; refresh current baseline after synchronization. Delivery/close
+use the same scope gate, including newly added sources with no previous unit association.
+
+When a native delta intentionally changes a requirement's verification method, keep the current
+flat policy mapping and add `requirements.<ID>.targets.<change-id> = {"type": ..., "checks": [...]}`.
+Only that Change's delta validation selects its target mapping; current checks retain current
+authority. After native synchronization, reconcile the flat current mapping and retire the target
+mapping explicitly. This never supplies manual/external execution evidence by itself.

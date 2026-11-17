@@ -5,6 +5,10 @@ Honor an explicit analysis-only or limited module scope and report the omitted s
 Otherwise the scope is the whole repository, with automatically ordered batches; checkpoints
 are recoverable progress, not a reason to ask for continuation or deliver one slice as complete.
 
+Read `behavior-model.md` first. Draft by observable capability and cross-module contract,
+not by directories. Every normative clause needs a discovered behavior unit, actual path
+conditions, an attempted counterexample and explicit verification gaps.
+
 1. Read policy.paths.specs/changes and existing requirements before writing. For an
    ungoverned repository, create real capability spec files at the mapped specs path
    (default openspec/specs/<capability>/spec.md). Do not create empty directories or

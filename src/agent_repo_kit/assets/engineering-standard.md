@@ -160,3 +160,23 @@ Use baseline audit-record/audit-status to bind the declared passes to source/art
 bytes. Missing, stale or unresolved audits remain PENDING. Such records cannot prove actual
 rereading, reviewer independence or semantic correctness. Declare actual review mode; preserve
 accepted decisions and history. Stop with explicit remaining work rather than loop indefinitely.
+
+## Behavior evidence and incremental semantic review
+
+Discover observable behavior independently from directories/spec outlines, including cross-module
+messages/configuration/lifecycle/calculation/upgrade paths. Current normative clauses require
+verified effective branch/use/effect evidence; inferred/unknown/defect observations remain explicit
+gaps or baseline facts. Attempt counterexamples and reconcile canonical contract facts across
+related specs. Use the baseline-repo behavior-model protocol and baseline behavior-status.
+REQ comments/test filenames are navigation; inspect actual stimulus/assertion/expected result
+and map native checks. Test-method downgrades retain reasons, alternatives and unverified scope.
+Source/spec/test changes require affected dependency/caller/contract review, not just fresh hashes.
+Coverage is over a declared behavior inventory and is never proof of exhaustive discovery.
+Record local build patches/toolchains and distinguish selected tests, full regression failures
+and unavailable external services. Do not fix all existing business defects merely for onboarding.
+
+An active delta may intentionally differ from current promises until native synchronization.
+After actual two-pass source/target/assertion review, baseline behavior-change-record can bind
+candidate evidence without certifying the stale current inventory. Audit all native targets,
+affected/new sources and assertion tests. Actual ready/regression/target execution is still
+mandatory; delivery and close share the gate. Refresh current behavior after native archive.
