@@ -1,5 +1,10 @@
 # Reopen source after generation
 
+Read `source-facts.md` and rebuild its factual rows from effective code during each pass.
+Audit every literal/enum, validation/limit, safety, timer/expiry, precedence and lifecycle claim
+using the applicable checks there. Check each clause/scenario's actual test stimulus and
+observation; a generic passing assertion is not coverage for unrelated behavior.
+
 This is mandatory after baseline/spec drafting by default; a format check is not a substitute.
 Honor limited scope and report uninspected dependencies. Reuse existing native audit formats
 for prose if present; the JSON record below is a verification attachment, not a second issue

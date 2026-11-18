@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 — 2026-11-18
+
+- Complete each behavior batch through a source fact table, current clauses, assertion review and source recheck.
+- Verify effective registrations/literals, enforced bounds, timing triggers, branch precedence and final lifecycle handlers before drafting guarantees.
+- Review stimulus and observation per clause/scenario; retain unrelated passing tests and absent external evidence as verification gaps.
+- Add a bounded C source-fact fixture and executable counterexamples, including a changed behavior that the original tests fail to observe.
+- Keep the existing evidence schema and native workflow; source-review conclusions and actual test results remain separate.
+
 ## 0.3.0 — 2026-11-17
 
 - Discover observable behavior before spec boundaries; track cross-cutting applicability, actual branch/use/effect evidence and unknowns.

@@ -3,6 +3,8 @@
 Read this BEFORE selecting spec boundaries or drafting requirements. Source code is the
 starting point; an existing spec tree, directory list or generated capability map is not
 the discovery checklist. The runtime records/checks obligations; the Agent must do the analysis.
+Use `source-facts.md` for the concrete source table, high-risk claim checks and test-observation
+review. Complete that work before calling an observation verified or a clause covered.
 
 ## Discover observable units
 

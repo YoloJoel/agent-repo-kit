@@ -43,8 +43,9 @@ reproducible environment evidence. Run `engineering-status`; readiness is not ex
    complete the coverage/gap ledger and create/reuse source-backed current behavior specs.
    Initialization does not end at inventory or Baseline prose; follow baseline-repo through
    its specification handoff AND default source-first/post-fix semantic audit.
-   Report source audit, specification and verification gaps separately. Work by
-   module and save checkpoints for large repositories, then continue the next pending batch
+   Use baseline-repo's source-facts.md: complete each behavior batch through source facts,
+   clauses, real assertion review and source recheck. Report source audit, specification
+   and verification gaps separately. Save checkpoints for large repositories, then continue the next pending batch
    automatically. Keep the whole inventory/capability map as the completion denominator;
    never pass the first batch as the declared whole scope. Stop only for an actual blocker,
    an execution interruption or an explicit user pause; state remaining ranges honestly.

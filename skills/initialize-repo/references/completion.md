@@ -55,3 +55,8 @@ branch/effect/counterexample evidence, cross-spec contract consistency and actua
 mapping. Run baseline behavior-status; files/capabilities and comment-level test references
 cannot close existing-repository onboarding. Upgrade preserves old assets and exposes missing
 behavior review as PENDING. Record native execution separately with engineering-verification.md.
+
+Inspect baseline-repo's source-facts.md rows for the declared batch. Confirm actual registered
+sets/literals, enforced bounds, timing triggers, precedence and final lifecycle handlers from
+decisive code. Check assertion stimulus and observation per clause/scenario. An unresolved
+contradiction or unrelated passing test keeps that behavior's quality/verification pending.

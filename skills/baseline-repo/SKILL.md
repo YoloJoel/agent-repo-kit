@@ -10,9 +10,11 @@ and subsequent batches yourself; do not ask the user to choose ordering or appro
 continuation. Explicit user limits take priority. Checkpoints preserve progress while work
 continues; they do not shrink the completion scope or end the task after one slice.
 
-Read `references/behavior-model.md` before selecting capability/spec boundaries. Build the independent
-observable-unit inventory FIRST; use actual trigger/branch/effect evidence, unresolved gaps,
-per-claim counterexamples and assertions. Modules are navigation, not the generation unit.
+Read `references/source-facts.md` and `references/behavior-model.md` before drafting. Seed a
+whole-scope checklist from executable entries, registrations, config consumers, data paths,
+background work and launch/build assembly. Complete each batch through a source fact table,
+current clauses, assertion review and source recheck; then continue the next pending batch.
+Use the actual effective literals, branches, overrides and observable effects. Modules are navigation.
 
 Use the supplied initialize-repo helper if project rules/runtime are absent. Run the target's
 `python hack/ai/ark.py` for command examples written as `ark`. No package or global CLI is needed.
