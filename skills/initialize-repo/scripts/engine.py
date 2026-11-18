@@ -7,6 +7,7 @@ source semantics or turn inventory into an approved specification by itself.
 from __future__ import annotations
 
 import argparse
+from bisect import bisect_left, bisect_right
 import contextlib
 import fnmatch
 import hashlib
@@ -27,7 +28,7 @@ from datetime import date, datetime, timezone
 import uuid
 import xml.etree.ElementTree as ET
 
-VERSION = "0.3.1"
+VERSION = "0.3.2"
 ASSETS = Path(__file__).parent / "assets"
 POLICY = ".ai/policy.json"
 MANIFEST = ".ai/manifest.json"
@@ -1081,24 +1082,123 @@ def behavior_anchor(root, entry):
     return path.is_file() and source_reference_valid(entry["reference"], entry["path"], path.read_bytes())
 
 
-def behavior_assertion_valid(root, test):
-    if not behavior_anchor(root,test) or test["role"] != "assertion" or Path(test["path"]).suffix.lower() not in TEST_SOURCE_SUFFIXES:
-        return False
-    if not all(isinstance(test.get(k),str) and test[k].strip() for k in ("input","expected","assertion","detects")): return False
-    lines = safe(root,test["path"]).read_text(encoding="utf-8").splitlines()
-    ranges = re.findall(re.escape(test["path"]) + r":L(\d+)(?:-L?(\d+))?\b",test["reference"])
-    selected = "\n".join(line for a,b in ranges for line in lines[int(a)-1:int(b or a)])
-    executable = selected
-    if Path(test["path"]).suffix.lower()==".py":
-        tokens=[]
+def assertion_code_mask(text, suffix):
+    """Mark literal/comment positions without interpreting assertion semantics."""
+    masked = list(text)
+    offsets = [0]
+    for line in text.splitlines(keepends=True):
+        offsets.append(offsets[-1] + len(line))
+    def hide(start, end):
+        for index in range(start, end):
+            if masked[index] not in "\r\n":
+                masked[index] = " "
+    if suffix == ".py":
+        ignored = {tokenize.COMMENT, tokenize.STRING}
+        ignored.update(getattr(tokenize, name, -1) for name in ("FSTRING_START", "FSTRING_MIDDLE", "FSTRING_END"))
         try:
-            for token in tokenize.generate_tokens(io.StringIO(selected).readline):
-                tokens.append(token._replace(string="") if token.type==tokenize.COMMENT else token)
-        except (tokenize.TokenError,IndentationError): pass
-        executable=tokenize.untokenize(tokens)
-    elif Path(test["path"]).suffix.lower() in {".c",".h",".cpp",".cc",".cxx",".hpp",".java",".js",".ts",".cs",".go",".rs"}:
-        executable=re.sub(r'''"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|//[^\n]*|/\*.*?\*/''',lambda m:"" if m.group().startswith(("//","/*")) else m.group(),selected,flags=re.S)
-    return test["assertion"] in executable and not re.match(r"\s*(#|//|/\*|\*)",test["assertion"])
+            for token in tokenize.generate_tokens(io.StringIO(text).readline):
+                if token.type in ignored:
+                    hide(offsets[token.start[0] - 1] + token.start[1],
+                         offsets[token.end[0] - 1] + token.end[1])
+        except (tokenize.TokenError, IndentationError, SyntaxError):
+            return None
+    elif suffix == ".rs":
+        # Rust raw strings, nested block comments and lifetimes need separate handling.
+        position = 0
+        while position < len(text):
+            start = position
+            if text.startswith("//", position):
+                end = text.find("\n", position)
+                position = len(text) if end < 0 else end
+            elif text.startswith("/*", position):
+                position += 2
+                depth = 1
+                while position < len(text) and depth:
+                    if text.startswith("/*", position):
+                        depth += 1
+                        position += 2
+                    elif text.startswith("*/", position):
+                        depth -= 1
+                        position += 2
+                    else:
+                        position += 1
+                if depth:
+                    return None
+            elif match := re.match(r'(?:br|cr|r)(#{0,255})"', text[position:]):
+                end = text.find('"' + match.group(1), position + match.end())
+                if end < 0:
+                    return None
+                position = end + 1 + len(match.group(1))
+            elif text[position] == '"':
+                match = re.match(r'"(?:\\.|[^"\\])*"', text[position:], re.S)
+                if not match:
+                    return None
+                position += match.end()
+            elif text[position] == "'" and (match := re.match(r"'(?:\\(?:u\{[0-9A-Fa-f_]+\}|x[0-9A-Fa-f]{2}|.)|[^'\\\r\n])'", text[position:])):
+                position += match.end()
+            else:
+                position += 1
+                continue
+            hide(start, position)
+    elif suffix in {".c", ".h", ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx",
+                    ".java", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts",
+                    ".cs", ".go", ".kt", ".kts", ".swift", ".m", ".mm", ".scala", ".groovy", ".dart"}:
+        pattern = r'''(?:u8|[uUL])?R"(?P<delimiter>[^ ()\\\t\r\n]{0,16})\(.*?\)(?P=delimiter)"|""".*?"""|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\x60(?:\\.|[^\x60\\])*\x60|//[^\n]*|/\*.*?\*/'''
+        lexical, positions = text, None
+        if suffix in {".c", ".h", ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx"}:
+            # C/C++ joins escaped physical lines before recognizing comments.
+            positions, pieces, start = [], [], 0
+            for splice in re.finditer(r"\\\r?\n", text):
+                pieces.append(text[start:splice.start()])
+                positions.extend(range(start, splice.start()))
+                start = splice.end()
+            pieces.append(text[start:])
+            positions.extend(range(start, len(text)))
+            lexical = "".join(pieces)
+            # Numeric separators are code, not character-literal openers.
+            pattern = (r'(?P<raw_start>(?:u8|[uUL])?R"(?P<raw_delimiter>[^ ()\\\t\r\n]{0,16})\()|'
+                       r"(?P<number_literal>\b[0-9][A-Za-z0-9_]*(?:'[A-Za-z0-9_]+)+(?:\.[A-Za-z0-9_']*)?)|" + pattern)
+        scanner, position = re.compile(pattern, re.S), 0
+        while match := scanner.search(lexical, position):
+            position = match.end()
+            if positions is not None and match.group("raw_start") is not None:
+                # Phase-2 splicing is reverted within a C++ raw literal. Find its
+                # actual terminator in the physical source, then skip that whole span.
+                start = positions[match.start()]
+                body = positions[match.end() - 1] + 1
+                terminator = ")" + match.group("raw_delimiter") + '"'
+                end = text.find(terminator, body)
+                if end < 0:
+                    return None
+                end += len(terminator)
+                hide(start, end)
+                position = bisect_left(positions, end)
+                continue
+            if positions is not None and match.group("number_literal") is not None:
+                continue
+            hide(positions[match.start()] if positions is not None else match.start(),
+                 positions[match.end() - 1] + 1 if positions is not None else match.end())
+    return "".join(masked)
+
+
+def behavior_assertion_valid(root, test):
+    if not behavior_anchor(root, test) or test["role"] != "assertion" or Path(test["path"]).suffix.lower() not in TEST_SOURCE_SUFFIXES:
+        return False
+    if not all(isinstance(test.get(k), str) and test[k].strip() for k in ("input", "expected", "assertion", "detects")):
+        return False
+    content = safe(root, test["path"]).read_text(encoding="utf-8")
+    ranges = re.findall(re.escape(test["path"]) + r":L(\d+)(?:-L?(\d+))?\b", test["reference"])
+    covered = {line for a, b in ranges for line in range(int(a), int(b or a) + 1)}
+    executable = assertion_code_mask(content, Path(test["path"]).suffix.lower())
+    assertion = test["assertion"].strip()
+    if executable is None or re.match(r"(#|//|/\*|\*)", assertion):
+        return False
+    offsets = [0] + [match.end() for match in re.finditer("\n", content)]
+    for match in re.finditer(re.escape(assertion), content):
+        first, last = bisect_right(offsets, match.start()), bisect_right(offsets, match.end() - 1)
+        if not executable[match.start()].isspace() and set(range(first, last + 1)).issubset(covered):
+            return True
+    return False
 
 
 def behavior_inventory_findings(root, p, data):
@@ -1416,8 +1516,9 @@ def engineering_status(root, p):
         executable = argv[0].replace("{python}", sys.executable) if argv else None
         location = shutil.which(executable) if executable else None
         if executable and ("/" in executable or "\\" in executable):
-            candidate = Path(executable) if Path(executable).is_absolute() else safe(root, check.get("cwd", ".")) / executable
-            location = str(candidate) if candidate.is_file() else location
+            cwd = root if check.get("cwd", ".") == "." else safe(root, check["cwd"])
+            candidate = Path(executable) if Path(executable).is_absolute() else cwd / executable
+            location = str(candidate) if candidate.is_file() and os.access(candidate, os.X_OK) else None
         commands.append({"name": check["name"], "type": check.get("type", "command"), "argv": argv,
                          "cwd": check.get("cwd", "."), "executable_available": bool(location),
                          "required": check.get("required", True), "execution": "NOT_RUN"})
@@ -2031,7 +2132,7 @@ def specification_findings(root, p, paths=None):
                 issue("PENDING", "spec-delegated-body", f"{identifier}: state the observable rules and outcomes in the spec; Baseline is provenance, not a substitute for the promise.", line)
             if path.is_relative_to(safe(root, p["paths"]["specs"])):
                 for dependencies in re.findall(r"(?im)^Depends-On:\s*(.+)$", body):
-                    for dependency in re.findall(r"REQ-[A-Z0-9]+-\d+", dependencies):
+                    for dependency in REQ.findall(dependencies):
                         if dependency not in current_requirement_ids(root, p):
                             issue("PENDING", "spec-missing-owner", f"{identifier}: dependency {dependency} is not current; do not delegate a required payload/contract to an uncreated capability.", line)
             for match in re.finditer(r"(?im)^(?:Source|Baseline|Decision):\s*\x60?([^\s\x60]+)", body):
@@ -2634,6 +2735,9 @@ def close_change(root, p, change):
     findings = [item for item in structure_findings(root, p) + change_findings(root, p, change, "delivery") if item["status"] in {"FAIL", "PENDING", "NOT_RUN"}]
     if findings:
         raise KitError("Change completion conditions no longer hold: " + findings[0]["message"])
+    if metadata.get("origin") == "files":
+        return {"status": "PENDING", "change": change, "state": "native-archive-required",
+                "message": "Delivery verification passed. Synchronize and archive using the repository's native workflow, then run the local check; the toolkit does not create ark.json or archive native changes."}
     archive = safe(root, p["paths"]["changes"] + "/archive/" + datetime.now(timezone.utc).strftime("%Y-%m-%d-") + change)
     if archive.exists():
         raise KitError("Archive destination already exists")
@@ -2807,6 +2911,18 @@ def install_git_hook(root, p):
     return {"status": "PASS", "path": str(path), "meaning": "Local pre-commit check installed; remote hosting and CI are unnecessary. Git hooks can be bypassed and are not server protection."}
 
 
+def lightweight_input_signature(root, p, base):
+    """Bind candidate bytes/modes and the lightweight declarations themselves."""
+    paths = set(changed_files(root, base))
+    paths.update(path.relative_to(root).as_posix() for path in safe(root, ".ai/notes").glob("*.json"))
+    inputs = {}
+    for relative in sorted(paths):
+        path = safe(root, relative)
+        inputs[relative] = ({"sha256": digest(path.read_bytes()), "executable": bool(path.stat().st_mode & 0o111)}
+                            if path.is_file() else None)
+    return {"fingerprint": fingerprint(root, p), "inputs": inputs}
+
+
 def ci_verify(root, p, base, local=False):
     """Re-execute candidate changes; never trust committed verification reports."""
     if (not base or set(base) == {"0"}) and not local:
@@ -2879,9 +2995,11 @@ def ci_verify(root, p, base, local=False):
             executed_count += sum(item["status"] in {"PASS", "FAIL"} and "argv" in item for item in report["checks"])
             results.append({"status": report["status"], "change": change, "phase": report["phase"], "run_id": report["run_id"], "checks": report["checks"]})
     light_checks = []
+    light_findings = []
     if lightweight:
         run_dir = safe(root, ".ai/runtime/runs/light-" + uuid.uuid4().hex[:12])
         run_dir.mkdir(parents=True)
+        start_signature = lightweight_input_signature(root, p, base)
         for check in p["checks"]:
             if "delivery" not in check.get("phases", ["ready", "delivery"]):
                 continue
@@ -2889,9 +3007,15 @@ def ci_verify(root, p, base, local=False):
                 light_checks.append(run_check(root, check, run_dir))
             elif check.get("required", True):
                 light_checks.append({"name": check["name"], "required": True, "status": "NOT_RUN", "reason": "Required outside verification needs a scoped change/evidence record."})
-        atomic(run_dir / "result.json", dump({"checks": light_checks, "status": overall([], light_checks)}))
+        if lightweight_input_signature(root, p, base) != start_signature:
+            light_findings.append({"status": "FAIL", "code": "inputs-changed",
+                                   "message": "Lightweight verification inputs changed while checks were running; inspect the resulting diff and rerun on the reviewed inputs."})
+        results += light_findings
+        atomic(run_dir / "result.json", dump({"checks": light_checks, "findings": light_findings,
+                                               "fingerprint": start_signature["fingerprint"], "inputs": start_signature["inputs"],
+                                               "status": overall(light_findings, light_checks)}))
     results += delivery_knowledge_findings(root, p, changed)
-    return {"status": overall(results, light_checks), "execution": "local" if local else "ci", "base": base, "executed_check_count": executed_count + sum(item["status"] in {"PASS", "FAIL"} for item in light_checks), "behavior_files": behavior, "lightweight_files": sorted(lightweight), "lightweight_checks": light_checks, "changes": results, "control_review": "Review lightweight declarations and policy/runtime/CI/manifest changes independently; repository-controlled checks are not a security boundary."}
+    return {"status": overall(results, light_checks), "execution": "local" if local else "ci", "base": base, "executed_check_count": executed_count + sum(item["status"] in {"PASS", "FAIL"} for item in light_checks), "behavior_files": behavior, "lightweight_files": sorted(lightweight), "lightweight_checks": light_checks, "lightweight_findings": light_findings, "changes": results, "control_review": "Review lightweight declarations and policy/runtime/CI/manifest changes independently; repository-controlled checks are not a security boundary."}
 
 
 def note_change(root, p, scope, kind, reason, reviewer, base=None):
@@ -3259,6 +3383,8 @@ def main(argv=None):
             else:
                 raise KitError("Unsupported operation")
         print(dump(result), end="")
+        if args.command == "change" and args.operation == "close":
+            return {"FAIL": 1, "PENDING": 2}.get(result.get("status"), 0)
         if args.command in {"init", "change", "checkpoint", "evidence", "hook"}:
             return 0
         return {"FAIL": 1, "PENDING": 2}.get(result.get("status"), 0)

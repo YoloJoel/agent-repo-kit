@@ -6,6 +6,7 @@ The journal is a scoped demonstration, not a production WAL or multi-writer guar
 import argparse
 import importlib.util
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -21,7 +22,8 @@ SPEC.loader.exec_module(kit)
 def qualify(root):
     records = []
     def run(argv):
-        result = subprocess.run(argv, cwd=root, capture_output=True, encoding="utf-8", timeout=240)
+        environment = {**os.environ, "OPENSPEC_TELEMETRY": "0", "DO_NOT_TRACK": "1", "CI": "1"}
+        result = subprocess.run(argv, cwd=root, capture_output=True, encoding="utf-8", timeout=240, env=environment)
         records.append({"argv": argv, "exit_code": result.returncode, "stdout": result.stdout[-10000:], "stderr": result.stderr[-2000:]})
         if result.returncode:
             raise RuntimeError(json.dumps(records[-1], ensure_ascii=False))
@@ -115,6 +117,9 @@ def main():
     if any(root.iterdir()):
         raise SystemExit("Qualification workspace must be empty")
     report = qualify(root)
+    report["privacy"] = {"fixture": "public synthetic event journal", "workspace_initially_empty": True,
+                         "telemetry": "disabled", "version_check": "disabled",
+                         "package_resolution": "offline-cache" if os.environ.get("npm_config_offline") == "true" else "npm-cache-or-registry"}
     Path(args.output).write_text(kit.dump(report), encoding="utf-8")
     print(json.dumps({"status": report["status"], "workspace": str(root), "output": args.output}))
 

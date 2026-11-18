@@ -79,6 +79,12 @@ Input mutation during checks SHALL fail. Handwritten/committed PASS alone SHALL 
 - WHEN its executable is missing
 - THEN the check is NOT_RUN and delivery is PENDING
 
+#### Scenario: Lightweight command mutates reviewed inputs
+
+- GIVEN a content-bound lightweight declaration and a required command
+- WHEN that command passes but changes reviewed inputs or the candidate diff during execution
+- THEN the same run fails input currency and retains the actual command output
+
 ### Requirement: Preserve specification synchronization through archive (REQ-ARCHIVE-001)
 
 Verification: automated
@@ -94,6 +100,13 @@ as proof of semantic equivalence.
 - WHEN delivery passes and the Change is archived
 - THEN the artifact reference resolves, candidate CI rechecks successfully and context
   does not point at a missing active checkpoint
+
+#### Scenario: File-native archive remains native
+
+- GIVEN a verified file-native change with no toolkit metadata sidecar
+- WHEN toolkit close is requested before native synchronization and archive
+- THEN it reports PENDING/native-archive-required with exit 2 and preserves the active files
+- AND the selected native workflow remains responsible for synchronization and archive
 
 ### Requirement: Isolate resumable work and bound hook continuation (REQ-CONTEXT-001)
 
@@ -182,6 +195,13 @@ The toolkit SHALL validate applicable current/delta scenarios, identities, refer
 - WHEN valid native proposal/tasks/delta files still contain unfinished implementation tasks
 - THEN specification review can pass without running business commands
 - AND delivery remains pending until applicable checks and tasks are complete
+
+#### Scenario: Complete composite dependency identity
+
+- WHEN Depends-On names a composite REQ identity whose current owner is missing
+- THEN validation reports that complete missing identity as pending
+- WHEN the actual complete identity is current
+- THEN that missing-owner finding is cleared
 
 ### Requirement: Execute preserved and target behavior verification (REQ-BEHAVIOR-001)
 
@@ -477,6 +497,12 @@ The toolkit SHALL bind behavior reviews to actual source/spec/test/policy inputs
 - THEN readiness/NOT_RUN is reported separately from actual build/test results
 - WHEN an assertion sees original, deliberately broken and restored bounded sample behavior
 - THEN actual pass/fail/pass results and logs are retained without certifying arbitrary projects
+
+#### Scenario: Executable assertion location and native command cwd
+- WHEN a claimed assertion exists only in a Python literal/docstring or supported C-family literal/comment, or only by joining disjoint selected ranges
+- THEN it cannot satisfy the executable assertion-location obligation
+- WHEN a configured relative executable uses the repository root or a declared subdirectory as cwd
+- THEN readiness resolves it from that cwd and reports availability separately from execution
 
 ### Requirement: REQ-SOURCE-FACTS-001 Current clauses follow decisive source observations
 Verification: manual

@@ -52,7 +52,7 @@ Deterministic commands never invoke a model automatically.
 | `ark verify --phase ready --change <id>` | Check preconditions; anchor existing reviewed baseline before implementation |
 | `ark change record-sync <id> --artifact <path> --reviewer <id> --method reviewed` | Record reviewed current-spec synchronization and its actual method |
 | `ark verify --phase delivery --change <id>` | Actual required checks, current specs, tasks and evidence |
-| `ark change close <id>` | Require fresh workspace PASS, rebase in-Change evidence and archive |
+| `ark change close <id>` | Require fresh workspace PASS; archive legacy metadata changes, or hand native changes back to their selected archive workflow |
 | `ark note --scope <paths...> --kind mechanical --reason <text> --reviewer <id>` | Hash-bound lightweight nonbehavior declaration |
 | `ark evidence --change <id> --check <name> --artifact <path> --reviewer <id> --status PASS --summary <text>` | Record actual manual/external evidence, not an independent certification |
 | `ark checkpoint --change <id> --summary <text> --next <text> [--blocked]` | Save recoverable progress; allow real handoff |
@@ -108,6 +108,23 @@ exit codes, logs and environment. The fingerprint excludes self-referential repo
 canonical Change paths so archival alone does not invalidate behavioral evidence. Archive
 rebases in-Change artifact references and clears completed session pointers. Local close
 requires local execution; CI re-executes against the candidate rather than trusting the report.
+
+For file-native changes without ark.json, close preserves the active files and reports
+PENDING/native-archive-required (exit 2). Synchronize/archive using OpenSpec or the mapped
+native workflow, then run the local check. No sidecar or second native archive is created.
+Legacy toolkit metadata changes retain their existing archive/rebased-evidence behavior.
+
+Lightweight checks also bind inputs before and after actual command execution. A command
+that changes reviewed source, policy, a note or the candidate diff invalidates the same run;
+a passing command cannot carry a PASS result onto the modified inputs.
+
+Assertion references must identify a real contiguous statement in the selected source lines.
+Python, Rust and supported C-family lexical guards reject quoted-string/comment-only matches,
+including Python docstrings, Rust nested comments/raw strings, Java text blocks and C++ raw
+strings. C/C++ line splicing and numeric separators retain physical-source anchors.
+These are bounded guards, not complete language parsers: JavaScript regex literals and other
+unsupported lexical forms still need source review. Location checks do not establish reachability
+or assertion quality; review the actual stimulus/observation and run native tests.
 
 Exit codes for doctor/validation/verification/CI: 0 PASS, 1 FAIL/input error, 2 PENDING.
 Inventory uses 2 when work remains by design. Successful mutation commands return 0 even

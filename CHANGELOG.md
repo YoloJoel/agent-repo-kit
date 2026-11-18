@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.2 — 2026-11-19
+
+- Reject lightweight PASS when commands change source, reviewed declarations, candidate bytes/modes or policy within the same run.
+- Resolve compound requirement dependencies as complete identities and diagnose relative executables from their declared cwd.
+- Hand file-native close back to its selected native archive workflow with PENDING/exit 2, retaining legacy archive compatibility.
+- Exclude quoted/doc/raw/comment-only assertion locations, preserve real C++ numeric-separator statements, and handle C++ line splicing without corrupting raw literals.
+- Consolidate fixed-source/retained-asset onboarding, actual upgrade/continuation, native multilanguage counterexamples and historical publication records.
+- Disable native OpenSpec qualification telemetry/version checks; qualify the public synthetic fixture from an offline package cache when available.
+
 ## 0.3.1 — 2026-11-18
 
 - Complete each behavior batch through a source fact table, current clauses, assertion review and source recheck.
