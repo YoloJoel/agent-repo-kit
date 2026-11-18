@@ -1,0 +1,7 @@
+初始任务指令（原样）：
+
+请使用 /workspace/scratch/09b24aad1085/agent-repo-kit/skills/baseline-repo/SKILL.md 和其源码复核参考规则，对 /workspace/scratch/09b24aad1085/final-source-fact-review 中的 spec.md 与 review-mapping.json 做一次只读源码审计。先依据该目录的 C 源码、头文件、Makefile 和测试，核对条款、场景、声明的证据范围和断言映射。记录具体问题、实际事实、位置和影响，并说明真实核验范围。所有业务源码检索限于该项目目录，流程参考从指定 Skill 读取。本次只做这次审查，无需补齐初始化、登记或其他工程资产。保持原始输入文件，把报告写到该项目目录的 source-review.md，最终返回结果和限制。无需委派其他 Agent。
+
+补充任务指令（原样）：
+
+源码/安装 wheel 各 189 测试、升级与原生探针均已通过。请将最终只读审查结果写入已指定 source-review.md，保留核实路径、错误与证据缺口；不要修改输入。为可复核记录，请在最终回复原样附上你收到的任务指令（不含系统/开发者指令）或写到同目录 task.txt。父任务将保存真实输入/报告及哈希到 repo evidence，注明这是新增的合成审计回归样例，不作为原两版 onboarding 原始产物恢复。

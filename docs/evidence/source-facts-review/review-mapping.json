@@ -1,0 +1,31 @@
+{
+  "resources": {
+    "requirement": "REQ-HUB-001",
+    "sources": [
+      "hub.h",
+      "hub.c"
+    ],
+    "condition": "after initialization",
+    "test": "tests/test_hub.py:test_initialize",
+    "assertion": "self.assertEqual(self.hub.hub_initialize(), 0)"
+  },
+  "period": {
+    "requirement": "REQ-HUB-002",
+    "sources": [
+      "hub.c:hub_period_valid"
+    ],
+    "condition": "period configuration",
+    "test": "tests/test_hub.py:test_period_configuration",
+    "assertion": "self.assertEqual(self.hub.hub_update_period(12), 12)"
+  },
+  "receive": {
+    "requirement": "REQ-HUB-003",
+    "sources": [
+      "hub.c:hub_receive"
+    ],
+    "condition": "Frame.token == 0",
+    "disposition": "current",
+    "tests": [],
+    "remaining_observation": "Nonzero token frames also return value, retained as an unpromoted observation."
+  }
+}

@@ -1,6 +1,7 @@
 # Compatibility and deployment status
 
-Current product: 0.3.0. Behavior evidence and evaluation changes are documented in docs/iterations/IT-08.md and docs/evaluation.md.
+Current product: 0.3.1. Source-fact workflow qualification is documented in docs/repairs/source-facts-0.3.1.md.
+Behavior evidence and evaluation changes remain documented in docs/iterations/IT-08.md and docs/evaluation.md.
 0.2.6 configuration/content/final-state changes remain documented in docs/repairs/onboarding-completeness-0.2.6.md.
 Historical compatibility matrix checked: 2026-11-13, against product 0.2.1; environment-specific live trust is not inferred for later versions. A declared API shape,
 generated config, a protocol test and a live trusted runtime are different claims.
