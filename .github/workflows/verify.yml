@@ -40,8 +40,15 @@ jobs:
           python-version: '3.11'
       - name: Validate native Claude plugin and marketplace
         run: |
-          npx --yes --package @anthropic-ai/claude-code@2.1.322 claude plugin validate .claude-plugin/plugin.json --strict
-          npx --yes --package @anthropic-ai/claude-code@2.1.322 claude plugin validate .claude-plugin/marketplace.json --strict
+          # Require the Ubuntu x64 binary package so npm reports installation failures.
+          claude_install="$RUNNER_TEMP/ark-claude-code"
+          claude_package="@anthropic-ai/claude-code-linux-x64"
+          npm install --prefix "$claude_install" --no-save --no-audit --no-fund --ignore-scripts \
+            "$claude_package@2.1.322"
+          claude="$claude_install/node_modules/$claude_package/claude"
+          "$claude" --version
+          "$claude" plugin validate .claude-plugin/plugin.json --strict
+          "$claude" plugin validate .claude-plugin/marketplace.json --strict
       - name: Install standard Skills into an isolated project
         env:
           DISABLE_TELEMETRY: '1'
