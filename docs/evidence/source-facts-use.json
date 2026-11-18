@@ -181,6 +181,63 @@
     "restored-original-tests.log": "cc -std=c99 -Wall -Wextra -Werror -O0 -g hub.c main.c -o build/hub\ncc -std=c99 -Wall -Wextra -Werror -O0 -g -shared -fPIC hub.c -o build/libhub.so\npython3 -m unittest discover -s tests -v\ntest_deploy_command (test_hub.HubTests.test_deploy_command) ... ok\ntest_filter_configuration (test_hub.HubTests.test_filter_configuration) ... ok\ntest_frame_value (test_hub.HubTests.test_frame_value) ... ok\ntest_initialize (test_hub.HubTests.test_initialize) ... ok\ntest_period_configuration (test_hub.HubTests.test_period_configuration) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.001s\n\nOK\n",
     "unknown-command.log": "-1\n"
   },
+  "publication_ci": {
+    "head_sha": "d3fd0bf300de7f69fbe84a192ee733262e472da7",
+    "jobs": [
+      {
+        "conclusion": "success",
+        "id": 134763828536,
+        "name": "behavior-probes",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "id": 134763828946,
+        "name": "workflows (macos-latest, 3.13)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "id": 134763828953,
+        "name": "workflows (macos-latest, 3.11)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "id": 134763828981,
+        "name": "workflows (windows-latest, 3.11)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "id": 134763829035,
+        "name": "native-installers",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "id": 134763829179,
+        "name": "workflows (ubuntu-latest, 3.13)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "id": 134763829230,
+        "name": "workflows (windows-latest, 3.13)",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "id": 134763829241,
+        "name": "workflows (ubuntu-latest, 3.11)",
+        "status": "completed"
+      }
+    ],
+    "meaning": "Observed full implementation/distribution CI before final evidence-only recording. Final PR head and main reruns remain authoritative at their own revisions.",
+    "run_id": 44293329166,
+    "status": "PASS",
+    "url": "https://github.com/YoloJoel/agent-repo-kit/actions/runs/44293329166"
+  },
   "resource_sha256": "f09f8897a9bfde9d4e87421fb5fe80b22564ab560a8443dbd74e00c309bc06e5",
   "review": {
     "reported_result": "No remaining confirmed code defect after timeout evidence fixes.",
