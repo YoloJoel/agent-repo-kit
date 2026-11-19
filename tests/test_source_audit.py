@@ -86,6 +86,40 @@ class SourceAuditTests(RepositoryCase):
         report['passes'][1]['findings'][1]['status'] = 'open'
         self.assertEqual(self.record(p, report)['status'], 'PENDING')
 
+    def test_further_rechecks_preserve_discoveries_through_closure(self):
+        p, report = self.prepare()
+        second = report['passes'][1]
+        new_issue = {'id': 'AUD-002', 'status': 'open', 'evidence': 'app.py:L2',
+                     'issue': 'Missing-key case did not check that the mapping stays unchanged.'}
+        second['findings'].append(new_issue)
+        self.assertEqual(self.record(p, report)['reports'][0]['open_findings'], ['AUD-002'])
+        shortened = copy.deepcopy(report)
+        shortened['passes'][1]['findings'].pop()
+        with self.assertRaisesRegex(kit.KitError, 'previously recorded open findings: AUD-002'):
+            self.record(p, shortened)
+        third = copy.deepcopy(second)
+        report['passes'].append(third)
+        third['findings'].pop()
+        with self.assertRaisesRegex(kit.KitError, 'retain every'):
+            self.record(p, report)
+        third['findings'].append({**new_issue, 'status': 'fixed',
+                                  'resolution': 'Reread direct indexing and verified no write on error.'})
+        new_subject = {**new_issue, 'id': 'AUD-003', 'issue': 'Recheck the stored-key return value.'}
+        third['findings'].append({**new_subject, 'status': 'rejected', 'resolution': 'Already correct.'})
+        with self.assertRaisesRegex(kit.KitError, 'New recheck findings'):
+            self.record(p, report)
+        third['findings'][-1] = new_subject
+        self.assertEqual(self.record(p, report)['reports'][0]['open_findings'], ['AUD-003'])
+        fourth = copy.deepcopy(third)
+        report['passes'].append(fourth)
+        fourth['findings'][-1].update(status='rejected', resolution='Existing-key example returns its stored value.')
+        result = self.record(p, report)
+        self.assertEqual(result['status'], 'PASS')
+        self.assertEqual(result['reports'][0]['pass_count'], 4)
+        fourth['artifacts'] = []
+        with self.assertRaisesRegex(kit.KitError, 'complete selected'):
+            self.record(p, report)
+
     def test_clean_two_pass_vendored_cli_and_scoped_report_selection(self):
         p, report = self.prepare()
         for audit in report['passes']:

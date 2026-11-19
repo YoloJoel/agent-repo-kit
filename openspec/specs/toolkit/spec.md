@@ -336,6 +336,9 @@ checkpoint rather than loop indefinitely.
 #### Scenario: Unresolved conflict or second-pass discovery
 - WHEN an accepted spec conflicts with source or a new unreviewed issue appears
 - THEN it remains explicitly unresolved rather than being silently closed for PASS
+- WHEN the Agent corrects a new issue and repeats the scoped source review
+- THEN it can append another source-recheck to the same report, retaining all prior finding IDs
+- AND newly discovered findings start open, and the final recheck determines outstanding findings
 
 ### Requirement: Generate usable project artifacts (REQ-ARTIFACT-QUALITY-001)
 

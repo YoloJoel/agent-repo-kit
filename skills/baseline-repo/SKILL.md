@@ -75,7 +75,10 @@ Do not upgrade inferred behavior into SHALL/MUST or omit cross-module flows.
    Then reopen source again for a separate post-fix pass and check affected/cross-cutting flows.
    Default to these two real passes, not two runs of a structural validator. Use a fresh reviewer
    when available; otherwise use an explicitly same-agent separate pass. Never claim independence
-   if unavailable. Keep unresolved/recurrent issues PENDING and save a checkpoint; no infinite loop.
+   if unavailable. When a recheck discovers a correctable issue, record it open, fix it and append
+   another source-recheck to the same report for that batch. Carry forward all finding IDs. Stop
+   when the last recheck closes the findings or further progress needs unavailable evidence or
+   a decision. In the latter case keep the findings PENDING and save a checkpoint.
    Record the actual report with `ark baseline audit-record`, then run `ark baseline audit-status`.
 9. Recheck project-specific AGENTS facts/commands and use initialize-repo project-entry guidance
    with `entry refresh` if necessary. Explicitly audit the three quality topics from

@@ -917,7 +917,7 @@ def knowledge_status(root, p, scope=None):
 
 
 def baseline_audit_record(root, p, report, files, artifacts, reviewer):
-    """Bind a declared two-pass source audit to exact inputs, without certifying semantics."""
+    """Bind a source-first audit and its rechecks to exact inputs, without certifying semantics."""
     if not reviewer.strip() or not files or not artifacts:
         raise KitError("A source audit needs an actual reviewer, source scope and reviewed artifacts")
     if set(files) & set(artifacts) or report in files or report in artifacts:
@@ -930,20 +930,23 @@ def baseline_audit_record(root, p, report, files, artifacts, reviewer):
     if not isinstance(data, dict) or data.get("review_mode") not in {"same-agent-separate-pass", "independent-reviewer"}:
         raise KitError("Declare actual same-agent-separate-pass or independent-reviewer mode")
     passes = data.get("passes", [])
-    if not isinstance(passes, list) or len(passes) != 2 or not all(isinstance(item, dict) for item in passes) or [item.get("kind") for item in passes] != ["source-first", "source-recheck"]:
+    if not isinstance(passes, list) or len(passes) < 2:
         raise KitError("Record source-first and source-recheck passes in order")
-    first_ids, open_ids = set(), set()
+    previous_ids = set()
     for index, audit in enumerate(passes):
+        expected_kind = "source-first" if index == 0 else "source-recheck"
+        if not isinstance(audit, dict) or audit.get("kind") != expected_kind:
+            raise KitError("Record source-first followed by source-recheck passes in order")
         sources, reviewed = audit.get("sources", []), audit.get("artifacts", [])
         if not isinstance(sources, list) or not isinstance(reviewed, list):
             raise KitError("Audit passes need explicit source and artifact coverage")
         if not all(isinstance(item, dict) and isinstance(item.get("path"), str) for item in sources + reviewed):
             raise KitError("Audit coverage entries need actual paths")
         if {item.get("path") for item in sources} != set(files) or {item.get("path") for item in reviewed} != set(artifacts):
-            raise KitError("Both audit passes must account for the complete selected source and artifact scope")
+            raise KitError("Every audit pass must account for the complete selected source and artifact scope")
         for item in sources:
             if not isinstance(item.get("checked"), str) or not item["checked"].strip() or not source_reference_valid(item.get("evidence", ""), item["path"], safe(root, item["path"]).read_bytes()):
-                raise KitError("Describe actual source branches checked with valid source evidence in both passes")
+                raise KitError("Describe actual source branches checked with valid source evidence in each pass")
         if any(not isinstance(item.get("checked"), str) or not item["checked"].strip() for item in reviewed):
             raise KitError("Describe the claims or omissions checked in every artifact")
         findings = audit.get("findings")
@@ -965,22 +968,24 @@ def baseline_audit_record(root, p, report, files, artifacts, reviewer):
                 raise KitError("Finding status must be open, fixed or rejected")
             if index == 0 and finding["status"] != "open":
                 raise KitError("Persist first-pass findings as open before fixes/dispositions")
-            if index == 1 and identity not in first_ids and finding["status"] != "open":
+            if index > 0 and identity not in previous_ids and finding["status"] != "open":
                 raise KitError("New recheck findings stay open until a further scoped source review")
             if finding["status"] != "open" and not str(finding.get("resolution", "")).strip():
                 raise KitError("Fixed/rejected findings need resolution and recheck reasoning")
-            if index == 1 and finding["status"] == "open":
-                open_ids.add(identity)
-        if index == 0:
-            first_ids = ids
-        elif not first_ids.issubset(ids):
-            raise KitError("Recheck must retain every first-pass finding with its actual disposition")
+        if not previous_ids.issubset(ids):
+            raise KitError("Recheck must retain every prior finding with its actual disposition")
+        previous_ids = ids
+    open_ids = sorted(finding["id"] for finding in passes[-1]["findings"] if finding["status"] == "open")
     record = {"report": report, "reviewer": reviewer, "files": sorted(set(files)), "artifacts": sorted(set(artifacts)),
-              "review_mode": data["review_mode"],
-              "inputs": {name: digest(safe(root, name).read_bytes()) for name in paths}, "open_findings": sorted(open_ids),
+              "review_mode": data["review_mode"], "pass_count": len(passes),
+              "inputs": {name: digest(safe(root, name).read_bytes()) for name in paths}, "open_findings": open_ids,
               "level": "agent-declared-source-audit", "recorded_at": now()}
     base = p["paths"]["baseline"]
     ledger = read_json(safe(root, base + "/audits.json"), {"schema_version": 1, "reports": {}})
+    earlier_open = set(ledger["reports"].get(report, {}).get("open_findings", []))
+    missing = earlier_open - previous_ids
+    if missing:
+        raise KitError("Retain previously recorded open findings: " + ", ".join(sorted(missing)))
     ledger["reports"][report] = record
     snapshot = evidence_root(p) + "/audits/" + digest(dump(record).encode())
     transact(root, {base + "/audits.json": dump(ledger), snapshot + "/record.json": dump(record),
