@@ -103,6 +103,7 @@ def qualify(output):
             hub.hub_window_reset(0)
             hub.hub_window_tick(99)
             observations["reports_after_timer_tick"] = hub.hub_window_reports()
+            hub.hub_window_reset(0)
             hub.hub_window_ingest(20, 0, 0)
             observations["reports_at_boundary"] = hub.hub_window_reports()
             hub.hub_window_ingest(21, 0, 0)

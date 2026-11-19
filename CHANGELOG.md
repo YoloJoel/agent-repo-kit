@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0-rc.2 — Spec readback pilot
+
+- Derive acceptance cases from the current Spec alone and compare the same stimulus with the
+  effective source behavior. A declared disagreement fails review. Unclear or absent cases
+  remain pending, including after upgrade of an existing inventory.
+- Add an eight-question public sample scored against actual native output, with an
+  intentionally flawed control. See the [blind reading procedure](docs/iterations/spec-readback-pilot.md).
+
 ## 0.4.0-rc.1 — local pilot
 
 - Classify ambiguous file-native changes before implementing or delivering them. Reuse current

@@ -44,7 +44,7 @@ reproducible environment evidence. Run `engineering-status`; readiness is not ex
    Initialization does not end at inventory or Baseline prose; follow baseline-repo through
    its specification handoff AND default source-first/post-fix semantic audit.
    Use baseline-repo's source-facts.md: complete each behavior batch through source facts,
-   clauses, real assertion review and source recheck. Report source audit, specification
+   clauses, Spec-only acceptance cases, same-input source comparison and actual assertion review. Report source audit, specification
    and verification gaps separately. Save checkpoints for large repositories, then continue the next pending batch
    automatically. Keep the whole inventory/capability map as the completion denominator;
    never pass the first batch as the declared whole scope. Stop only for an actual blocker,
