@@ -49,7 +49,7 @@ class ReleaseReadinessTests(RepositoryCase):
         self.write("tests/assert_value.py", "from app import value\nassert value() == 7\n")
         self.configure(p, [{"name": "unit", "argv": ["{python}", "-c", "exec(open('tests/assert_value.py').read())"]}])
         prefix = "openspec/changes/native"
-        self.write(prefix + "/proposal.md", "# Native change\nKind: maintenance\n## Impact\nUpdate \x60app.py\x60 and \x60tests\x60.\n")
+        self.write(prefix + "/proposal.md", "# Native change\nKind: maintenance\nPreserves: Calling value returns seven.\n## Impact\nUpdate \x60app.py\x60 and \x60tests\x60.\n")
         self.write(prefix + "/tasks.md", "- [x] Verify current behavior.\n")
         self.assertEqual(kit.verify(self.root, p, "delivery", "native")["status"], "PASS")
         directory = self.root / prefix

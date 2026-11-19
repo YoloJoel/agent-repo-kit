@@ -35,7 +35,7 @@ reproducible environment evidence. Run `engineering-status`; readiness is not ex
    execution before adding them to `checks`. Candidates are suggestions, not gates.
    Read `references/onboarding.md` for configuration, discovery and upgrade details.
    Read `references/project-entry.md` and curate .ai/project-entry.json from source evidence,
-   then run `entry refresh`. Read `references/configuration.md`; generate or reconcile
+   then run `entry refresh`. Translate project-specific Spec/Design/ADR triggers into policy.artifact_rules using project-entry.md. Verify that the same rule reaches OpenSpec, Superpowers and a direct request. Read `references/configuration.md`; generate or reconcile
    the actual OpenSpec schema/context/rules and record source-backed configuration review.
    CLI setup or spec-file creation alone does not complete project configuration. Produce a project-specific seven-section AGENTS entrance, not
    a tool manual or build-file dump. Preserve native/human entry structure without duplicating it.

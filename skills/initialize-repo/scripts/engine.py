@@ -28,7 +28,7 @@ from datetime import date, datetime, timezone
 import uuid
 import xml.etree.ElementTree as ET
 
-VERSION = "0.3.2"
+VERSION = "0.4.0-rc.1"
 ASSETS = Path(__file__).parent / "assets"
 POLICY = ".ai/policy.json"
 MANIFEST = ".ai/manifest.json"
@@ -211,6 +211,23 @@ def policy_at(root):
     for key in ("exclude", "test_paths", "checks", "source_paths"):
         if not isinstance(p.get(key), list):
             raise KitError(f"policy.{key} must be an array")
+    rules = p.get("artifact_rules", {})
+    if not isinstance(rules, dict):
+        raise KitError("policy.artifact_rules must map project risk IDs to artifact requirements")
+    for name, rule in rules.items():
+        if not ID.fullmatch(name) or name == "none" or not isinstance(rule, dict):
+            raise KitError(f"Invalid artifact rule: {name}")
+        requires, paths = rule.get("requires"), rule.get("paths", [])
+        if not isinstance(requires, list) or not requires or any(x not in ("spec", "design", "adr") for x in requires):
+            raise KitError(f"Rule {name} requires spec, design or adr")
+        if not isinstance(paths, list):
+            raise KitError(f"Rule {name} paths must be repository paths or globs")
+        for path in paths:
+            if path != ".":
+                safe(root, path)
+        source = safe(root, rule.get("source"))
+        if not source.is_file():
+            raise KitError(f"Rule {name} needs a real repository policy source: {source.relative_to(root)}")
     names = set()
     for check in p["checks"]:
         if not isinstance(check, dict) or not ID.fullmatch(str(check.get("name", ""))):
@@ -437,7 +454,12 @@ def project_entry(root, p, profile, existing=""):
         text = f"## Engineering integration\n\nUse the user's language. Preserve the project rules above.\nRead `{standard}` and `{context}`; paths/checks are mapped in `.ai/policy.json`.\nLocal check: `python hack/ai/ark.py check`. Initialization is not onboarding completion.\n"
         if data.get("language") == "zh":
             text = f"## 工程工具接入\n\n保留以上项目规则。详细流程见 `{standard}`，项目上下文见 `{context}`。\n路径与确认后的命令见 `.ai/policy.json`；本地检查：`python hack/ai/ark.py check`。初始化不等于接入完成。\n"
-    return text
+    routing_note = ("通过 OpenSpec、Superpowers 或普通对话开发时，沿用同一 Change、当前规格、ADR 与仓内检查。"
+                    "见 `hack/ai/assets/engineering-standard.md` 的跨工具流程；交付前运行 `python hack/ai/ark.py check`。"
+                    if data.get("language") == "zh" else
+                    "OpenSpec, Superpowers and direct requests share the same Change, current specs and ADRs. "
+                    "See `hack/ai/assets/engineering-standard.md` for design and plan references. Verify delivery with `python hack/ai/ark.py check`.")
+    return text.rstrip() + "\n\n" + routing_note + "\n"
 
 
 def entry_refresh(root, p):
@@ -488,6 +510,7 @@ def fingerprint(root, p, change=None):
     files = inventory_files(root, p)
     # Configuration/contract inputs are always bound, even if excluded from inventory.
     required = [POLICY, MANIFEST, "AGENTS.md", ".ai/project-entry.json", ".ai/project-entry-review.json", ".ai/capability-coverage-review.json", "openspec/config.yaml", ".ai/openspec-review.json", p["paths"]["baseline"] + "/README.md"]
+    required.extend(rule["source"] for rule in p.get("artifact_rules", {}).values())
     behavior_review = read_json(safe(root, ".ai/behavior-review.json"), {})
     required += [".ai/behavior-review.json", *behavior_review.get("inputs", {})]
     spec_root = safe(root, p["paths"]["specs"])
@@ -495,6 +518,10 @@ def fingerprint(root, p, change=None):
         required += [f.relative_to(root).as_posix() for f in spec_root.rglob("*.md") if f.is_file()]
     if change:
         directory, metadata = change_at(root, p, change)
+        for name in ("design.md", "tasks.md"):
+            content, source = workflow_document(root, directory, name)
+            if source:
+                files["@workflow/" + name] = digest(content.encode("utf-8"))
         for name in ("proposal.md", "design.md"):
             if (directory / name).is_file():
                 data = (directory / name).read_bytes()
@@ -1542,7 +1569,7 @@ def openspec_config_text(root, p, facts):
     context += [f"Current specifications: {p['paths']['specs']}", f"Engineering authority: {p['paths'].get('standard', 'docs/engineering-standard.md')}",
                 "Source/Baseline are evidence. Current specifications state accepted observable behavior. Active deltas are proposed changes."]
     rules = {
-        "proposal": ["Explain why, changed behavior, included/excluded scope, impact and compatibility; cite actual evidence and relevant decisions."],
+        "proposal": ["Explain why, changed behavior, included/excluded scope, impact and compatibility; cite actual evidence and relevant decisions. Use the repository Change and its policy.artifact_rules with any development entry."],
         "specs": ["Preserve existing requirement IDs; state observable normative behavior with concrete normal/error/boundary scenarios.",
                   "Discover observable cross-module behavior before selecting spec boundaries; require effective source-path evidence, attempted counterexamples and actual assertion mappings. Unknowns/defects do not automatically become current promises.",
                   "Necessary contracts must be defined in current normative artifacts; Baseline/Source citations do not replace the behavior definition."],
@@ -1969,13 +1996,39 @@ def change_directories(root, p, archived=False):
                   ((path / "ark.json").is_file() or (path / "proposal.md").is_file()))
 
 
+def proposal_field(proposal, name):
+    """Read a single visible, line-oriented declaration in the native proposal."""
+    visible = re.sub(r"<!--.*?(?:-->|\Z)", "", markdown_structure(proposal), flags=re.S)
+    values = re.findall(rf"(?mi)^{re.escape(name)}:[ \t]*(.+?)[ \t]*$", visible)
+    if len(values) > 1:
+        raise KitError(f"Multiple {name}: fields in one proposal")
+    return values[0].strip() if values else ""
+
+
+def workflow_document(root, directory, name):
+    """A native wrapper may cite one existing repository-local design or task document."""
+    wrapper = safe(root, (directory / name).relative_to(root).as_posix())
+    if not wrapper.is_file():
+        return "", None
+    content = wrapper.read_text(encoding="utf-8")
+    source = proposal_field(content, "Workflow-Source").strip("`")
+    if not source:
+        return content, None
+    path = safe(root, source)
+    if not path.is_file() or path.suffix.lower() != ".md" or path == wrapper:
+        raise KitError(f"{name} requires an existing distinct Markdown Workflow-Source: {source}")
+    extra = path.read_text(encoding="utf-8")
+    if not extra.strip() or proposal_field(extra, "Workflow-Source"):
+        raise KitError(f"{name} Workflow-Source must contain the actual design or plan: {source}")
+    return content + "\n" + extra, source
+
+
 def file_change_metadata(root, p, directory):
     """Read ordinary change documents; no toolkit-owned lifecycle or sidecar is needed."""
     name = re.sub(r"^\d{4}-\d{2}-\d{2}-", "", directory.name) if directory.parent.name == "archive" else directory.name
     proposal = (directory / "proposal.md").read_text(encoding="utf-8")
     deltas = list(directory.glob("specs/**/*.md"))
-    text = "\n".join(path.read_text(encoding="utf-8") for path in deltas)
-    kind_match = re.search(r"^Kind:\s*(feature|fix|refactor|maintenance|docs)\s*$", proposal, re.MULTILINE)
+    kind = proposal_field(proposal, "Kind")
     scope = []
     for candidate in re.findall(r"`([^`\n]+)`", proposal):
         candidate = candidate.rstrip("/")
@@ -1991,8 +2044,8 @@ def file_change_metadata(root, p, directory):
         scope = p.get("source_paths", ["."])
     records = [item for path in deltas for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name)]
     removed = [item["id"] for item in records if item["section"] == "REMOVED"]
-    return {"schema_version": 1, "id": name, "kind": kind_match.group(1) if kind_match else ("feature" if deltas else "maintenance"),
-            "scope": sorted(set(scope)), "scope_source": origin, "requirements": sorted({item["id"] for item in records}),
+    return {"schema_version": 1, "id": name, "kind": kind or ("feature" if deltas else "unclassified"),
+            "scope": sorted(set(scope)), "scope_source": origin, "requirements": sorted({item["id"] for item in records} | set(proposal_field(proposal, "Current-Requirements").split())),
             "removed_requirements": sorted(set(removed)), "state": "complete" if directory.parent.name == "archive" else "draft", "origin": "files"}
 
 
@@ -2009,7 +2062,10 @@ def change_at(root, p, change):
             raise KitError(f"Expected one active/archived change with ID {change}; found {len(matches)}")
         directory = matches[0]
     metadata = read_json(directory / "ark.json") if (directory / "ark.json").is_file() else file_change_metadata(root, p, directory)
-    if metadata.get("id") != change or metadata.get("kind") not in {"feature", "fix", "refactor", "maintenance", "docs"}:
+    allowed_kinds = {"feature", "fix", "refactor", "maintenance", "docs"}
+    if not (directory / "ark.json").is_file():
+        allowed_kinds.add("unclassified")
+    if metadata.get("id") != change or metadata.get("kind") not in allowed_kinds:
         raise KitError(f"Invalid change metadata: {change}")
     if not isinstance(metadata.get("scope"), list) or not metadata["scope"]:
         raise KitError(f"Change scope is missing: {change}")
@@ -2413,7 +2469,63 @@ def behavior_results(root, p, change, checks):
             for case in behavior_plan(root, p, change)["cases"]]
 
 
-def change_findings(root, p, change, phase):
+def matching_artifact_rules(p, paths):
+    return {name for name, rule in p.get("artifact_rules", {}).items()
+            if any(under(path, pattern) or fnmatch.fnmatchcase(path, pattern)
+                   for path in paths for pattern in rule.get("paths", []))}
+
+
+def project_obligations(root, p, directory, metadata, phase, paths, deltas):
+    """Combine actual scoped paths with the project's recorded semantic risk assessment."""
+    findings = []
+    proposal = directory / "proposal.md"
+    text = proposal.read_text(encoding="utf-8") if proposal.is_file() else ""
+    kind = metadata["kind"]
+    current = current_requirement_ids(root, p)
+    claimed = set(proposal_field(text, "Current-Requirements").split())
+    if claimed - current:
+        findings.append({"status": "FAIL", "code": "unknown-current-requirement",
+                         "message": f"Current-Requirements refers to missing current specifications: {sorted(claimed - current)}"})
+    if kind == "unclassified" and phase in {"ready", "delivery"}:
+        findings.append({"status": "PENDING", "code": "change-intent",
+                         "message": "Declare the change intent in the proposal (Kind: feature/fix/refactor/maintenance/docs). Supply a delta for new behavior, or identify the preserved contract."})
+    if kind == "maintenance" and metadata.get("origin") == "files" and paths and not deltas and not claimed and not proposal_field(text, "Preserves"):
+        plan = behavior_plan(root, p, metadata["id"])
+        if not any(case["effect"] == "preserve" for case in plan["cases"]):
+            findings.append({"status": "PENDING", "code": "maintenance-rationale",
+                         "message": "For production maintenance, explain the unchanged observable behavior in Preserves: or cite Current-Requirements:."})
+    rules = p.get("artifact_rules", {})
+    selected = set(proposal_field(text, "Risks").split())
+    if selected - {"none"} - rules.keys() or ("none" in selected and len(selected) != 1):
+        findings.append({"status": "FAIL", "code": "invalid-risks", "message": "Risks: must name configured project rule IDs or none alone."})
+    if paths and any(not rule.get("paths") for rule in rules.values()) and not selected:
+        findings.append({"status": "PENDING", "code": "risk-assessment", "message": "Assess the repository's semantic artifact rules in Risks: before delivery."})
+    if selected == {"none"} and not proposal_field(text, "Risk-Reason"):
+        findings.append({"status": "PENDING", "code": "risk-rationale", "message": "Explain the assessment in Risk-Reason:."})
+    applicable = (selected & rules.keys()) | matching_artifact_rules(p, paths)
+    required = {asset for name in applicable for asset in rules[name]["requires"]}
+    if kind == "feature":
+        required.add("spec")
+    if "spec" in required and not any(spec_records(path.read_text(encoding="utf-8"), path.parent.name) for path in deltas):
+        findings.append({"status": "PENDING", "code": "required-delta", "message": "Add the observable behavior and its scenarios to the Change delta."})
+    if "design" in required:
+        design, _ = workflow_document(root, directory, "design.md")
+        if not design.strip() or FILL in design:
+            findings.append({"status": "PENDING", "code": "required-design", "message": f"Project rules {sorted(applicable)} require a filled Change design.md."})
+    if "adr" in required:
+        reference = proposal_field(text, "ADR").strip("`")
+        adr = safe(root, reference) if reference else None
+        status = None
+        if adr and under(reference, p["paths"]["adr"]) and adr.suffix == ".md" and adr.is_file():
+            body = adr.read_text(encoding="utf-8")
+            if FILL not in body:
+                status = adr_status(body)
+        if not status or status[0] not in ({"Accepted", "Proposed"} if phase == "specification" else {"Accepted"}):
+            findings.append({"status": "PENDING", "code": "required-adr", "message": "Reference an applicable ADR with ADR: <repo-relative path>. Implementation requires an Accepted decision; specification can cite a Proposed one."})
+    return findings
+
+
+def change_findings(root, p, change, phase, changed=None):
     directory, metadata = change_at(root, p, change)
     findings = []
     report_path = directory / "verify-report.md"
@@ -2429,10 +2541,20 @@ def change_findings(root, p, change, phase):
         path = directory / name
         if not path.is_file():
             findings.append({"status": "FAIL", "code": "missing-artifact", "message": f"Missing {change}/{name}"})
-        elif phase != "structure" and FILL in path.read_text(encoding="utf-8"):
+        elif phase != "structure" and (FILL in (workflow_document(root, directory, name)[0]
+                if name in {"design.md", "tasks.md"} else path.read_text(encoding="utf-8"))):
             findings.append({"status": "PENDING", "code": "draft-artifact", "message": f"Fill {change}/{name} or explain why its sections do not apply."})
     deltas = list(directory.glob("specs/**/*.md"))
     if phase != "structure":
+        paths = metadata["scope"] if changed is None else changed
+        production = [path for path in paths if path == "." or (
+            any(under(path, scope) for scope in metadata["scope"])
+            and is_behavior(path, p) and not excluded(path, p)
+            and not any(under(path, test) for test in p["test_paths"]))]
+        # Concrete paths stated in an active proposal also matter before the first edit.
+        declared = [path for path in metadata["scope"] if path != "." and is_behavior(path, p) and not excluded(path, p)
+                    and not any(under(path, test) for test in p["test_paths"])]
+        findings += project_obligations(root, p, directory, metadata, phase, production + declared, deltas)
         findings += apply_format_exceptions(root, p, specification_findings(root, p, deltas))
         if metadata["kind"] in {"feature", "fix", "refactor"} and not metadata.get("requirements"):
             findings.append({"status": "PENDING", "code": "missing-requirements", "message": "Declare affected requirements in current/delta specifications before implementation."})
@@ -2449,8 +2571,8 @@ def change_findings(root, p, change, phase):
     if phase == "delivery":
         findings += behavior_scope_findings(root, p, metadata["scope"], change)
         findings += delivery_knowledge_findings(root, p, metadata["scope"])
-        tasks = directory / "tasks.md"
-        if tasks.is_file() and re.search(r"^\s*- \[ \]", tasks.read_text(encoding="utf-8"), re.MULTILINE):
+        tasks, _ = workflow_document(root, directory, "tasks.md")
+        if re.search(r"^\s*[-*] \[ \]", markdown_structure(tasks), re.MULTILINE):
             findings.append({"status": "PENDING", "code": "unfinished-tasks", "message": "Change tasks still contain unchecked items."})
         records = [item for path in deltas for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name)]
         declared = current_requirement_ids(root, p) | {item["id"] for item in records}
@@ -2615,12 +2737,16 @@ def overall(findings, checks):
     return "PASS"
 
 
-def verify(root, p, phase="structure", change=None, base=None, selected=None, peer_scopes=None):
+def verify(root, p, phase="structure", change=None, base=None, selected=None, peer_scopes=None, candidate_paths=None):
     findings = structure_findings(root, p)
     metadata = None
     if change:
         _, metadata = change_at(root, p, change)
-        findings += change_findings(root, p, change, phase)
+        if candidate_paths is None:
+            candidate_paths = changed_files(root, base)
+            if not candidate_paths and git(root, "rev-parse", "--is-inside-work-tree", optional=True) is None:
+                candidate_paths = list(inventory_files(root, p))
+        findings += change_findings(root, p, change, phase, candidate_paths)
         if base:
             outside = [x for x in changed_files(root, base) if is_behavior(x, p) and not excluded(x, p) and not any(under(x, scope) for scope in metadata["scope"] + (peer_scopes or []))]
             if outside:
@@ -2819,7 +2945,13 @@ def work_selection(root, p, changed=None, behavior=None):
         elif not any(under(path, relative) for path in changed):
             continue
         matched = [path for path in behavior if any(under(path, scope) for scope in metadata["scope"]) and owner(path) in {None, metadata["id"]}]
-        if matched or any(under(path, relative) for path in changed):
+        linked = set()
+        if directory.parent.name != "archive":
+            for name in ("design.md", "tasks.md"):
+                wrapper = directory / name
+                if wrapper.is_file():
+                    linked.add(proposal_field(wrapper.read_text(encoding="utf-8"), "Workflow-Source").strip("`"))
+        if matched or linked.intersection(changed) or any(under(path, relative) for path in changed):
             candidates.append({"id": metadata["id"], "path": relative, "files": matched, "scope": metadata["scope"], "scope_source": metadata.get("scope_source", "declared")})
     overlaps = {path: [item["id"] for item in candidates if path in item["files"]] for path in behavior}
     overlaps = {path: names for path, names in overlaps.items() if len(names) > 1}
@@ -2975,6 +3107,8 @@ def ci_verify(root, p, base, local=False):
             actual = digest(target.read_bytes()) if target.is_file() else None
             if actual == expected:
                 lightweight.add(relative)
+    protected = {path for path in lightweight if matching_artifact_rules(p, [path])}
+    lightweight -= protected
     behavior = [relative for relative in behavior if relative not in lightweight]
     selection = work_selection(root, p, changed, behavior)
     candidates = [item["id"] for item in selection["candidates"]]
@@ -2991,9 +3125,10 @@ def ci_verify(root, p, base, local=False):
             results.append({"status": "FAIL", "code": "classification", "message": f"{change} is marked docs but intersects behavior/configuration changes."})
         else:
             peers = [scope for item in selection["candidates"] if item["id"] != change for scope in item["scope"]]
-            report = verify(root, p, "delivery" if affects_behavior else "specification", change, base, peer_scopes=peers)
+            report = verify(root, p, "delivery" if affects_behavior else "specification", change, base, peer_scopes=peers,
+                            candidate_paths=next(item["files"] for item in selection["candidates"] if item["id"] == change))
             executed_count += sum(item["status"] in {"PASS", "FAIL"} and "argv" in item for item in report["checks"])
-            results.append({"status": report["status"], "change": change, "phase": report["phase"], "run_id": report["run_id"], "checks": report["checks"]})
+            results.append({"status": report["status"], "change": change, "phase": report["phase"], "run_id": report["run_id"], "checks": report["checks"], "findings": report["findings"]})
     light_checks = []
     light_findings = []
     if lightweight:
