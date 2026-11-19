@@ -70,3 +70,29 @@ class ProjectObligationsTests(RepositoryCase):
         report=self.report()
         self.assertNotIn("store.py", report["lightweight_files"])
         self.assertIn("required-adr", self.codes())
+
+    def test_handoff_follows_original_superpowers_plan_and_binds_its_content(self):
+        self.write(self.change + "specs/store/spec.md", self.spec)
+        self.write(self.change + "proposal.md", "# Feature\n## Impact\nUpdate `store.py` and `tests/`.\n")
+        self.p.pop("artifact_rules")
+        self.configure(self.p, self.p["checks"])
+        plan = self.write("docs/superpowers/plans/store.md", "# Implementation\n- [ ] Test opening twice.\n")
+        self.write(self.change + "tasks.md", "# Tasks\nWorkflow-Source: docs/superpowers/plans/store.md\n")
+        self.write("docs/superpowers/specs/store-design.md", "# Design\nKeep durable rows in one local table.\n")
+        self.write(self.change + "design.md", "# Design\nWorkflow-Source: docs/superpowers/specs/store-design.md\n")
+        self.assertIn("unfinished-tasks", self.codes())
+        first = kit.fingerprint(self.root, self.p, "add-store")
+        plan.write_text(plan.read_text().replace("[ ]", "[x]"))
+        self.assertNotEqual(first, kit.fingerprint(self.root, self.p, "add-store"))
+        report = self.report()
+        self.assertEqual(report["status"], "PASS", report)
+        self.assertFalse((self.root / self.change / "ark.json").exists())
+        self.assertFalse((self.root / "openspec/specs/store/spec.md").exists())
+
+    def test_broken_or_recursive_workflow_document_cannot_be_delivered(self):
+        self.write(self.change + "tasks.md", "Workflow-Source: docs/superpowers/plans/store.md\n")
+        with self.assertRaisesRegex(kit.KitError, "Workflow-Source"):
+            self.report()
+        self.write("docs/superpowers/plans/store.md", "Workflow-Source: openspec/changes/add-store/tasks.md\n")
+        with self.assertRaisesRegex(kit.KitError, "Workflow-Source"):
+            self.report()

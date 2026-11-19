@@ -454,7 +454,12 @@ def project_entry(root, p, profile, existing=""):
         text = f"## Engineering integration\n\nUse the user's language. Preserve the project rules above.\nRead `{standard}` and `{context}`; paths/checks are mapped in `.ai/policy.json`.\nLocal check: `python hack/ai/ark.py check`. Initialization is not onboarding completion.\n"
         if data.get("language") == "zh":
             text = f"## 工程工具接入\n\n保留以上项目规则。详细流程见 `{standard}`，项目上下文见 `{context}`。\n路径与确认后的命令见 `.ai/policy.json`；本地检查：`python hack/ai/ark.py check`。初始化不等于接入完成。\n"
-    return text
+    routing_note = ("通过 OpenSpec、Superpowers 或普通对话开发时，沿用同一 Change、当前规格、ADR 与仓内检查。"
+                    "见 `hack/ai/assets/engineering-standard.md` 的跨工具流程；交付前运行 `python hack/ai/ark.py check`。"
+                    if data.get("language") == "zh" else
+                    "OpenSpec, Superpowers and direct requests share the same Change, current specs and ADRs. "
+                    "See `hack/ai/assets/engineering-standard.md` for design and plan references. Verify delivery with `python hack/ai/ark.py check`.")
+    return text.rstrip() + "\n\n" + routing_note + "\n"
 
 
 def entry_refresh(root, p):
@@ -513,6 +518,10 @@ def fingerprint(root, p, change=None):
         required += [f.relative_to(root).as_posix() for f in spec_root.rglob("*.md") if f.is_file()]
     if change:
         directory, metadata = change_at(root, p, change)
+        for name in ("design.md", "tasks.md"):
+            content, source = workflow_document(root, directory, name)
+            if source:
+                files["@workflow/" + name] = digest(content.encode("utf-8"))
         for name in ("proposal.md", "design.md"):
             if (directory / name).is_file():
                 data = (directory / name).read_bytes()
@@ -1560,7 +1569,7 @@ def openspec_config_text(root, p, facts):
     context += [f"Current specifications: {p['paths']['specs']}", f"Engineering authority: {p['paths'].get('standard', 'docs/engineering-standard.md')}",
                 "Source/Baseline are evidence. Current specifications state accepted observable behavior. Active deltas are proposed changes."]
     rules = {
-        "proposal": ["Explain why, changed behavior, included/excluded scope, impact and compatibility; cite actual evidence and relevant decisions."],
+        "proposal": ["Explain why, changed behavior, included/excluded scope, impact and compatibility; cite actual evidence and relevant decisions. Use the repository Change and its policy.artifact_rules with any development entry."],
         "specs": ["Preserve existing requirement IDs; state observable normative behavior with concrete normal/error/boundary scenarios.",
                   "Discover observable cross-module behavior before selecting spec boundaries; require effective source-path evidence, attempted counterexamples and actual assertion mappings. Unknowns/defects do not automatically become current promises.",
                   "Necessary contracts must be defined in current normative artifacts; Baseline/Source citations do not replace the behavior definition."],
@@ -1994,6 +2003,24 @@ def proposal_field(proposal, name):
     if len(values) > 1:
         raise KitError(f"Multiple {name}: fields in one proposal")
     return values[0].strip() if values else ""
+
+
+def workflow_document(root, directory, name):
+    """A native wrapper may cite one existing repository-local design or task document."""
+    wrapper = safe(root, (directory / name).relative_to(root).as_posix())
+    if not wrapper.is_file():
+        return "", None
+    content = wrapper.read_text(encoding="utf-8")
+    source = proposal_field(content, "Workflow-Source").strip("`")
+    if not source:
+        return content, None
+    path = safe(root, source)
+    if not path.is_file() or path.suffix.lower() != ".md" or path == wrapper:
+        raise KitError(f"{name} requires an existing distinct Markdown Workflow-Source: {source}")
+    extra = path.read_text(encoding="utf-8")
+    if not extra.strip() or proposal_field(extra, "Workflow-Source"):
+        raise KitError(f"{name} Workflow-Source must contain the actual design or plan: {source}")
+    return content + "\n" + extra, source
 
 
 def file_change_metadata(root, p, directory):
@@ -2482,8 +2509,8 @@ def project_obligations(root, p, directory, metadata, phase, paths, deltas):
     if "spec" in required and not any(spec_records(path.read_text(encoding="utf-8"), path.parent.name) for path in deltas):
         findings.append({"status": "PENDING", "code": "required-delta", "message": "Add the observable behavior and its scenarios to the Change delta."})
     if "design" in required:
-        design = directory / "design.md"
-        if not design.is_file() or not design.read_text(encoding="utf-8").strip() or FILL in design.read_text(encoding="utf-8"):
+        design, _ = workflow_document(root, directory, "design.md")
+        if not design.strip() or FILL in design:
             findings.append({"status": "PENDING", "code": "required-design", "message": f"Project rules {sorted(applicable)} require a filled Change design.md."})
     if "adr" in required:
         reference = proposal_field(text, "ADR").strip("`")
@@ -2514,7 +2541,8 @@ def change_findings(root, p, change, phase, changed=None):
         path = directory / name
         if not path.is_file():
             findings.append({"status": "FAIL", "code": "missing-artifact", "message": f"Missing {change}/{name}"})
-        elif phase != "structure" and FILL in path.read_text(encoding="utf-8"):
+        elif phase != "structure" and (FILL in (workflow_document(root, directory, name)[0]
+                if name in {"design.md", "tasks.md"} else path.read_text(encoding="utf-8"))):
             findings.append({"status": "PENDING", "code": "draft-artifact", "message": f"Fill {change}/{name} or explain why its sections do not apply."})
     deltas = list(directory.glob("specs/**/*.md"))
     if phase != "structure":
@@ -2543,8 +2571,8 @@ def change_findings(root, p, change, phase, changed=None):
     if phase == "delivery":
         findings += behavior_scope_findings(root, p, metadata["scope"], change)
         findings += delivery_knowledge_findings(root, p, metadata["scope"])
-        tasks = directory / "tasks.md"
-        if tasks.is_file() and re.search(r"^\s*- \[ \]", tasks.read_text(encoding="utf-8"), re.MULTILINE):
+        tasks, _ = workflow_document(root, directory, "tasks.md")
+        if re.search(r"^\s*[-*] \[ \]", markdown_structure(tasks), re.MULTILINE):
             findings.append({"status": "PENDING", "code": "unfinished-tasks", "message": "Change tasks still contain unchecked items."})
         records = [item for path in deltas for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name)]
         declared = current_requirement_ids(root, p) | {item["id"] for item in records}
@@ -2917,7 +2945,13 @@ def work_selection(root, p, changed=None, behavior=None):
         elif not any(under(path, relative) for path in changed):
             continue
         matched = [path for path in behavior if any(under(path, scope) for scope in metadata["scope"]) and owner(path) in {None, metadata["id"]}]
-        if matched or any(under(path, relative) for path in changed):
+        linked = set()
+        if directory.parent.name != "archive":
+            for name in ("design.md", "tasks.md"):
+                wrapper = directory / name
+                if wrapper.is_file():
+                    linked.add(proposal_field(wrapper.read_text(encoding="utf-8"), "Workflow-Source").strip("`"))
+        if matched or linked.intersection(changed) or any(under(path, relative) for path in changed):
             candidates.append({"id": metadata["id"], "path": relative, "files": matched, "scope": metadata["scope"], "scope_source": metadata.get("scope_source", "declared")})
     overlaps = {path: [item["id"] for item in candidates if path in item["files"]] for path in behavior}
     overlaps = {path: names for path, names in overlaps.items() if len(names) > 1}

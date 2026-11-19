@@ -45,3 +45,25 @@ assets, real commands and process without decoding the kit? Existing human secti
 coherent. The scaffold alone is not complete: entry status stays PENDING until declared review,
 and source/config/command changes invalidate its currency. Refresh after final context/command
 edits, then include the entrance/facts in baseline source audit and onboarding-status.
+
+## Carry project decisions into all development entries
+
+During initialization or explicit upgrade, read actual authority documents for conditional spec,
+design and ADR obligations. Express applicable rules in policy.artifact_rules; preserve existing
+IDs, sources, and custom rules. Use stable project-defined keys. Each entry has a repository-relative
+source document, requires (spec/design/adr), and optionally actual path prefixes or globs. Omit
+paths for a choice identifiable only by inspecting the task and code. Do not invent a path trigger
+for every edit to a directory if only some edits qualify. Example for a project that requires both
+design and ADR for a new persistence model:
+
+    "artifact_rules": {
+      "persistence-model": {"source": "AGENTS.md", "requires": ["design", "adr"]},
+      "schema-migration": {"source": "docs/engineering-standard.md", "paths": ["db/migrations"], "requires": ["design", "adr"]}
+    }
+
+Review each mapping against the authority with the user’s normal project rules. When no conditional
+rule applies, keep the mapping empty. Give OpenSpec context/rules and the human entry the same
+Change location, requirement convention and command. Reuse a native standard on upgrade; when it is
+human-owned, link this packet's engineering instructions in the managed AGENTS integration and keep
+its own stricter rules. Exercise an applicable example with its required artifact missing and then
+present before reporting that rule enforced. A semantic risk declaration still needs review.
