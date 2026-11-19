@@ -211,6 +211,23 @@ def policy_at(root):
     for key in ("exclude", "test_paths", "checks", "source_paths"):
         if not isinstance(p.get(key), list):
             raise KitError(f"policy.{key} must be an array")
+    rules = p.get("artifact_rules", {})
+    if not isinstance(rules, dict):
+        raise KitError("policy.artifact_rules must map project risk IDs to artifact requirements")
+    for name, rule in rules.items():
+        if not ID.fullmatch(name) or name == "none" or not isinstance(rule, dict):
+            raise KitError(f"Invalid artifact rule: {name}")
+        requires, paths = rule.get("requires"), rule.get("paths", [])
+        if not isinstance(requires, list) or not requires or any(x not in ("spec", "design", "adr") for x in requires):
+            raise KitError(f"Rule {name} requires spec, design or adr")
+        if not isinstance(paths, list):
+            raise KitError(f"Rule {name} paths must be repository paths or globs")
+        for path in paths:
+            if path != ".":
+                safe(root, path)
+        source = safe(root, rule.get("source"))
+        if not source.is_file():
+            raise KitError(f"Rule {name} needs a real repository policy source: {source.relative_to(root)}")
     names = set()
     for check in p["checks"]:
         if not isinstance(check, dict) or not ID.fullmatch(str(check.get("name", ""))):
@@ -488,6 +505,7 @@ def fingerprint(root, p, change=None):
     files = inventory_files(root, p)
     # Configuration/contract inputs are always bound, even if excluded from inventory.
     required = [POLICY, MANIFEST, "AGENTS.md", ".ai/project-entry.json", ".ai/project-entry-review.json", ".ai/capability-coverage-review.json", "openspec/config.yaml", ".ai/openspec-review.json", p["paths"]["baseline"] + "/README.md"]
+    required.extend(rule["source"] for rule in p.get("artifact_rules", {}).values())
     behavior_review = read_json(safe(root, ".ai/behavior-review.json"), {})
     required += [".ai/behavior-review.json", *behavior_review.get("inputs", {})]
     spec_root = safe(root, p["paths"]["specs"])
@@ -1969,13 +1987,21 @@ def change_directories(root, p, archived=False):
                   ((path / "ark.json").is_file() or (path / "proposal.md").is_file()))
 
 
+def proposal_field(proposal, name):
+    """Read a single visible, line-oriented declaration in the native proposal."""
+    visible = re.sub(r"<!--.*?(?:-->|\Z)", "", markdown_structure(proposal), flags=re.S)
+    values = re.findall(rf"(?mi)^{re.escape(name)}:[ \t]*(.+?)[ \t]*$", visible)
+    if len(values) > 1:
+        raise KitError(f"Multiple {name}: fields in one proposal")
+    return values[0].strip() if values else ""
+
+
 def file_change_metadata(root, p, directory):
     """Read ordinary change documents; no toolkit-owned lifecycle or sidecar is needed."""
     name = re.sub(r"^\d{4}-\d{2}-\d{2}-", "", directory.name) if directory.parent.name == "archive" else directory.name
     proposal = (directory / "proposal.md").read_text(encoding="utf-8")
     deltas = list(directory.glob("specs/**/*.md"))
-    text = "\n".join(path.read_text(encoding="utf-8") for path in deltas)
-    kind_match = re.search(r"^Kind:\s*(feature|fix|refactor|maintenance|docs)\s*$", proposal, re.MULTILINE)
+    kind = proposal_field(proposal, "Kind")
     scope = []
     for candidate in re.findall(r"`([^`\n]+)`", proposal):
         candidate = candidate.rstrip("/")
@@ -1991,8 +2017,8 @@ def file_change_metadata(root, p, directory):
         scope = p.get("source_paths", ["."])
     records = [item for path in deltas for item in spec_records(path.read_text(encoding="utf-8"), path.parent.name)]
     removed = [item["id"] for item in records if item["section"] == "REMOVED"]
-    return {"schema_version": 1, "id": name, "kind": kind_match.group(1) if kind_match else ("feature" if deltas else "maintenance"),
-            "scope": sorted(set(scope)), "scope_source": origin, "requirements": sorted({item["id"] for item in records}),
+    return {"schema_version": 1, "id": name, "kind": kind or ("feature" if deltas else "unclassified"),
+            "scope": sorted(set(scope)), "scope_source": origin, "requirements": sorted({item["id"] for item in records} | set(proposal_field(proposal, "Current-Requirements").split())),
             "removed_requirements": sorted(set(removed)), "state": "complete" if directory.parent.name == "archive" else "draft", "origin": "files"}
 
 
@@ -2009,7 +2035,10 @@ def change_at(root, p, change):
             raise KitError(f"Expected one active/archived change with ID {change}; found {len(matches)}")
         directory = matches[0]
     metadata = read_json(directory / "ark.json") if (directory / "ark.json").is_file() else file_change_metadata(root, p, directory)
-    if metadata.get("id") != change or metadata.get("kind") not in {"feature", "fix", "refactor", "maintenance", "docs"}:
+    allowed_kinds = {"feature", "fix", "refactor", "maintenance", "docs"}
+    if not (directory / "ark.json").is_file():
+        allowed_kinds.add("unclassified")
+    if metadata.get("id") != change or metadata.get("kind") not in allowed_kinds:
         raise KitError(f"Invalid change metadata: {change}")
     if not isinstance(metadata.get("scope"), list) or not metadata["scope"]:
         raise KitError(f"Change scope is missing: {change}")
@@ -2413,7 +2442,63 @@ def behavior_results(root, p, change, checks):
             for case in behavior_plan(root, p, change)["cases"]]
 
 
-def change_findings(root, p, change, phase):
+def matching_artifact_rules(p, paths):
+    return {name for name, rule in p.get("artifact_rules", {}).items()
+            if any(under(path, pattern) or fnmatch.fnmatchcase(path, pattern)
+                   for path in paths for pattern in rule.get("paths", []))}
+
+
+def project_obligations(root, p, directory, metadata, phase, paths, deltas):
+    """Combine actual scoped paths with the project's recorded semantic risk assessment."""
+    findings = []
+    proposal = directory / "proposal.md"
+    text = proposal.read_text(encoding="utf-8") if proposal.is_file() else ""
+    kind = metadata["kind"]
+    current = current_requirement_ids(root, p)
+    claimed = set(proposal_field(text, "Current-Requirements").split())
+    if claimed - current:
+        findings.append({"status": "FAIL", "code": "unknown-current-requirement",
+                         "message": f"Current-Requirements refers to missing current specifications: {sorted(claimed - current)}"})
+    if kind == "unclassified" and phase in {"ready", "delivery"}:
+        findings.append({"status": "PENDING", "code": "change-intent",
+                         "message": "Declare the change intent in the proposal (Kind: feature/fix/refactor/maintenance/docs). Supply a delta for new behavior, or identify the preserved contract."})
+    if kind == "maintenance" and metadata.get("origin") == "files" and paths and not deltas and not claimed and not proposal_field(text, "Preserves"):
+        plan = behavior_plan(root, p, metadata["id"])
+        if not any(case["effect"] == "preserve" for case in plan["cases"]):
+            findings.append({"status": "PENDING", "code": "maintenance-rationale",
+                         "message": "For production maintenance, explain the unchanged observable behavior in Preserves: or cite Current-Requirements:."})
+    rules = p.get("artifact_rules", {})
+    selected = set(proposal_field(text, "Risks").split())
+    if selected - {"none"} - rules.keys() or ("none" in selected and len(selected) != 1):
+        findings.append({"status": "FAIL", "code": "invalid-risks", "message": "Risks: must name configured project rule IDs or none alone."})
+    if paths and any(not rule.get("paths") for rule in rules.values()) and not selected:
+        findings.append({"status": "PENDING", "code": "risk-assessment", "message": "Assess the repository's semantic artifact rules in Risks: before delivery."})
+    if selected == {"none"} and not proposal_field(text, "Risk-Reason"):
+        findings.append({"status": "PENDING", "code": "risk-rationale", "message": "Explain the assessment in Risk-Reason:."})
+    applicable = (selected & rules.keys()) | matching_artifact_rules(p, paths)
+    required = {asset for name in applicable for asset in rules[name]["requires"]}
+    if kind == "feature":
+        required.add("spec")
+    if "spec" in required and not any(spec_records(path.read_text(encoding="utf-8"), path.parent.name) for path in deltas):
+        findings.append({"status": "PENDING", "code": "required-delta", "message": "Add the observable behavior and its scenarios to the Change delta."})
+    if "design" in required:
+        design = directory / "design.md"
+        if not design.is_file() or not design.read_text(encoding="utf-8").strip() or FILL in design.read_text(encoding="utf-8"):
+            findings.append({"status": "PENDING", "code": "required-design", "message": f"Project rules {sorted(applicable)} require a filled Change design.md."})
+    if "adr" in required:
+        reference = proposal_field(text, "ADR").strip("`")
+        adr = safe(root, reference) if reference else None
+        status = None
+        if adr and under(reference, p["paths"]["adr"]) and adr.suffix == ".md" and adr.is_file():
+            body = adr.read_text(encoding="utf-8")
+            if FILL not in body:
+                status = adr_status(body)
+        if not status or status[0] not in ({"Accepted", "Proposed"} if phase == "specification" else {"Accepted"}):
+            findings.append({"status": "PENDING", "code": "required-adr", "message": "Reference an applicable ADR with ADR: <repo-relative path>. Implementation requires an Accepted decision; specification can cite a Proposed one."})
+    return findings
+
+
+def change_findings(root, p, change, phase, changed=None):
     directory, metadata = change_at(root, p, change)
     findings = []
     report_path = directory / "verify-report.md"
@@ -2433,6 +2518,15 @@ def change_findings(root, p, change, phase):
             findings.append({"status": "PENDING", "code": "draft-artifact", "message": f"Fill {change}/{name} or explain why its sections do not apply."})
     deltas = list(directory.glob("specs/**/*.md"))
     if phase != "structure":
+        paths = metadata["scope"] if changed is None else changed
+        production = [path for path in paths if path == "." or (
+            any(under(path, scope) for scope in metadata["scope"])
+            and is_behavior(path, p) and not excluded(path, p)
+            and not any(under(path, test) for test in p["test_paths"]))]
+        # Concrete paths stated in an active proposal also matter before the first edit.
+        declared = [path for path in metadata["scope"] if path != "." and is_behavior(path, p) and not excluded(path, p)
+                    and not any(under(path, test) for test in p["test_paths"])]
+        findings += project_obligations(root, p, directory, metadata, phase, production + declared, deltas)
         findings += apply_format_exceptions(root, p, specification_findings(root, p, deltas))
         if metadata["kind"] in {"feature", "fix", "refactor"} and not metadata.get("requirements"):
             findings.append({"status": "PENDING", "code": "missing-requirements", "message": "Declare affected requirements in current/delta specifications before implementation."})
@@ -2615,12 +2709,16 @@ def overall(findings, checks):
     return "PASS"
 
 
-def verify(root, p, phase="structure", change=None, base=None, selected=None, peer_scopes=None):
+def verify(root, p, phase="structure", change=None, base=None, selected=None, peer_scopes=None, candidate_paths=None):
     findings = structure_findings(root, p)
     metadata = None
     if change:
         _, metadata = change_at(root, p, change)
-        findings += change_findings(root, p, change, phase)
+        if candidate_paths is None:
+            candidate_paths = changed_files(root, base)
+            if not candidate_paths and git(root, "rev-parse", "--is-inside-work-tree", optional=True) is None:
+                candidate_paths = list(inventory_files(root, p))
+        findings += change_findings(root, p, change, phase, candidate_paths)
         if base:
             outside = [x for x in changed_files(root, base) if is_behavior(x, p) and not excluded(x, p) and not any(under(x, scope) for scope in metadata["scope"] + (peer_scopes or []))]
             if outside:
@@ -2975,6 +3073,8 @@ def ci_verify(root, p, base, local=False):
             actual = digest(target.read_bytes()) if target.is_file() else None
             if actual == expected:
                 lightweight.add(relative)
+    protected = {path for path in lightweight if matching_artifact_rules(p, [path])}
+    lightweight -= protected
     behavior = [relative for relative in behavior if relative not in lightweight]
     selection = work_selection(root, p, changed, behavior)
     candidates = [item["id"] for item in selection["candidates"]]
@@ -2991,9 +3091,10 @@ def ci_verify(root, p, base, local=False):
             results.append({"status": "FAIL", "code": "classification", "message": f"{change} is marked docs but intersects behavior/configuration changes."})
         else:
             peers = [scope for item in selection["candidates"] if item["id"] != change for scope in item["scope"]]
-            report = verify(root, p, "delivery" if affects_behavior else "specification", change, base, peer_scopes=peers)
+            report = verify(root, p, "delivery" if affects_behavior else "specification", change, base, peer_scopes=peers,
+                            candidate_paths=next(item["files"] for item in selection["candidates"] if item["id"] == change))
             executed_count += sum(item["status"] in {"PASS", "FAIL"} and "argv" in item for item in report["checks"])
-            results.append({"status": report["status"], "change": change, "phase": report["phase"], "run_id": report["run_id"], "checks": report["checks"]})
+            results.append({"status": report["status"], "change": change, "phase": report["phase"], "run_id": report["run_id"], "checks": report["checks"], "findings": report["findings"]})
     light_checks = []
     light_findings = []
     if lightweight:
