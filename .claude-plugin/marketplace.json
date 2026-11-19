@@ -5,7 +5,12 @@
   "plugins": [
     {
       "name": "agent-repo-kit",
-      "source": "./",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/YoloJoel/agent-repo-kit.git",
+        "sha": "5ad64f92a40febe423f1c707d78c6c6cdadead71"
+      },
+      "version": "0.4.0-rc.1",
       "description": "Reusable repository initialization, source-grounded baseline and verified-delivery Skills."
     }
   ]

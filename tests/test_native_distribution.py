@@ -40,7 +40,11 @@ class NativeDistributionTests(unittest.TestCase):
         market = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text(encoding="utf-8"))
         self.assertEqual(plugin["name"], "agent-repo-kit")
         self.assertEqual(market["plugins"][0]["name"], plugin["name"])
-        self.assertEqual(market["plugins"][0]["source"], "./")
+        release = market["plugins"][0]
+        self.assertEqual(release["source"]["source"], "url")
+        self.assertEqual(release["source"]["url"], "https://github.com/YoloJoel/agent-repo-kit.git")
+        self.assertRegex(release["source"]["sha"], r"^[0-9a-f]{40}$")
+        self.assertRegex(release["version"], r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$")
         self.assertFalse((ROOT / "CLAUDE.md").exists(), "Claude does not load root CLAUDE as plugin instructions")
         names = sorted(p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md"))
         self.assertEqual(names, ["baseline-repo", "initialize-repo"])
