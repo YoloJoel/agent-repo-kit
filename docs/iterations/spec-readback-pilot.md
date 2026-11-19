@@ -47,3 +47,11 @@ Its eight supplied example answers should produce one match, two contradictions 
 results. They are authored controls. Generating a candidate with an installed plugin and scoring
 a fresh reader's answers is a separate experiment. Do not tune prompts against private answers or
 report the controls as generated Spec quality.
+
+## Effective owner follow-up
+
+Keep the original eight fixed questions for comparable core results. There is also a separate
+`--suite lifecycle` question and score. Give the reader just the output of
+`python tools/score_spec_readback.py --suite lifecycle --questions` and the candidate Spec.
+Use the same suite when scoring the frozen answers. The native probe starts the public sample
+and observes its final termination outcome. The lifecycle score has its own denominator.

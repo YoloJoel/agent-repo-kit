@@ -21,18 +21,29 @@ QUESTIONS = {
 }
 
 
-def score(spec_text, answers, observations):
-    actual = {
-        "Q1": sorted(observations["registered_resources"]),
-        "Q2": observations["update_period_700"] == 700,
-        "Q3": observations["received_arbitrary_token_value"],
-        "Q4": observations["both_rules_enabled_route"],
-        "Q5": observations["reports_after_timer_tick"],
-        "Q6": observations["reports_at_boundary"],
-        "Q7": observations["reports_after_next_event"],
-        "Q8": observations["filter_count_5"],
-    }
-    if not isinstance(answers, dict) or set(answers) != set(QUESTIONS):
+LIFECYCLE_QUESTIONS = {
+    "L1": "Start the default server, wait for readiness, then send SIGTERM. Predict the subprocess returncode "
+          "and whether a flush marker is printed. Use an object with integer returncode (negative for a signal) "
+          "and boolean flushed.",
+}
+
+
+def score(spec_text, answers, observations, suite="core"):
+    if suite == "lifecycle":
+        actual = {"L1": {"returncode": observations["termination_returncode"],
+                         "flushed": observations["termination_flushed"]}}
+    else:
+        actual = {
+            "Q1": sorted(observations["registered_resources"]),
+            "Q2": observations["update_period_700"] == 700,
+            "Q3": observations["received_arbitrary_token_value"],
+            "Q4": observations["both_rules_enabled_route"],
+            "Q5": observations["reports_after_timer_tick"],
+            "Q6": observations["reports_at_boundary"],
+            "Q7": observations["reports_after_next_event"],
+            "Q8": observations["filter_count_5"],
+        }
+    if not isinstance(answers, dict) or set(answers) != set(actual):
         raise ValueError("Supply one answer for every question, including unclear answers.")
     rows = []
     for key, observed in actual.items():
@@ -58,12 +69,13 @@ def score(spec_text, answers, observations):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--questions", action="store_true", help="Print reader inputs without reference outcomes")
+    parser.add_argument("--suite", choices=("core", "lifecycle"), default="core")
     parser.add_argument("--spec", type=Path)
     parser.add_argument("--answers", type=Path)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.questions:
-        print(json.dumps(QUESTIONS, indent=2))
+        print(json.dumps(LIFECYCLE_QUESTIONS if args.suite == "lifecycle" else QUESTIONS, indent=2))
         return 0
     if not all((args.spec, args.answers, args.output)):
         parser.error("scoring requires --spec, --answers and --output (a new directory)")
@@ -72,10 +84,10 @@ def main():
     args.output.mkdir(parents=True, exist_ok=False)
     probe = qualify(args.output / "native")
     (args.output / "native/report.json").write_text(json.dumps(probe, indent=2) + "\n")
-    result = {"native_status": probe["status"], "spec_sha256": hashlib.sha256(spec).hexdigest(),
+    result = {"suite": args.suite, "native_status": probe["status"], "spec_sha256": hashlib.sha256(spec).hexdigest(),
               "answers_sha256": hashlib.sha256(answers).hexdigest()}
     if probe["status"] == "PASS":
-        result.update(score(spec.decode("utf-8"), json.loads(answers), probe["observations"]))
+        result.update(score(spec.decode("utf-8"), json.loads(answers), probe["observations"], args.suite))
     (args.output / "readback.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({k: v for k, v in result.items() if k not in ("rows", "spec_sha256", "answers_sha256")}))
     return 0 if probe["status"] == "PASS" else 1

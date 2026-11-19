@@ -26,7 +26,11 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
    unavailable external sources and actual revision/workspace. Inventory is not understanding. Read `references/artifact-quality.md` before planning batches. Keep the whole repository
    inventory/capability map as the denominator unless the user explicitly limited scope.
    Derive a complete business/supporting capability map from actual production/build/config
-   sources, not from already generated specs. Record it with baseline coverage-record;
+   sources, independently of already generated specs. Before drafting, run baseline coverage-record on
+   this first map even when it reports PENDING. Walk the runnable entry points and registrations,
+   and separately work backwards from outputs, writers, build selections and background effects.
+   Reconcile the two lists within the user's scope. Many responsibilities can share one source file.
+   Return to this recorded map after each batch;
    uninspected capabilities remain pending. Inspect actual contract files and current-spec
    references independently of the registry; source-review/register all in-scope contracts,
    including any currently referenced but unregistered file. Do not present lifecycle-only or a partial module
