@@ -15,10 +15,10 @@ class ProjectObligationsTests(RepositoryCase):
         self.p = self.initialize()
         self.write("README.md", "Storage schema changes require design, spec and an accepted decision.\n")
         self.p["artifact_rules"] = {"storage": {"paths": ["store.py"], "source": "README.md", "requires": ["spec", "design", "adr"]}}
-        self.configure(self.p, [{"name": "unit", "argv": ["{python}", "-c", "from store import empty; assert empty() == []"]}])
+        self.configure(self.p, [{"name": "unit", "argv": ["{python}", "-c", "import runpy; runpy.run_path('tests/test_store.py')"]}])
         self.base = self.commit()
-        self.write("store.py", "def empty():\n    return []\n")
-        self.write("tests/test_store.py", "# REQ-STORE-001\n")
+        self.write("store.py", "import sqlite3\n\ndef open_store(path):\n    with sqlite3.connect(path) as db:\n        db.execute('create table if not exists events (id integer primary key)')\n    db.close()\n")
+        self.write("tests/test_store.py", "# REQ-STORE-001\nimport sqlite3, tempfile\nfrom pathlib import Path\nfrom store import open_store\nwith tempfile.TemporaryDirectory() as directory:\n    path = Path(directory) / 'log.db'\n    open_store(path)\n    with sqlite3.connect(path) as reopened:\n        assert reopened.execute('select id from events').fetchall() == []\n    reopened.close()\n")
         self.write(self.change + "proposal.md", "# Open a store\n## Impact\nUpdate `store.py` and `tests/`.\n")
         self.write(self.change + "tasks.md", "- [x] Verify opening a new store.\n")
 

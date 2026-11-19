@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0-rc.1 — local pilot
+
+- Classify ambiguous file-native changes before implementing or delivering them. Reuse current
+  contracts for restorative fixes and reviewed preservation evidence for maintenance.
+- Apply project-defined Spec, Design and ADR obligations using scoped paths and declared semantic
+  risks. Report missing evidence alongside executed checks.
+- Route designs and plans from OpenSpec, Superpowers or direct requests into one Change. Follow
+  local source references, unfinished tasks and changes to the referenced work.
+- See [pilot instructions and evaluation](docs/iterations/workflow-contract-pilot.md).
+
 ## 0.3.2 — 2026-11-19
 
 - Reject lightweight PASS when commands change source, reviewed declarations, candidate bytes/modes or policy within the same run.

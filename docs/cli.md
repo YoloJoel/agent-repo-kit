@@ -1,5 +1,16 @@
 # CLI reference
 
+## Project obligations and cross-tool delivery (0.4.0 RC)
+
+A native proposal may declare `Kind:`, `Current-Requirements:` (space-separated stable IDs),
+`Preserves:`, `Risks:` (space-separated project rule IDs), `Risk-Reason:` and `ADR:` (one
+repo-relative Markdown path). Keep each declaration on its own line. The initializer maps
+applicable project obligations in `.ai/policy.json` under `artifact_rules`; see the installed
+initialize-repo project-entry reference. Path triggers apply to the actual candidate even when
+an author declares no risk. Semantic triggers are reviewed declarations. Native design.md and
+tasks.md may each cite their original local file on one `Workflow-Source:` line. The local
+`check --base <ref>` and existing pipeline `ci --base <ref>` use the same obligations.
+
 ## Behavior evidence (0.3.0)
 
 `ark baseline behavior-record --document <mapped behavior inventory> --reviewer <actual identity>`

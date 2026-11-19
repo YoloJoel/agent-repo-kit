@@ -1,5 +1,5 @@
 {
-  "engine_sha256": "0a3ff2b893187aff9c7337ae40daa949c9728c12240b8b09270e6aacafaa8d89",
+  "engine_sha256": "6ad04bc0d47953426365c05e25a8fe1627c4ef5d283520049da5363baa019c04",
   "files": {
     "agents.md": "# AGENTS.md — AI engineering entry\n\nUse the user's language. This is the project entrance; detailed procedures belong in the engineering standard.\n\n## 1. Project and stack\n{{PURPOSE}}\n\n{{STACK}}\n\n## 2. Architecture constraints\n{{CONSTRAINTS}}\n\n## 3. Asset navigation\n{{ASSETS}}\n\n## 4. Source boundaries\n{{BOUNDARIES}}\n\n## 5. Project commands\n{{COMMANDS}}\n\n## 6. Development workflow\n{{WORKFLOW}}\n\n## 7. Rule precedence\n{{PRECEDENCE}}\n",
     "change.schema.json": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"title\": \"Agent Repo Kit scoped change metadata v1\",\n  \"type\": \"object\",\n  \"required\": [\"schema_version\", \"id\", \"kind\", \"scope\", \"requirements\", \"state\"],\n  \"properties\": {\n    \"schema_version\": {\"const\": 1},\n    \"id\": {\"type\": \"string\", \"pattern\": \"^[a-z0-9]+(?:-[a-z0-9]+)*$\"},\n    \"kind\": {\"enum\": [\"feature\", \"fix\", \"refactor\", \"maintenance\", \"docs\"]},\n    \"scope\": {\"type\": \"array\", \"minItems\": 1, \"items\": {\"type\": \"string\", \"minLength\": 1}},\n    \"requirements\": {\"type\": \"array\", \"uniqueItems\": true, \"items\": {\"type\": \"string\", \"pattern\": \"^REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*$\"}},\n    \"removed_requirements\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}, \"description\": \"Must be a subset of affected requirements; retired IDs must be absent from current specs.\"},\n    \"state\": {\"enum\": [\"draft\", \"ready\", \"implementing\", \"verifying\", \"blocked\", \"complete\"]},\n    \"created_at\": {\"type\": \"string\"}\n  }\n}\n",
@@ -38,5 +38,5 @@
   },
   "resources_sha256": "62e701af06a8ad91484bfc1a322058dec3d245553727f7ab52b8f031bd86c05a",
   "schema_version": 1,
-  "version": "0.3.2"
+  "version": "0.4.0-rc.1"
 }

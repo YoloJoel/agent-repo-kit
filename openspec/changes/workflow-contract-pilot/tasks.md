@@ -1,0 +1,5 @@
+- [x] Exercise the missing-delta delivery and independent project artifact requirements.
+- [x] Route native and linked design/plan artifacts through the same Change and verification.
+- [x] Add targeted regression cases and an actual native archive with a linked plan.
+- [x] Provide versioned local-pilot and anonymized evaluation instructions.
+- [ ] Evaluate clean real-repository agent sessions and triage independent local feedback.
