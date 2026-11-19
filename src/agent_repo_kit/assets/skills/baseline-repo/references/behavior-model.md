@@ -60,6 +60,9 @@ ledger. Keep existing IDs; new behavior IDs only identify discovery rows. Schema
   alternatives into rows/scenarios rather than labeling a whole module reviewed.
 - Current unit: requirement (existing authoritative ID/title), spec_path, normative_quote (actual
   clause verbatim). Baseline/gap units have no current requirement. Map ALL normative clauses.
+- Current units carry `acceptance_cases`, one or more input/outcome comparisons from the process
+  below. Schema 1 inventories written before these records remain readable. Reopen each affected
+  Spec/source before filling the missing evidence. Old immutable snapshots stay intact.
 - `challenge`: counterexample, alternative, result supported/contradicted/unknown, reason.
 - `contract_facts`: optional list of key, condition, typed value. Normalize names, units, enum and
   payload fields deliberately; do not alter conditions merely to suppress a real conflict.
@@ -76,6 +79,38 @@ Run `baseline behavior-record --document <actual file> --reviewer <actual review
 review, then `baseline behavior-status`. Recording never runs tests. Snapshots bind inputs and
 retain old rows/modes; file changes invalidate currency. Whole onboarding requires this review;
 upgrading 0.2.x does not silently certify old inventory. Do not regenerate old specs wholesale.
+
+## Derive the case from the Spec, then reopen the source
+
+1. Finish a short capability index and draft each observable rule in its owning Spec. For a
+   material alternative, state the input/state that selects it and the resulting return, error
+   or state change. For priority, pick an input where both conditions hold. For a threshold,
+   choose values on opposite sides including equality. For a failure, include what was already
+   committed or left unchanged when the source establishes that fact.
+2. Set source, Baseline, tests and the discovery table aside. Read the Spec and its referenced
+   current requirements. For each current unit write the stimulus and predicted observable
+   result a test could assert. Choose a case that distinguishes plausible implementations.
+   Freeze that prediction before reopening the code. Use a fresh context when available, or
+   describe the same-agent pass honestly. Keep short navigation and shared infrastructure rules.
+3. Follow the actual entry, branch and effect for exactly that input. Write the result using
+   the same observable fields, units and JSON types as the prediction. A compound outcome can
+   be an object. Keep the asserted outcome in the Spec itself. One comparison per materially
+   distinct alternative is usually enough. Multiple inputs may share a rule and existing IDs.
+4. Record this in the current unit's existing inventory, for example:
+
+   ```json
+   {"acceptance_cases": [{"stimulus": "Submit a known key a whose stored value is 3.",
+     "spec_quote": "- THEN the stored value is returned", "expected": 3,
+     "source_outcome": 3, "source_reference": "src/lookup.py:L8-L9", "status": "compared"}]}
+   ```
+
+   Use a complete normative or outcome line from this requirement for `spec_quote`; the source
+   reference must match a decisive branch/effect anchor in this unit. If the Spec leaves the
+   outcome open use `status: spec-ambiguous`; if the source side is unavailable use
+   `status: source-unknown`. Record what is missing with the stimulus and keep the case pending.
+   Preserve a mismatch in first-pass audit findings before editing. Fix a new draft, or record
+   a discrepancy against an accepted promise. Re-derive the case after edits. Never reconcile
+   the two values by copying one over the other. A static source result is not a test run.
 
 ## Assertion and execution quality
 

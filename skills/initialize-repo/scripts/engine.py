@@ -28,7 +28,7 @@ from datetime import date, datetime, timezone
 import uuid
 import xml.etree.ElementTree as ET
 
-VERSION = "0.4.0-rc.1"
+VERSION = "0.4.0-rc.2"
 ASSETS = Path(__file__).parent / "assets"
 POLICY = ".ai/policy.json"
 MANIFEST = ".ai/manifest.json"
@@ -1228,6 +1228,36 @@ def behavior_assertion_valid(root, test):
     return False
 
 
+def acceptance_readback_findings(unit, body):
+    """Compare the two declared observations for one stimulus. Neither observation is inferred here."""
+    cases = unit.get("acceptance_cases")
+    if not isinstance(cases, list) or not cases:
+        yield "PENDING", "behavior-case-missing", "Derive a concrete case from the Spec alone, then compare it with the effective source path."
+        return
+    scoped_evidence = {e["reference"] for e in unit["evidence"] if e["role"] in {"branch", "effect"}}
+    outcome_lines = {line.strip() for line in body.splitlines()
+                     if re.search(r"\b(?:SHALL|MUST)\b", line, re.I)
+                     or re.match(r"^\s*(?:[-*]\s+)?(?:\*\*)?(?:THEN\b|AND\b|则|那么|并且)", line, re.I)}
+    for index, case in enumerate(cases, 1):
+        prefix = f"Acceptance case {index}: "
+        if not isinstance(case, dict) or not isinstance(case.get("stimulus"), str) or not case["stimulus"].strip():
+            yield "PENDING", "behavior-case-missing", prefix + "describe a concrete input and initial state."
+            continue
+        if case.get("status") in ("spec-ambiguous", "source-unknown"):
+            yield "PENDING", "behavior-case-gap", prefix + case["status"] + " for " + case["stimulus"]
+            continue
+        if case.get("status") != "compared" or not {"expected", "source_outcome"}.issubset(case):
+            yield "PENDING", "behavior-case-incomplete", prefix + "record the Spec prediction and source outcome for the same input."
+            continue
+        if json.dumps(case["expected"], sort_keys=True) != json.dumps(case["source_outcome"], sort_keys=True):
+            yield "FAIL", "behavior-case-contradicted", prefix + "the Spec prediction and the source outcome disagree for " + case["stimulus"]
+        quote = case.get("spec_quote")
+        if not isinstance(quote, str) or not quote.strip() or quote.strip() not in outcome_lines:
+            yield "PENDING", "behavior-case-spec-evidence", prefix + "cite the full outcome line from this requirement."
+        if not isinstance(case.get("source_reference"), str) or case["source_reference"] not in scoped_evidence:
+            yield "PENDING", "behavior-case-source-evidence", prefix + "cite the decisive branch/effect in the unit's source evidence."
+
+
 def behavior_inventory_findings(root, p, data):
     """Check explicit evidence obligations. The reviewer supplies semantics; no semantic PASS is inferred."""
     if not isinstance(data, dict) or data.get("schema_version") != 1:
@@ -1305,6 +1335,8 @@ def behavior_inventory_findings(root, p, data):
                 if unit.get("spec_path") != spec["path"] or not isinstance(quote, str) or not quote.strip() or quote not in spec["body"]:
                     add("behavior-claim-drift", "Bind the actual normative clause, not merely a requirement ID", identity)
                 else: quoted.setdefault(requirement, []).append(quote)
+                for status, code, message in acceptance_readback_findings(unit, spec["body"]):
+                    add(code, message, identity, status)
         elif requirement:
             add("behavior-gap-promoted", "Baseline/gap observations must not masquerade as current promises", identity, "FAIL")
         if unit["disposition"] == "gap" or unit["confidence"] in {"inferred", "unknown"}:
@@ -1572,6 +1604,7 @@ def openspec_config_text(root, p, facts):
         "proposal": ["Explain why, changed behavior, included/excluded scope, impact and compatibility; cite actual evidence and relevant decisions. Use the repository Change and its policy.artifact_rules with any development entry."],
         "specs": ["Preserve existing requirement IDs; state observable normative behavior with concrete normal/error/boundary scenarios.",
                   "Discover observable cross-module behavior before selecting spec boundaries; require effective source-path evidence, attempted counterexamples and actual assertion mappings. Unknowns/defects do not automatically become current promises.",
+                  "Draft a concrete acceptance case from the spec alone. For existing behavior compare its predicted result with the reachable source branch for that same input. For proposed behavior use the approved target as the expected result.",
                   "Necessary contracts must be defined in current normative artifacts; Baseline/Source citations do not replace the behavior definition."],
         "design": ["Document implementation for new dependencies, concurrency/data models and cross-module interfaces; preserve consequential decisions in ADRs."],
         "tasks": ["Include applicable characterization/regression/acceptance, actual verification evidence and native specification synchronization/archive; missing execution stays pending."]}

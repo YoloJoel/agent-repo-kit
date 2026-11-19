@@ -27,6 +27,9 @@ class BehaviorQualityTests(RepositoryCase):
                 'confidence': 'verified', 'disposition': 'current', 'reason': 'Preserve observed failure signaling.',
                 'requirement': 'REQ-SEND-001', 'spec_path': 'openspec/specs/send/spec.md',
                 'normative_quote': 'The sender SHALL return false for absent input or failed publishing.',
+                'acceptance_cases': [{'status': 'compared', 'stimulus': 'send("offline")',
+                                      'spec_quote': '- THEN return false', 'expected': False, 'source_outcome': False,
+                                      'source_reference': 'transport.py:L1-L2'}],
                 'evidence': evidence, 'depends_on': [],
                 'dimensions': {k: {'status': 'reviewed' if k in {'normal', 'negative', 'boundary'} else 'not-applicable',
                                   'reason': 'Synchronous stateless call; source has no retry/concurrency/owned resources or migration.'} for k in kit.BEHAVIOR_DIMENSIONS},
@@ -102,6 +105,45 @@ class BehaviorQualityTests(RepositoryCase):
         result = self.record(p, data)
         self.assertEqual(result['status'], 'PENDING')
         self.assertEqual(result['coverage']['unresolved_units'], 1)
+
+    def test_wrong_spec_prediction_fails_despite_real_anchors_and_passing_tests(self):
+        p, data = self.prepare()
+        spec = self.root / data['units'][0]['spec_path']
+        spec.write_text(spec.read_text().replace('- THEN return false', '- THEN return 0'), encoding='utf-8')
+        unit = data['units'][0]
+        case = unit['acceptance_cases'][0]
+        source_result = subprocess.run([sys.executable, '-c', 'import json; from app import send; print(json.dumps(send("offline")))'],
+                                       cwd=self.root, capture_output=True, text=True, check=True)
+        case.update(spec_quote='- THEN return 0', expected=0, source_outcome=json.loads(source_result.stdout))
+        subprocess.run([sys.executable, '-c', "exec(open('tests/test_send.py').read())"], cwd=self.root, check=True)
+        result = self.record(p, data)
+        self.assertEqual(result['status'], 'FAIL')
+        self.assertIn('behavior-case-contradicted', self.codes(result))
+
+    def test_existing_case_free_inventory_can_be_read_and_refreshed(self):
+        p, data = self.prepare()
+        cases = data['units'][0].pop('acceptance_cases')
+        self.assertIn('behavior-case-missing', self.codes(self.record(p, data)))
+        self.assertEqual(kit.behavior_status(self.root, p)['status'], 'PENDING')
+        data['units'][0]['acceptance_cases'] = cases
+        self.assertEqual(self.record(p, data)['status'], 'PASS')
+
+    def test_unclear_spec_or_unavailable_source_cannot_close_a_case(self):
+        p, data = self.prepare()
+        case = data['units'][0]['acceptance_cases'][0]
+        for status in ('spec-ambiguous', 'source-unknown'):
+            with self.subTest(status=status):
+                case['status'] = status
+                self.assertIn('behavior-case-gap', self.codes(self.record(p, data)))
+
+    def test_case_needs_its_own_spec_outcome_and_decisive_source_reference(self):
+        p, data = self.prepare()
+        case = data['units'][0]['acceptance_cases'][0]
+        case.update(spec_quote='Verification: automated', source_reference='app.py:L2-L5')
+        self.assertTrue({'behavior-case-spec-evidence', 'behavior-case-source-evidence'}.issubset(
+            self.codes(self.record(p, data))))
+        case.pop('expected')
+        self.assertIn('behavior-case-incomplete', self.codes(self.record(p, data)))
 
     def test_contradiction_has_priority_over_format_compliance(self):
         p, data = self.prepare()

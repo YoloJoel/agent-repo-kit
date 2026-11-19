@@ -55,6 +55,10 @@ Do not upgrade inferred behavior into SHALL/MUST or omit cross-module flows.
    with scenarios, Baseline/Source links and actual verification gaps. This is part of a
    bare baseline-repo invocation, not an optional user prompt. Preserve existing specs/IDs;
    record conflicts, defects and unknowns separately without endorsing or silently fixing them.
+   Before promotion, read the candidate Spec alone and write a concrete input and predicted
+   outcome for each current behavior unit. Compare the prediction against the reachable source
+   for that same stimulus. Follow the acceptance_cases protocol in references/behavior-model.md.
+   Fix unsupported new wording or retain a gap. Include relevant infrastructure in the scope.
    Document routine preservation reasoning as the actual Agent analysis, not invented owner approval.
    Promote selected promises only after that compatibility record and current Spec exist: `ark baseline promote --document <path> --requirements <IDs> --decision <artifact>
    --reviewer <identity>`. Do not promote every implementation detail or defect. Retire

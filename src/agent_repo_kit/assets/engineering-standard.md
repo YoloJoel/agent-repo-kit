@@ -35,7 +35,11 @@ Describe observable behavior in Spec; keep class names/algorithms/thread choices
 Identify requirements consistently with the repository's existing scheme. Give observable
 scenarios with conditions/inputs and expected outcomes. Identify automated, manual or
 external verification. Keep references from affected requirements to actual tests/evidence.
-Textual references establish navigation; reviewers still assess assertion quality.
+For a high-impact rule, derive a concrete input and predicted output, error or state change
+from the Spec alone. For current behavior compare that prediction with the reachable source
+branch for the same input. Preserve missing or conflicting evidence. For a proposed change
+use the accepted target as the expectation and verify it against the candidate implementation.
+Keep the assertion location and the actual test run as separate evidence.
 Check the complete effective-spec verification matrix even when this change has no delta;
 removing a test must not leave a current promise without a test reference or an explicit
 required delivery-check mapping. Proposed deltas can precede tests; current promises retain

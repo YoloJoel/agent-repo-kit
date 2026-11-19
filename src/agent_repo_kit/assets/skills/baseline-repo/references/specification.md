@@ -56,7 +56,11 @@ Baseline/Source are provenance, not a replacement for normative input/rule/outpu
    - THEN its stored value is returned without modifying the record
    ```
 
-   Replace the example with observed behavior; no fabricated source ranges or test results.
+   For each high-impact alternative, try to write one discriminating case from the Spec alone.
+   For example, “uses the configured limit” leaves acceptance at equality undecided. Specify the
+   observable result at equality and just across it when the effective path establishes both.
+   Put the rule in this Spec. Keep source anchors and branch analysis in the evidence record.
+   Follow the acceptance_cases comparison in behavior-model.md before completing this batch.
 6. Register contract/case evidence, then `baseline promote --document <contract> --requirements <IDs> --decision <preservation-record> --reviewer <actual identity>`.
    A promotion records selected promises, not every detail in a contract. Document
    exclusions and unresolved decisions so linked IDs cannot imply total semantic coverage.

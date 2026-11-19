@@ -520,6 +520,20 @@ observed assertion. Missing or unrelated assertions SHALL remain verification ga
 test execution reported separately. The runtime SHALL continue to label declaration consistency
 and currency within their actual scope.
 
+The reviewer SHALL derive concrete acceptance predictions from the current Spec before comparing
+them to the effective source outcomes for the same stimuli. The behavior review SHALL flag
+differing declared outcomes, retain unclear or ungrounded cases as pending, and continue to
+read older inventories without awarding the new review from old records.
+
+#### Scenario: A valid reference accompanies an incorrect expected result
+- GIVEN the cited requirement and source anchors exist and unrelated tests pass
+- WHEN the recorded Spec prediction differs from the recorded source outcome for the same stimulus
+- THEN the current behavior review fails and identifies the behavior unit
+
+#### Scenario: A legacy inventory lacks a Spec-only case
+- WHEN the existing inventory is reviewed again
+- THEN the missing comparison stays pending until the Spec and source have been reviewed
+
 #### Scenario: A definition disagrees with an effective path
 - GIVEN a declared constant, validator or callback differs from effective registration, use or final installation
 - WHEN current clauses are drafted and rechecked
