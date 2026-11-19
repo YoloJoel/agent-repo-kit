@@ -1032,11 +1032,31 @@ def coverage_record(root, p, document, reviewer):
             raise KitError("Exclusions need a concrete scope/supporting/generated/vendor rationale")
         if not isinstance(item.get("requirements", []), list) or any(not isinstance(identity, str) for identity in item.get("requirements", [])):
             raise KitError("Requirements must be actual declared IDs/titles")
+    ledger = ".ai/capability-coverage-review.json"
+    previous = read_json(safe(root, ledger), {})
+    if previous:
+        # Compare with the reviewed bytes, including snapshots written by older versions.
+        # The live map is normally already being edited at this point.
+        prior_path = evidence_root(p) + "/capabilities/" + digest(dump(previous).encode()) + "/map.json"
+        prior_file = safe(root, prior_path)
+        if not prior_file.is_file():
+            prior_file = safe(root, previous["document"])
+            if not prior_file.is_file() or digest(prior_file.read_bytes()) != previous["sha256"]:
+                raise KitError("Previous capability snapshot unavailable; restore the recorded map before replacing its scope")
+        kinds = {item["id"]: item["kind"] for item in data["capabilities"]}
+        dispositions = data.get("capability_dispositions", {})
+        if not isinstance(dispositions, dict):
+            raise KitError("capability_dispositions must map prior capability IDs to their review reasons")
+        for prior in read_json(prior_file)["capabilities"]:
+            key = prior["id"]
+            if key not in kinds or (prior["kind"] == "business" and kinds[key] == "supporting"):
+                if not isinstance(dispositions.get(key), str) or not dispositions[key].strip():
+                    raise KitError(f"Capability {key} was removed or reclassified; retain it as pending or record its disposition")
     inputs = capability_sources(root, p)
     record = {"document": document, "sha256": digest(safe(root, document).read_bytes()), "sources": inputs,
               "reviewer": reviewer, "recorded_at": now(), "level": "agent-declared-capability-map"}
     snapshot = evidence_root(p) + "/capabilities/" + digest(dump(record).encode())
-    transact(root, {".ai/capability-coverage-review.json": dump(record), snapshot + "/record.json": dump(record), snapshot + "/map.json": dump(data)})
+    transact(root, {ledger: dump(record), snapshot + "/record.json": dump(record), snapshot + "/map.json": dump(data)})
     return coverage_status(root, p)
 
 

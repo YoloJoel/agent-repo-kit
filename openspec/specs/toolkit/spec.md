@@ -534,6 +534,15 @@ read older inventories without awarding the new review from old records.
 - WHEN the existing inventory is reviewed again
 - THEN the missing comparison stays pending until the Spec and source have been reviewed
 
+The baseline workflow SHALL record its source-derived capability map before drafting batches and
+reconcile it during later reviews. Re-recording SHALL require a disposition for a previously
+discovered capability that disappears or changes from business to supporting.
+
+#### Scenario: A pending alternative shares a file with a specified capability
+- WHEN a later batch omits the previously recorded alternative without a disposition
+- THEN recording is rejected and the previous review snapshot remains available
+- AND the changed live map cannot establish current coverage
+
 #### Scenario: A definition disagrees with an effective path
 - GIVEN a declared constant, validator or callback differs from effective registration, use or final installation
 - WHEN current clauses are drafted and rechecked

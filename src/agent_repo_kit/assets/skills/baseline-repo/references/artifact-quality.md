@@ -24,8 +24,18 @@ business capability outside current scope stays pending/excluded and must be rep
 For an inspected business capability with actual current requirements set specified and list
 the existing IDs/titles; support-only files need no invented product requirements.
 
-Run `baseline coverage-record --document <map.json> --reviewer <actual identity>` and
-`baseline coverage-status`. Reconcile uncovered/stale files and capability gaps as work proceeds.
+Run `baseline coverage-record --document <map.json> --reviewer <actual identity>` before selecting
+the first batch. A pending row is an expected discovery result. Within the requested scope,
+walk entry/registration/caller paths forward, then trace externally visible effects, writers and
+build-selected components back to their owners. Record anything found by just one walk. One source
+file can implement several capabilities. For a scoped review keep other existing rows intact and
+report the requested slice and remaining repository coverage separately.
+
+Reread this recorded list after each batch and fill its pending rows. For a genuine retirement,
+merge or reclassification, set `capability_dispositions.<previous ID>` on the same map to the
+specific reason, surviving ID/evidence as applicable. A batch boundary alone leaves a row pending.
+The checker reconciles IDs and business-to-supporting changes against the last recorded map.
+It cannot discover an entry neither walk found. Run `baseline coverage-status` to inspect remaining gaps.
 These are declared coverage, not proof of semantics. Independently reconstruct the capability
 checklist from source during audit; do not just approve the author's map. Report total production
 inputs, mapped/reviewed scope, excluded reasons and each unfinished capability. Large scopes
