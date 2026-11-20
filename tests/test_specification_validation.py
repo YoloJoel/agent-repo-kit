@@ -50,7 +50,7 @@ class SpecificationValidationTests(RepositoryCase):
         stable = "Limit: 12. Port: 8080. See [contract](docs/baseline/scale.md#accepted-inputs).\n"
         self.write(current, block + stable + "\n".join(citations[:-1]) + "\n~~~text\n" + citations[-1] + "\n~~~\n")
         rows = [x for x in kit.specification_findings(self.root, p) if x["code"] == "spec-source-line-reference"]
-        lines = (self.root / current).read_text().splitlines()
+        lines = (self.root / current).read_text(encoding="utf-8").splitlines()
         self.assertEqual([lines[x["line"] - 1] for x in rows], citations)
 
     def test_fenced_examples_do_not_declare_requirements(self):
