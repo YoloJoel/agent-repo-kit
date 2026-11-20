@@ -1,0 +1,12 @@
+{
+  "document": "docs/baseline/memory-handler-coverage.json",
+  "level": "agent-declared-capability-map",
+  "recorded_at": "2026-11-20T04:34:11+00:00",
+  "reviewer": "scoped-spec-author",
+  "sha256": "f967ef66bfce994daa09589fe46256d54d4b5518bb72106455cffb7b7522ba26",
+  "sources": {
+    ".gitignore": "13e78b172a43adbbb328e4498f43c7cc161ca79b441359ac3328742a483609e1",
+    "logging/__init__.py": "dc42e5cf19a2dd03bd95ed3600803effa9c5f107927ab5f66cacf3eebcfd9a47",
+    "logging/handlers.py": "464980a72ce4c0ca1e6a6724a9760f5e101475a4e347329272ba6d2c4b39dffd"
+  }
+}

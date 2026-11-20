@@ -1,0 +1,93 @@
+{
+  "set": "E",
+  "runtime": {
+    "implementation": "CPython",
+    "version": "3.13.5",
+    "executable": "/usr/bin/python3",
+    "source_root": "/usr/lib/python3.13",
+    "sha256": {
+      "logging/__init__.py": "dc42e5cf19a2dd03bd95ed3600803effa9c5f107927ab5f66cacf3eebcfd9a47",
+      "logging/handlers.py": "464980a72ce4c0ca1e6a6724a9760f5e101475a4e347329272ba6d2c4b39dffd"
+    }
+  },
+  "questions": [
+    {
+      "id": "E1",
+      "actual_observations": {
+        "close_outcome": "ArithmeticError",
+        "after_close": [
+          [
+            [
+              "check"
+            ]
+          ],
+          [
+            "north",
+            "south"
+          ],
+          false,
+          true
+        ],
+        "after_recovery": [
+          "ok",
+          [
+            [
+              [
+                "check"
+              ],
+              [
+                "check"
+              ],
+              [
+                "handle",
+                "north"
+              ],
+              [
+                "handle",
+                "south"
+              ]
+            ],
+            [],
+            true,
+            false
+          ]
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Direct emit appends, tests the trigger and conditionally calls flush."
+        },
+        {
+          "location": "logging/handlers.py:1378-1396",
+          "rule": "The target defaults to None; flushOnClose defaults to true."
+        },
+        {
+          "location": "logging/handlers.py:1398-1410",
+          "rule": "Only occupancy or supplied severity can trigger; setTarget stores the reference without testing it."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "The target truth test precedes the forwarding loop and buffer clear, and no exception handler swallows a failing truth test."
+        },
+        {
+          "location": "logging/handlers.py:1431-1437",
+          "rule": "Default close flushes, then its finally detaches and delegates close even if the flush raises."
+        },
+        {
+          "location": "logging/handlers.py:1367-1370",
+          "rule": "Parent close invokes dynamic flush after detachment and then calls Handler.close."
+        },
+        {
+          "location": "logging/__init__.py:1055-1058",
+          "rule": "Base close marks the handler closed. setTarget and MemoryHandler.flush do not consult that flag."
+        }
+      ],
+      "field_rationale": {
+        "close_outcome": "The two emits do not reach capacity or severity and setTarget does not evaluate truth. The first actual Receiver test is the one performed by the default close's initial flush. The test raises ArithmeticError before the loop; it escapes after cleanup.",
+        "after_close": "Exactly one check, no delivery and no clear occurred. Close detached the target in its finally. The parent subsequently invoked another flush with target None, which cannot touch the receiver or buffer. Both pending names remain in order.",
+        "after_recovery": "After readiness is enabled and the same receiver is reattached, explicit flush checks it a second time, then sends north followed by south. The loop completes and clears. The supplied receiver remains attached."
+      }
+    }
+  ]
+}

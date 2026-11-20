@@ -1,0 +1,290 @@
+[
+  {
+    "id": "A1",
+    "fields": {
+      "predicate": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001 assigns INFO 20, DEBUG 10 and ERROR 40. REQ-MEM-003 sees occupancy 0 and 2, each below capacity 3, so both comparisons return false. Strictly, rec() passes positional arguments to imported LogRecord without specifying that its level argument sets .levelno; the numeric comparisons assume that fixture projection."
+      },
+      "capacity": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 keep INFO and WARNING below 40 at lengths one and two. The third append reaches capacity. REQ-MEM-005 fixes ordered target emission and the in-place clear; the field's quotes omit the needed named-level mapping present in 001. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "severity": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 make ERROR equal the threshold, so d drains after the first capacity batch. REQ-MEM-005 fixes the completed ordered list and empty buffer. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A2",
+    "fields": {
+      "waiting": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003/004 append both inputs at capacity one and preserve all entries on every detached flush, including the explicit flush. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "switches": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004 replaces each target immediately without touching the pending sequence or either destination. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "final": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004/005 offer both references to the final target, in order, and clear the buffer; no call was made to the earlier target. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A3",
+    "fields": {
+      "filter_calls": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002 establishes ordinary level assignment, direct handle admission independent of that level and the emit bypass. Thus the source selector sees only a then b. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "returns": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002 fixes return identity with x, boolean false on veto and null for direct emit; describe explicitly returns x.name for the first. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "delivery": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/002/003/005 give a replacement at ERROR, a veto for b and a direct ERROR emission for c; the targets accept both x and c despite the configured CRITICAL level. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A4",
+    "fields": {
+      "first_call": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 leave the three INFO entries pending. REQ-MEM-005/006 pass Once.emit's ValueError on b back from the first explicit flush. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "after_first": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-005/006 stop at the second call, retain the entire batch and preserve earlier callback side effects. Once logs an attempted b before the raise and has only stored a. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "after_second": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-005/006 replay from a. The supplied callback disarms at b, so it now stores a,b,c and normal completion clears. Its attempt and receipt histories retain the earlier calls. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A5",
+    "fields": {
+      "at_close": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 leave the initial INFO a pending. REQ-MEM-007 disables attached delivery, detaches, retains a on the detached flush and does not invoke the target's flush or close; the fixture's outcome is ok. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "after_handle": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002/003/004/007 fix identity with b and preserve both queued entries, including on the ERROR-triggered flush after close with no target. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "final": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004/005/007 keep post-close retarget and flush usable, deliver both retained entries only to the second sink and clear the buffer. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A6",
+    "fields": {
+      "format_calls": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "REQ-MEM-002 explicitly says setFormatter configures explicit format and that buffering and forwarding never invoke the memory handler's formatter. It does not specify that installing the formatter cannot itself call f.format. The counter spans installation as well as both handling calls and explicit flush. Thus zero fits the keyed runtime, and the remaining whole-observation requirement is passive setter behavior. The fixture initializes its count to zero and its sink simply appends."
+      },
+      "before_flush": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/002/003 put INFO 20 and DEBUG 10 below ERROR 40; the second predicate considers b and the current count, so changing the earlier a's severity does not drain it. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "after_flush": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-005 gives ordered delivery of the live a and b references, including a's mutated message, and an empty buffer. Converting the objects into the exact ['revised','b'] strings requires LogRecord.getMessage and how the imported constructor sets b.msg. These are observer premises, granted for contract_support but absent from this fixture's text. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B1",
+    "fields": {
+      "empty_probe": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001 explicitly ranks DEBUG 10 < WARNING 30. REQ-MEM-003 admits at capacity zero without consulting severity, then gives false for DEBUG and true for WARNING at an empty capacity-five handler. Strictly, rec() passes positional arguments to imported LogRecord without specifying that its level argument sets .levelno; the numeric comparisons assume that fixture projection."
+      },
+      "capacity_zero": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002/003/005 admit low, trigger at capacity zero and deliver it regardless of severity, then clear. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "custom_level": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003/005 establish DEBUG below the supplied WARNING threshold, WARNING equal to it, and ordered delivery of the retained pair on equality. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B2",
+    "fields": {
+      "disabled": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/004 keep the actual Switch reference but retain a when its __bool__ is false at automatic and explicit flush entry. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "enabled": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004/005 test the same target again, deliver a and clear once Switch is true. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "final": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-003/004/005 retain b when detached, preserve it across reattachment, and deliver b,c at capacity two. Its retained history begins with a. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B3",
+    "fields": {
+      "target_filters": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 give DEBUG below ERROR and then two records at capacity; the cited REQ-MEM-002/005 therefore apply both target filters to each offered entry, replacing a with x for the second filter. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "source_returns": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002/005 return each original unfiltered source input regardless of normal target returns. Identity, not label equality, is observed. Both callbacks still read .name, so the supplied records must expose that attribute for normal completion. Readable record attributes are ordinary fixture assumptions, not guaranteed by the shown constructor code."
+      },
+      "final": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 are needed along with the cited REQ-MEM-002/005: the batch triggers on b, x is accepted as a's replacement and b is vetoed. A normal veto does not prevent clearing. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B4",
+    "fields": {
+      "close_and_old_sink": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 define DEBUG 10 and INFO 20 below ERROR 40, so both inputs reach the close without an early exception. REQ-MEM-005/006/007 propagate the callback's RuntimeError, leave a stored, and leave target counters at their initial zero. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "after_close": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 guarantee both records are still pending at entry to close. REQ-MEM-006/007 then retain the failed batch and detach in cleanup. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "recovery": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "The low input levels fixed by REQ-MEM-001/003 ensure the stimulus reaches the protected close. REQ-MEM-005/006/007 permit post-close replay to fresh from a, followed by b and a successful clear. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B5",
+    "fields": {
+      "before": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 establish INFO 20 < 40 and occupancy three < eight. All entries wait and neither sink callback runs. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "events": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004/005 retarget during the first callback. Later entries read the new destination. The provided callbacks append event pairs in call order. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "after": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004/005 make the new destination stick, preserve each sink's actual receipt list and clear after normal completion. The explicit outcome helper then reports 'ok'. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B6",
+    "fields": {
+      "second_call": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002 says the filter exception propagates before append. The code selects b by identity and outcome returns LookupError. The unguarded first handle and both invocations of inspect must be able to read .name to reach this outcome. Readable record attributes are ordinary fixture assumptions, not guaranteed by the shown constructor code."
+      },
+      "after_handle": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 keep a pending below both thresholds, and REQ-MEM-002 causes the second call to stop at the raising filter before any append or delivery. The fixture records both visits. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      },
+      "after_emit": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/002/003/005 make direct emit bypass inspect, append b at ERROR and deliver a,b before success. The seen history is untouched. The actual string labels or callback name checks rely on the external positional LogRecord-to-.name convention in rec(), which the A/B stimulus uses but does not define."
+      }
+    },
+    "conflicts": []
+  }
+]

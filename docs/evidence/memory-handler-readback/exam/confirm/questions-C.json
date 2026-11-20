@@ -1,0 +1,69 @@
+{
+  "set": "C",
+  "runtime": "CPython 3.13.5. Each question starts fresh and uses only the shared fixture and its own stimulus. Runs are single-threaded. All observations occur before interpreter teardown.",
+  "instructions": "Predict each field from the supplied specification. State which result or component is unresolved whenever the specification does not determine it. Prose is sufficient if fields, values and sequence are unambiguous.",
+  "fixture_semantics": "rec(label, level) returns a fresh standard LogRecord with name and msg equal to label and levelno equal to the supplied level. labels returns the current name of each given record in order. Tap is a plain, initially truthy test double. Its handle stores the live record reference and returns True. Its flush and close increment separate counters and have no other effect. outcome invokes the callable exactly once, reporting 'ok' on a normal return or the caught exception class name on failure. describe maps LogRecords to their name and leaves other results unchanged. Python identity tests compare the actual objects. The local subclasses in each stimulus have exactly the shown behavior. No other fixture component dispatches or formats records.",
+  "shared_fixture_python": "import logging\nfrom logging.handlers import MemoryHandler\n\ndef rec(label, level):\n    return logging.LogRecord(label, level, \"sample.py\", 1, label, (), None)\n\ndef labels(records):\n    return [r.name for r in records]\n\nclass Tap:\n    def __init__(self):\n        self.received = []\n        self.flushes = 0\n        self.closes = 0\n\n    def handle(self, r):\n        self.received.append(r)\n        return True\n\n    def flush(self):\n        self.flushes += 1\n\n    def close(self):\n        self.closes += 1\n\ndef outcome(f):\n    try:\n        f()\n        return \"ok\"\n    except Exception as exc:\n        return type(exc).__name__\n\ndef describe(x):\n    if isinstance(x, logging.LogRecord):\n        return x.name\n    return x",
+  "questions": [
+    {
+      "id": "C1",
+      "question": "What does each buffer contain and what has reached the tap at each marked point?",
+      "observation_fields": [
+        "one",
+        "two",
+        "three"
+      ],
+      "stimulus_python": "t = Tap()\nmid = MemoryHandler(7, flushLevel=logging.ERROR, target=t)\nfront = MemoryHandler(6, flushLevel=logging.WARNING, target=mid)\ndef state():\n    return [labels(front.buffer), labels(mid.buffer), labels(t.received)]\nfront.handle(rec(\"fern\", logging.INFO))\none = state()\nfront.emit(rec(\"elm\", logging.WARNING))\ntwo = state()\nfront.handle(rec(\"oak\", logging.CRITICAL))\nobservations = {\"one\": one, \"two\": two, \"three\": state()}"
+    },
+    {
+      "id": "C2",
+      "question": "What are the initial predicate results, and what return and state does the caller observe after each handle call?",
+      "observation_fields": [
+        "predicates",
+        "first",
+        "second"
+      ],
+      "stimulus_python": "t = Tap()\nh = MemoryHandler(5, flushLevel=logging.INFO, target=t)\na, b = rec(\"alpha\", logging.ERROR), rec(\"beta\", logging.DEBUG)\nx, y = rec(\"xi\", logging.DEBUG), rec(\"psi\", logging.WARNING)\nh.addFilter(lambda r: x if r is a else y)\np = [h.shouldFlush(r) for r in (a, x, y)]\nra = h.handle(a)\nfirst = [describe(ra), labels(h.buffer), labels(t.received)]\nrb = h.handle(b)\nobservations = {\"predicates\": p, \"first\": first, \"second\": [describe(rb), labels(h.buffer), labels(t.received)]}"
+    },
+    {
+      "id": "C3",
+      "question": "What is visible after each explicit flush, including who attempted each record and which sink remains attached?",
+      "observation_fields": [
+        "first_result",
+        "first_state",
+        "retry"
+      ],
+      "stimulus_python": "events = []\nclass Right(Tap):\n    def __init__(self):\n        super().__init__()\n        self.armed = True\n    def handle(self, r):\n        events.append([\"R\", r.name])\n        if self.armed and r.name == \"j\":\n            self.armed = False\n            raise ValueError(\"pause\")\n        return super().handle(r)\nclass Left(Tap):\n    def handle(self, r):\n        events.append([\"L\", r.name])\n        h.setTarget(right)\n        return super().handle(r)\nleft, right = Left(), Right()\nh = MemoryHandler(10, flushLevel=100, target=left)\nfor tag in (\"i\", \"j\", \"k\"):\n    h.emit(rec(tag, 10))\nfirst_result = outcome(h.flush)\ndef state():\n    return [list(events), labels(h.buffer), h.target is right, labels(left.received), labels(right.received)]\nfirst_state = state()\nsecond_result = outcome(h.flush)\nobservations = {\"first_result\": first_result, \"first_state\": first_state, \"retry\": [second_result, state()]}"
+    },
+    {
+      "id": "C4",
+      "question": "What do the two close calls and the intervening explicit flush leave in the buffer and at the target?",
+      "observation_fields": [
+        "first_close",
+        "intervening",
+        "second_close"
+      ],
+      "stimulus_python": "class Lamp(Tap):\n    def __init__(self):\n        super().__init__()\n        self.lit = True\n    def __bool__(self):\n        return self.lit\n    def handle(self, r):\n        self.lit = False\n        return super().handle(r)\nt = Lamp()\nh = MemoryHandler(9, flushLevel=100, target=t)\ndef state():\n    return [labels(h.buffer), labels(t.received), h.target is t, t.lit, t.flushes, t.closes]\nh.emit(rec(\"sun\", 10))\nh.emit(rec(\"moon\", 10))\nh.close()\nfirst = state()\nh.setTarget(t)\nh.emit(rec(\"star\", 10))\nh.flush()\nbetween = state()\nt.lit = True\nh.close()\nobservations = {\"first_close\": first, \"intervening\": between, \"second_close\": state()}"
+    },
+    {
+      "id": "C5",
+      "question": "What does each handle return, which object or objects are queued before flush, and which message values are seen during and after flush?",
+      "observation_fields": [
+        "returns",
+        "pending",
+        "seen"
+      ],
+      "stimulus_python": "shared = rec(\"shared\", 11)\nclass Edit(Tap):\n    def __init__(self):\n        super().__init__()\n        self.messages = []\n    def handle(self, r):\n        self.messages.append(r.msg)\n        r.msg = r.msg + \"!\"\n        super().handle(r)\n        return False\nt = Edit()\nh = MemoryHandler(6, flushLevel=100, target=t)\nh.addFilter(lambda r: shared)\nu, v = rec(\"u\", 11), rec(\"v\", 11)\nr1 = h.handle(u)\nr2 = h.handle(v)\npending = [labels(h.buffer), [r is shared for r in h.buffer]]\nh.flush()\nobservations = {\"returns\": [describe(r1), describe(r2)], \"pending\": pending, \"seen\": [list(t.messages), shared.msg, labels(h.buffer), [r is shared for r in t.received]]}"
+    },
+    {
+      "id": "C6",
+      "question": "What outcome and state does the caller observe after the first handle(p) call and after repeating that same call?",
+      "observation_fields": [
+        "first_result",
+        "after_first",
+        "after_repeat"
+      ],
+      "stimulus_python": "class Gate(Tap):\n    def __init__(self):\n        super().__init__()\n        self.attempts = []\n        self.armed = True\n    def handle(self, r):\n        self.attempts.append(r.name)\n        if self.armed and r.name == \"p\":\n            self.armed = False\n            raise OSError(\"pause\")\n        return super().handle(r)\nt = Gate()\nh = MemoryHandler(2, flushLevel=100, target=t)\nn, p = rec(\"n\", 10), rec(\"p\", 10)\ndef state():\n    return [list(t.attempts), labels(h.buffer), labels(t.received)]\nh.handle(n)\nfirst_result = outcome(lambda: h.handle(p))\nfirst_state = state()\nagain = outcome(lambda: h.handle(p))\nobservations = {\"first_result\": first_result, \"after_first\": first_state, \"after_repeat\": [again, state()]}"
+    }
+  ]
+}

@@ -1,0 +1,290 @@
+[
+  {
+    "id": "A1",
+    "fields": {
+      "predicate": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "REQ-MH-003's capacity-2 direct query of INFO B with one pending record returns false, establishing INFO below the default. Here the queried lengths are below three even if WARNING caused an intervening drain. The second Boolean requires DEBUG < ERROR. The fixture imports DEBUG, and neither its rank nor its value appears in the spec. The level argument is read as the level of the record produced by rec()."
+      },
+      "capacity": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The first snapshot requires WARNING below the default; its position is absent. If WARNING reaches 40, b drains the earlier entries before this snapshot. Under WARNING < 40, c reaches capacity and REQ-MH-003 short-circuits the severity test, so DEBUG's rank is irrelevant here. REQ-MH-004 fixes delivery order and clearing. The literals in labels() also require the external LogRecord positional name convention."
+      },
+      "severity": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-001 equates default logging.ERROR with 40, REQ-MH-003 includes equality, and REQ-MH-004 preserves order. Even if WARNING or DEBUG flushes an earlier prefix, d flushes every remaining entry, so their ranks cannot change the final snapshot. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A2",
+    "fields": {
+      "waiting": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "Capacity one makes each append trigger regardless of severity. With no target the implicit and explicit flushes retain both entries under REQ-MH-003/004. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      },
+      "switches": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-004 makes each setter replace the destination without draining. The same a,b references stay pending; both sink lists start empty in the fixture. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      },
+      "final": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-004 sends the retained references to the last target in order, then clears. The first target has received no call. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A3",
+    "fields": {
+      "filter_calls": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-002 explicitly ignores handler level in handle, invokes the installed selector on a and b, and bypasses it in emit(c). The test reads .name inside pick and treats setLevel as ordinary level assignment. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      },
+      "returns": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-002 entails identity with x and Boolean false on veto; REQ-MH-003 entails null for successful emit. The first serialized component reads x.name in describe(), so its exact string needs the fixture's external name convention; setLevel is used as ordinary setup."
+      },
+      "delivery": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-001/003 establish ERROR equals the default threshold. REQ-MH-002 substitutes x and bypasses the source selector for c. REQ-MH-004's target filter scenario confirms direct dispatch despite level CRITICAL. The observed string names assume the fixture's external positional label mapping and ordinary setLevel setup."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A4",
+    "fields": {
+      "first_call": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-003's direct INFO query establishes that the three INFO entries fit without a drain; REQ-MH-004/005 and the Bare Handler example support propagation from delivery. Once.emit raises ValueError on the condition r.name == 'b', whose truth for the second record needs the external positional name convention."
+      },
+      "after_first": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "Given r.name matches the supplied label, the fixture appends 'b' to attempts before raising, but does not add it to received. REQ-MH-004/005 stop the loop and preserve the full batch including c; the earlier delivery of a persists. Both exception control flow and the displayed names depend on the external name mapping."
+      },
+      "after_second": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-005 replays from a, and REQ-MH-004 drains in order and clears. Once has disarmed its failure if and only if the earlier name condition selected b; its histories then have the predicted duplicate. That condition and the rendered histories require the external name convention."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A5",
+    "fields": {
+      "at_close": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-003's INFO example and REQ-MH-006's Disabled close-time delivery example establish a low INFO record and retained backlog. Only the detached flush runs; the two sink counters initialized to zero stay zero and outcome returns 'ok'. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      },
+      "after_handle": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-002/006 support successful post-close handle and the identity Boolean. REQ-MH-004 preserves the pending records while detached; the old sink remains untouched. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      },
+      "final": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-004/006 permit post-close retarget and flush: the new sink receives all retained entries and the buffer clears. The original sink sees none. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A6",
+    "fields": {
+      "format_calls": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "REQ-MH-002 rules out formatting by MemoryHandler while it handles or forwards records. The supplied Sink.emit only appends and F.__init__ resets its counter to zero. The observation also spans h.setFormatter(f), whose inherited setter behavior is absent: the exact zero assumes configuration stores f without invoking f.format. This is a setup/API contract omission, separate from the covered record path. contract_support counts the whole public call sequence, including the inherited setup method. If passive setter behavior is a harness convention, the handler-only result is fully entailed."
+      },
+      "before_flush": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "REQ-MH-003 tests only the just-appended record, so changing a.levelno while pending does not retest a. The buffer length on b is two, below four, and INFO < ERROR follows from the direct INFO query scenario. DEBUG < ERROR is not supplied; a high DEBUG could drain both entries on b. Exact label strings and passive setFormatter setup are fixture conventions."
+      },
+      "after_flush": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-004 and its Object identity and list identity example entail ordered delivery, an empty final buffer, preservation of a's identity and visibility of the new a.msg. An earlier flush at b converges on the same final delivery. The observer calls imported LogRecord.getMessage(), whose result for empty args is unspecified; b's initial .msg and both .name strings also rely on the external constructor. The helper outcome is only partly supported even granting ordinary setter behavior. Under the contract-only projection, the harness supplies the conventional getMessage result for a string msg and empty args; this does not make it a MemoryHandler postcondition."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B1",
+    "fields": {
+      "empty_probe": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "REQ-MH-003 entails true at capacity zero and true when the input level equals WARNING. The middle Boolean needs DEBUG < WARNING; the shared fixture aliases both imported constants, and neither one appears in the spec. This is missing input ordering, not a missing predicate rule."
+      },
+      "capacity_zero": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-002/003/004 and the zero-capacity example determine immediate delivery and the clear without consulting either severity. The one delivered object's label is an external fixture projection. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      },
+      "custom_level": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "REQ-MH-003/004 entail the final ordered delivery: edge equals WARNING and flushes any remaining prefix. The first snapshot depends on DEBUG < WARNING, a relation absent from spec and fixture. Exact record labels additionally depend on the external constructor projection."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B2",
+    "fields": {
+      "disabled": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "The fixture makes t falsy without removing the reference. REQ-MH-001/003/004 retain a both when CRITICAL triggers an automatic flush and when it does not; the explicit flush also sees a falsy target. CRITICAL's exact rank is immaterial for comparable numeric severity. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      },
+      "enabled": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-004 rechecks the truth of the same Switch on explicit flush; it now delivers the retained a and clears the buffer regardless of whether a previously triggered. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      },
+      "final": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-003/004 retain b under None and do not drain it when t is reattached. c is the second entry and capacity two suffices, irrespective of DEBUG's rank. All three entries have now reached t in chronological order. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B3",
+    "fields": {
+      "target_filters": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "REQ-MH-002/004 predict f1 then f2 for every offered record and f2 sees the replacement x for a. Both records are offered only if DEBUG < default ERROR: otherwise a flushes immediately, then b at INFO stays below capacity alone. REQ-MH-003's INFO example supplies the latter inequality but gives no DEBUG rank. The fixture compares identities in the selectors and serializes external constructor names; setLevel is taken as ordinary setup."
+      },
+      "source_returns": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-002 gives both unfiltered source calls back their own input objects; REQ-MH-004 ignores all normal target return values. All possible placements of the early drain for comparable input levels produce the same two identity Booleans. The checks use object identity, not the numerical level or projected label. The stimulus uses its inherited setLevel call as level configuration. Strict whole-stimulus reachability also needs ordinary inherited setLevel to return and the records to expose a readable .name used inside both target filters. The fixture does not define those imported APIs. This qualification concerns fixture viability, not identity or label equality."
+      },
+      "final": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "REQ-MH-002/004 supply target replacement and veto; REQ-MH-003 also matters although it is not cited here. Below-default DEBUG makes the second entry trigger at capacity and the vetoed b is cleared with a. If DEBUG reaches the default first, x still reaches the sink, but the later lone INFO b stays buffered. DEBUG < default is absent, as is the literal record-name mapping."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B4",
+    "fields": {
+      "close_and_old_sink": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "REQ-MH-003 supplies low INFO, but DEBUG's rank is unknown. If DEBUG reaches the default then h.emit(b) calls Broken.emit and raises outside outcome(h.close), so this observation is never assigned. If b stays buffered and the constructor supplies name 'b', REQ-MH-005/006 and the fixture give RuntimeError, only a delivered, and zero old-sink callbacks."
+      },
+      "after_close": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "REQ-MH-006's Close-time failure scenario supplies detachment and full retention only after close is reached with both entries pending. An above-threshold or equal DEBUG makes the earlier unguarded h.emit(b) raise instead. The callback condition and labels() also require the external positional name convention."
+      },
+      "recovery": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "If close is reached with both records pending, REQ-MH-004/005/006 give successful replay to fresh and clearing. If DEBUG reaches the default, the preceding unguarded h.emit(b) raises and recovery is not reached. The imported level order and the record names used by Broken.emit/labels are necessary fixture premises."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B5",
+    "fields": {
+      "before": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-003's direct INFO query example establishes INFO below the default, while length three is below capacity eight. No callback occurs before the explicit flush. The quoted numerical threshold alone does not establish INFO's place. The handler result follows under the fixture convention that rec(label, level) yields a record named label at that level. The helper passes positional arguments to an imported LogRecord constructor, and its .name mapping is not declared in the supplied text."
+      },
+      "events": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-004 explicitly resolves the current target for each item and includes a successful retarget during a callback. With the second event's object still pending, b and c therefore reach Second. The switching condition r.name == 'a' and the event names both depend on the external constructor's label mapping."
+      },
+      "after": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-004 fixes synchronous retargeting, successful final clear, the surviving target reference and sink allocations once the name check for a succeeds. The imported LogRecord's positional mapping determines that branch and the observed sink labels."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B6",
+    "fields": {
+      "second_call": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-002's A filter raises scenario propagates LookupError. The code raises on r is b after logging the name, with no comparison of its value and before severity is examined. The identity-based result needs only the readable name attribute used by the supplied fixture, not its literal mapping. The fixture does not separately guarantee that the constructor supplies a readable .name: if inspect cannot read the first input's name, unguarded handle(a) aborts before the measured call. Under the fixture's declared observer convention this field is fully determined."
+      },
+      "after_handle": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-002 leaves the earlier record pending after the filter exception; REQ-MH-003's separate direct INFO query supplies INFO below the default. Both filter calls occur, b never appends, and the sink is empty. The seen history and buffer display require the positional mapping to .name."
+      },
+      "after_emit": {
+        "accuracy": "F",
+        "support": "conditional",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-001 fixes ERROR at the default threshold; REQ-MH-002/003/004 make direct emit bypass inspect, drain both entries and return normally. The severity-equality example is applicable through the default constructor. The observed names come from seen and labels() using the external constructor convention."
+      }
+    },
+    "conflicts": []
+  }
+]

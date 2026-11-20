@@ -1,0 +1,26 @@
+[
+  {
+    "id": "E1",
+    "fields": {
+      "close_outcome": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001 enables the attached close-time flush by default, REQ-MEM-004 says setTarget does not test truth and propagates the same truth-test exception after close cleanup, and REQ-MEM-007 requires the attached flush even below thresholds. Receiver's first check raises ArithmeticError; outcome reports that exact class."
+      },
+      "after_close": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-003 retains the two records before close. REQ-MEM-004 tests the receiver once, preserves that check effect, never enters handle, and skips the clear. REQ-MEM-007 then detaches and performs a detached flush that cannot call Receiver. The copied history, record order and both identity tests therefore give exactly the keyed values."
+      },
+      "after_recovery": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004/007 permit post-close reattachment, with no truth check in the setter. The explicit retry performs the second check, which the fixture now makes successful. REQ-MEM-004/005 then visit north,south in order and clear normally. The installed receiver remains the target and outcome is 'ok'."
+      }
+    },
+    "conflicts": []
+  }
+]

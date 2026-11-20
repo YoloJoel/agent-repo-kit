@@ -1,0 +1,453 @@
+[
+  {
+    "id": "B1",
+    "fields": {
+      "empty_probe": {
+        "status": "full",
+        "value": [
+          true,
+          false,
+          true
+        ],
+        "reqs": [
+          "REQ-MEM-001",
+          "REQ-MEM-003"
+        ],
+        "quotes": [
+          "SHALL start with its own empty buffer, retain the supplied settings",
+          "DEBUG 10, INFO 20, WARNING (WARN) 30, ERROR 40 and CRITICAL (FATAL) 50",
+          "If the count is at least capacity, it returns True without inspecting record severity.",
+          "Otherwise it returns the result of `record.levelno >= flushLevel`.",
+          "The query itself neither appends nor delivers."
+        ]
+      },
+      "capacity_zero": {
+        "status": "full",
+        "value": {
+          "buffer": [],
+          "delivered": [
+            "low"
+          ]
+        },
+        "reqs": [
+          "REQ-MEM-002",
+          "REQ-MEM-003",
+          "REQ-MEM-005"
+        ],
+        "quotes": [
+          "With no veto, the handler returns the final record object on normal completion and emits it if it tests true.",
+          "If the count is at least capacity, it returns True without inspecting record severity.",
+          "append the record object first, query with that record, and call `flush()` once if either condition is true.",
+          "It calls its own `emit` once with a truthy accepted record, including a replacement.",
+          "flush clears the existing buffer in place and returns None, irrespective of the targets' return values."
+        ]
+      },
+      "custom_level": {
+        "status": "full",
+        "value": [
+          {
+            "buffer": [
+              "low"
+            ],
+            "delivered": []
+          },
+          {
+            "buffer": [],
+            "delivered": [
+              "low",
+              "edge"
+            ]
+          }
+        ],
+        "reqs": [
+          "REQ-MEM-001",
+          "REQ-MEM-003",
+          "REQ-MEM-005"
+        ],
+        "quotes": [
+          "DEBUG 10, INFO 20, WARNING (WARN) 30, ERROR 40 and CRITICAL (FATAL) 50",
+          "Otherwise it returns the result of `record.levelno >= flushLevel`.",
+          "Below both thresholds, the entire buffer stays pending.",
+          "append the record object first, query with that record, and call `flush()` once if either condition is true.",
+          "visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "It calls its own `emit` once with a truthy accepted record, including a replacement.",
+          "flush clears the existing buffer in place and returns None, irrespective of the targets' return values."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B2",
+    "fields": {
+      "disabled": {
+        "status": "full",
+        "value": [
+          true,
+          {
+            "buffer": [
+              "a"
+            ],
+            "delivered": []
+          }
+        ],
+        "reqs": [
+          "REQ-MEM-001",
+          "REQ-MEM-003",
+          "REQ-MEM-004"
+        ],
+        "quotes": [
+          "SHALL start with its own empty buffer, retain the supplied settings",
+          "append the record object first, query with that record, and call `flush()` once if either condition is true.",
+          "a missing or otherwise false-valued target causes the flush to return None with all entries retained.",
+          "This applies to explicit, threshold-triggered and close-triggered flushes."
+        ]
+      },
+      "enabled": {
+        "status": "full",
+        "value": {
+          "buffer": [],
+          "delivered": [
+            "a"
+          ]
+        },
+        "reqs": [
+          "REQ-MEM-004",
+          "REQ-MEM-005"
+        ],
+        "quotes": [
+          "a missing or otherwise false-valued target causes the flush to return None with all entries retained.",
+          "visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "It calls its own `emit` once with a truthy accepted record, including a replacement.",
+          "flush clears the existing buffer in place and returns None, irrespective of the targets' return values."
+        ]
+      },
+      "final": {
+        "status": "full",
+        "value": {
+          "buffer": [],
+          "delivered": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        "reqs": [
+          "REQ-MEM-004",
+          "REQ-MEM-003",
+          "REQ-MEM-005"
+        ],
+        "quotes": [
+          "replace the destination immediately and return None, leaving pending records untouched.",
+          "Below both thresholds, the entire buffer stays pending.",
+          "append the record object first, query with that record, and call `flush()` once if either condition is true.",
+          "visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "It calls its own `emit` once with a truthy accepted record, including a replacement.",
+          "flush clears the existing buffer in place and returns None, irrespective of the targets' return values."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B3",
+    "fields": {
+      "target_filters": {
+        "status": "full",
+        "value": [
+          [
+            "a",
+            "b"
+          ],
+          [
+            "x",
+            "b"
+          ]
+        ],
+        "reqs": [
+          "REQ-MEM-003",
+          "REQ-MEM-005",
+          "REQ-MEM-002"
+        ],
+        "quotes": [
+          "append the record object first, query with that record, and call `flush()` once if either condition is true.",
+          "visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "that target SHALL apply its own filters by the admission rule in REQ-MEM-002.",
+          "the handler SHALL apply its filters in registration order",
+          "A truthy LogRecord result replaces the current record for every later filter and for emission.",
+          "Any other truthy result keeps the current record.",
+          "The call from the memory handler does not consult the target's configured level."
+        ]
+      },
+      "source_returns": {
+        "status": "full",
+        "value": [
+          true,
+          true
+        ],
+        "reqs": [
+          "REQ-MEM-001",
+          "REQ-MEM-002",
+          "REQ-MEM-005"
+        ],
+        "quotes": [
+          "SHALL start with its own empty buffer, retain the supplied settings",
+          "With no filters, the input object is the final record",
+          "With no veto, the handler returns the final record object on normal completion and emits it if it tests true.",
+          "flush clears the existing buffer in place and returns None, irrespective of the targets' return values."
+        ]
+      },
+      "final": {
+        "status": "full",
+        "value": {
+          "buffer": [],
+          "delivered": [
+            "x"
+          ]
+        },
+        "reqs": [
+          "REQ-MEM-005",
+          "REQ-MEM-002"
+        ],
+        "quotes": [
+          "that target SHALL apply its own filters by the admission rule in REQ-MEM-002.",
+          "A truthy LogRecord result replaces the current record for every later filter and for emission.",
+          "A false result stops the chain, returns the boolean False and skips emission.",
+          "The call from the memory handler does not consult the target's configured level.",
+          "It calls its own `emit` once with a truthy accepted record, including a replacement.",
+          "flush clears the existing buffer in place and returns None, irrespective of the targets' return values."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B4",
+    "fields": {
+      "close_and_old_sink": {
+        "status": "full",
+        "value": [
+          "RuntimeError",
+          [
+            "a"
+          ],
+          0,
+          0
+        ],
+        "reqs": [
+          "REQ-MEM-001",
+          "REQ-MEM-007",
+          "REQ-MEM-005",
+          "REQ-MEM-006"
+        ],
+        "quotes": [
+          "MemoryHandler(capacity, flushLevel=logging.ERROR, target=None, flushOnClose=True)",
+          "first call flush with the current target if flushOnClose is truthy, regardless of count or severity.",
+          "visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "It calls its own `emit` once with a truthy accepted record, including a replacement.",
+          "Side effects already performed by callbacks persist.",
+          "Close does not call the target's close or flush.",
+          "propagates a target exception after cleanup."
+        ]
+      },
+      "after_close": {
+        "status": "full",
+        "value": [
+          true,
+          [
+            "a",
+            "b"
+          ]
+        ],
+        "reqs": [
+          "REQ-MEM-006",
+          "REQ-MEM-007"
+        ],
+        "quotes": [
+          "The sender leaves the entire batch pending, including any entries whose target calls already returned and the entry whose call raised.",
+          "including when that first flush raises, it sets target to None",
+          "another call to the memory handler's flush runs with the target detached and preserves any remaining entries."
+        ]
+      },
+      "recovery": {
+        "status": "full",
+        "value": [
+          "ok",
+          [],
+          [
+            "a",
+            "b"
+          ]
+        ],
+        "reqs": [
+          "REQ-MEM-007",
+          "REQ-MEM-004",
+          "REQ-MEM-006",
+          "REQ-MEM-005"
+        ],
+        "quotes": [
+          "Closing SHALL leave subsequent direct handle, emit, setTarget and flush calls usable.",
+          "replace the destination immediately and return None, leaving pending records untouched.",
+          "An explicit or subsequent automatic flush starts again at the front.",
+          "visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "It calls its own `emit` once with a truthy accepted record, including a replacement.",
+          "flush clears the existing buffer in place and returns None, irrespective of the targets' return values."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B5",
+    "fields": {
+      "before": {
+        "status": "full",
+        "value": [
+          [
+            "a",
+            "b",
+            "c"
+          ],
+          []
+        ],
+        "reqs": [
+          "REQ-MEM-001",
+          "REQ-MEM-002",
+          "REQ-MEM-003"
+        ],
+        "quotes": [
+          "MemoryHandler(capacity, flushLevel=logging.ERROR, target=None, flushOnClose=True)",
+          "Direct `emit(record)` skips these filters, appends its argument, and returns None on normal completion.",
+          "Below both thresholds, the entire buffer stays pending."
+        ]
+      },
+      "events": {
+        "status": "full",
+        "value": [
+          [
+            "first",
+            "a"
+          ],
+          [
+            "second",
+            "b"
+          ],
+          [
+            "second",
+            "c"
+          ]
+        ],
+        "reqs": [
+          "REQ-MEM-005",
+          "REQ-MEM-004"
+        ],
+        "quotes": [
+          "visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "It calls its own `emit` once with a truthy accepted record, including a replacement.",
+          "replace the destination immediately and return None, leaving pending records untouched.",
+          "The destination is read for each entry."
+        ]
+      },
+      "after": {
+        "status": "full",
+        "value": [
+          "ok",
+          true,
+          [],
+          [
+            "a"
+          ],
+          [
+            "b",
+            "c"
+          ]
+        ],
+        "reqs": [
+          "REQ-MEM-004",
+          "REQ-MEM-005"
+        ],
+        "quotes": [
+          "replace the destination immediately and return None, leaving pending records untouched.",
+          "The destination is read for each entry.",
+          "visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "It calls its own `emit` once with a truthy accepted record, including a replacement.",
+          "flush clears the existing buffer in place and returns None, irrespective of the targets' return values."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "B6",
+    "fields": {
+      "second_call": {
+        "status": "full",
+        "value": "LookupError",
+        "reqs": [
+          "REQ-MEM-002"
+        ],
+        "quotes": [
+          "A filter exception propagates before this call appends a record."
+        ]
+      },
+      "after_handle": {
+        "status": "full",
+        "value": [
+          [
+            "a",
+            "b"
+          ],
+          {
+            "buffer": [
+              "a"
+            ],
+            "delivered": []
+          }
+        ],
+        "reqs": [
+          "REQ-MEM-002",
+          "REQ-MEM-003"
+        ],
+        "quotes": [
+          "the handler SHALL apply its filters in registration order",
+          "With no veto, the handler returns the final record object on normal completion and emits it if it tests true.",
+          "Below both thresholds, the entire buffer stays pending.",
+          "handle propagates LookupError, no later filter or target is called for B and only A remains pending."
+        ]
+      },
+      "after_emit": {
+        "status": "full",
+        "value": [
+          "ok",
+          [
+            "a",
+            "b"
+          ],
+          {
+            "buffer": [],
+            "delivered": [
+              "a",
+              "b"
+            ]
+          }
+        ],
+        "reqs": [
+          "REQ-MEM-001",
+          "REQ-MEM-002",
+          "REQ-MEM-003",
+          "REQ-MEM-005"
+        ],
+        "quotes": [
+          "MemoryHandler(capacity, flushLevel=logging.ERROR, target=None, flushOnClose=True)",
+          "Direct `emit(record)` skips these filters, appends its argument, and returns None on normal completion.",
+          "Otherwise it returns the result of `record.levelno >= flushLevel`.",
+          "append the record object first, query with that record, and call `flush()` once if either condition is true.",
+          "visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "It calls its own `emit` once with a truthy accepted record, including a replacement.",
+          "flush clears the existing buffer in place and returns None, irrespective of the targets' return values."
+        ]
+      }
+    },
+    "conflicts": []
+  }
+]

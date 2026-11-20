@@ -1,0 +1,74 @@
+[
+  {
+    "id": "D1",
+    "fields": {
+      "first": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "Meter has no events in either branch and seed stays in inner. REQ-MEM-002/003/004/005 establish that outer is forwarded to inner only if bool(inner) succeeds and is true. The D fixture says plain Meter is truthy and that ordinary MemoryHandler uses the standard implementation. Neither statement nor the candidate says how that implementation truth-tests. Both reader branches are consistent and the keyed one is not selected."
+      },
+      "second": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The reader unconditionally locates last in outer and seed in inner, with no Meter event. REQ-MEM-003/004 show that setTarget does not drain the earlier backlog and the low-level append is below the limits. Which buffer holds the prior record named outer still depends on the first truth test on inner."
+      },
+      "third": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "Both requested identity Booleans are fixed in all four branches. REQ-MEM-007 detaches outer without closing or detaching inner. The two truth tests on the nested MemoryHandler control its deliveries; the four conditional sequences correctly account for reaching inner capacity, ordered traversal and Meter's ignored False returns under REQ-MEM-003/004/005. No clause selects the actually true/true branch."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "D2",
+    "fields": {
+      "setup": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "The two direct setup calls precede handler construction. The explicit Meter contract and snapshot semantics alone give the cumulative handle/sample then flush sequence; no MemoryHandler requirement is needed."
+      },
+      "dispatch": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002/003 and fixture keep make the first source handle log filter/sample and veto it, direct emit then buffer sample, and the next source handle log filter/fresh and buffer fresh. Count two and severity 17 remain below their limits. The earlier setup events persist."
+      },
+      "after_close": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-005/007 send sample and fresh to Meter on default close, ignore its normal False returns, clear the buffer and detach. No target flush/close is added and the fixture preserves the complete earlier event history."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "D3",
+    "fields": {
+      "trigger": {
+        "accuracy": "U",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The single scored field is outcome's string. The reader correctly states where LookupError originates, but allows 'LookupError', 'ok' and other exceptions at the boundary. No returned string common to those alternatives is specified. REQ-MEM-006 addresses interrupted record delivery and predicate failures; its scope does not clearly cover failure of __bool__ before the first delivery."
+      },
+      "between": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The definite cumulative prefix ['test'] is a requested, observable component. The fixture logs it before raising, after REQ-MEM-003 has appended both inputs. The reader makes the full post-failure buffer, events and target snapshot conditional; REQ-MEM-004/005/006 do not explicitly govern error recovery from the entry truth test."
+      },
+      "retry": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The question's guaranteed first ['test'] event remains a prefix of the retry's explicitly cumulative log because Meter's entries never mutate or disappear. The successful two-record retry and its complete state are expressly conditional on the original batch and destination surviving. REQ-MEM-004/005 determine traversal if those premises hold, but the failed entry truth test is not explicitly covered in REQ-MEM-006. Merely naming the keyed complete branch does not earn full credit."
+      }
+    },
+    "conflicts": []
+  }
+]

@@ -1,0 +1,270 @@
+{
+  "set": "D",
+  "runtime": {
+    "implementation": "CPython",
+    "version": "3.13.5",
+    "executable": "/usr/bin/python3",
+    "source_root": "/usr/lib/python3.13",
+    "sha256": {
+      "logging/__init__.py": "dc42e5cf19a2dd03bd95ed3600803effa9c5f107927ab5f66cacf3eebcfd9a47",
+      "logging/handlers.py": "464980a72ce4c0ca1e6a6724a9760f5e101475a4e347329272ba6d2c4b39dffd"
+    }
+  },
+  "questions": [
+    {
+      "id": "D1",
+      "actual_observations": {
+        "first": [
+          [],
+          [
+            "seed",
+            "outer"
+          ],
+          []
+        ],
+        "second": [
+          [
+            "last"
+          ],
+          [
+            "seed",
+            "outer"
+          ],
+          []
+        ],
+        "third": [
+          [
+            [],
+            [],
+            [
+              [
+                "handle",
+                "seed"
+              ],
+              [
+                "handle",
+                "outer"
+              ],
+              [
+                "handle",
+                "last"
+              ]
+            ]
+          ],
+          true,
+          true
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:98-105",
+          "rule": "Standard symbolic levels."
+        },
+        {
+          "location": "logging/__init__.py:865-874",
+          "rule": "Default filter returns its input."
+        },
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Standard handle dispatch runs even when used as a target."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Append before testing and possible flush."
+        },
+        {
+          "location": "logging/handlers.py:1378-1396",
+          "rule": "Default target, flush level and close mode."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Inclusive capacity or severity condition."
+        },
+        {
+          "location": "logging/handlers.py:1405-1424",
+          "rule": "Installing a target and iterating over the complete batch."
+        },
+        {
+          "location": "logging/handlers.py:1367-1370",
+          "rule": "Parent close dispatches the handler's own flush."
+        },
+        {
+          "location": "logging/handlers.py:1431-1437",
+          "rule": "Close initially flushes if enabled and detaches its own target."
+        }
+      ],
+      "field_rationale": {
+        "first": "The inner handler already holds seed. Explicit outer flush calls inner.handle with outer. Capacity two is reached in inner but it has no target; inner retains both entries. Outer finishes its loop and clears.",
+        "second": "Installing meter does not drain inner. The low-severity last stays pending in outer below capacity.",
+        "third": "Closing outer sends last to the ordinary inner handler. Its existing two plus last meet inner capacity, so it forwards seed, outer, last to the arbitrary meter. The meter's False does not affect clearing. Outer detaches its own target and does not close or detach inner."
+      }
+    },
+    {
+      "id": "D2",
+      "actual_observations": {
+        "setup": [
+          [
+            "handle",
+            "sample"
+          ],
+          [
+            "flush"
+          ]
+        ],
+        "dispatch": [
+          [
+            [
+              "handle",
+              "sample"
+            ],
+            [
+              "flush"
+            ],
+            [
+              "filter",
+              "sample"
+            ],
+            [
+              "filter",
+              "fresh"
+            ]
+          ],
+          [
+            "sample",
+            "fresh"
+          ]
+        ],
+        "after_close": [
+          [
+            [
+              "handle",
+              "sample"
+            ],
+            [
+              "flush"
+            ],
+            [
+              "filter",
+              "sample"
+            ],
+            [
+              "filter",
+              "fresh"
+            ],
+            [
+              "handle",
+              "sample"
+            ],
+            [
+              "handle",
+              "fresh"
+            ]
+          ],
+          [],
+          true
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:865-874",
+          "rule": "A false source filter result vetoes; a non-record truthy result preserves the current record."
+        },
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filters apply on handle before emission."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Direct emit appends and checks thresholds."
+        },
+        {
+          "location": "logging/handlers.py:1378-1396",
+          "rule": "Default flush-on-close flag."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Capacity and severity conditions."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Only target.handle is called per queued record; return values are unused."
+        },
+        {
+          "location": "logging/handlers.py:1367-1370",
+          "rule": "Parent close invokes the receiver's flush."
+        },
+        {
+          "location": "logging/handlers.py:1431-1437",
+          "rule": "Close flushes, detaches and chains."
+        }
+      ],
+      "field_rationale": {
+        "setup": "The fixture's explicit setup calls append the handle/sample and flush events, before h exists.",
+        "dispatch": "The handle(sample) filter sees and vetoes sample, direct emit(sample) enqueues it without invoking the filter, and handle(fresh) passes after adding its filter event. Neither bound is reached.",
+        "after_close": "Default close forwards both queued records; meter returns False normally after each. Close clears, detaches and adds no flush or close event to the meter. The original setup events remain in the cumulative trace."
+      }
+    },
+    {
+      "id": "D3",
+      "actual_observations": {
+        "trigger": "LookupError",
+        "between": [
+          [
+            [
+              "test"
+            ]
+          ],
+          [
+            "one",
+            "two"
+          ],
+          true
+        ],
+        "retry": [
+          "ok",
+          [
+            [
+              "test"
+            ],
+            [
+              "test"
+            ],
+            [
+              "handle",
+              "one"
+            ],
+            [
+              "handle",
+              "two"
+            ]
+          ],
+          [],
+          true
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/handlers.py:1378-1396",
+          "rule": "Construction stores the target directly."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Appending and testing occur before automatic flush."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Capacity two selects the second emit."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "The truth test is before iteration and clearing."
+        }
+      ],
+      "field_rationale": {
+        "trigger": "Appending two reaches capacity. The test for the target's truth calls the specified observer, which raises LookupError and the error escapes emit.",
+        "between": "The failed test precedes iteration. Both records remain, no record was offered, and construction and identity observation do not invoke __bool__.",
+        "retry": "On explicit retry the second truth test returns True. Both handle calls occur even though both return False, and the completed batch clears with its target still installed."
+      }
+    }
+  ]
+}

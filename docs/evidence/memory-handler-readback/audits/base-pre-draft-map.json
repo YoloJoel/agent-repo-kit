@@ -1,0 +1,448 @@
+{
+  "capabilities": [
+    {
+      "id": "construction",
+      "kind": "business",
+      "purpose": "Public starting state",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "initial-state",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1392-L1396",
+          "source_outcome": {
+            "capacity": 2,
+            "first": [
+              "A"
+            ],
+            "flushLevel": 40,
+            "flushOnClose": true,
+            "level": 0,
+            "second": [],
+            "target": null
+          },
+          "stimulus": "Construct two MemoryHandler(2) instances with no optional arguments. Emit INFO A on the first. Inspect both buffers and the first handler's options."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "admission",
+      "kind": "business",
+      "purpose": "Filtering, identity and admission before buffering",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "filter-replace",
+          "path": "logging/__init__.py",
+          "reference": "logging/__init__.py:L865-L874",
+          "source_outcome": {
+            "buffer": [],
+            "returned": "R",
+            "secondFilter": "R",
+            "target": [
+              "R"
+            ]
+          },
+          "stimulus": "With capacity 8, default flushLevel and a collecting target, install a callable replacing INFO A with ERROR R and then a filter accepting its argument. Call handle(A)."
+        },
+        {
+          "id": "veto-vs-emit",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1348-L1350",
+          "source_outcome": {
+            "buffer": [],
+            "emitted": null,
+            "handled": false,
+            "target": [
+              "B"
+            ]
+          },
+          "stimulus": "On an empty capacity-one handler with a collecting target, add a filter returning zero. Call handle(INFO A), then emit(INFO B)."
+        },
+        {
+          "id": "filter-raises",
+          "path": "logging/__init__.py",
+          "reference": "logging/__init__.py:L865-L874",
+          "source_outcome": {
+            "buffer": [
+              "A"
+            ],
+            "error": "LookupError",
+            "laterFilterCalls": 0
+          },
+          "stimulus": "A capacity-8 handler already holds A. Its first filter raises LookupError on B, followed by a recording filter. Call handle(B)."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "threshold",
+      "kind": "business",
+      "purpose": "Append, threshold comparison and its error ordering",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "capacity-query",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1402-L1403",
+          "source_outcome": {
+            "buffer": [],
+            "query": false,
+            "target": [
+              "A",
+              "B"
+            ]
+          },
+          "stimulus": "A capacity-2 handler with a collector holds INFO A. Query shouldFlush(INFO B), then emit B. What does the query return and what is delivered?"
+        },
+        {
+          "id": "severity-boundary",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1402-L1403",
+          "source_outcome": {
+            "afterA": [],
+            "afterB": [
+              "A",
+              "B"
+            ],
+            "buffer": []
+          },
+          "stimulus": "Capacity is 8 with a collecting target and default flushLevel. Emit level 39 A, then level 40 B."
+        },
+        {
+          "id": "capacity-short-circuit",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1402-L1403",
+          "source_outcome": {
+            "buffer": [],
+            "returned": null,
+            "target": [
+              "A"
+            ]
+          },
+          "stimulus": "On MemoryHandler(0, flushLevel='ERROR', target=collector), emit an object A with no levelno."
+        },
+        {
+          "id": "predicate-error",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1348-L1350",
+          "source_outcome": {
+            "afterA": [
+              "A"
+            ],
+            "afterB": [],
+            "firstError": "TypeError",
+            "target": [
+              "A",
+              "B"
+            ]
+          },
+          "stimulus": "On MemoryHandler(2, flushLevel='ERROR', target=collector), emit INFO A. Catch the error, then emit INFO B."
+        },
+        {
+          "id": "custom-predicate",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1348-L1350",
+          "source_outcome": {
+            "afterEmit": [
+              "A"
+            ],
+            "afterExplicitFlush": [],
+            "predicateSaw": [
+              "A"
+            ],
+            "target": [
+              "A"
+            ]
+          },
+          "stimulus": "Use a MemoryHandler subclass whose shouldFlush records the current buffer and always returns False. With capacity 1, a collecting target and ERROR A, call emit(A), then explicit flush()."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "target",
+      "kind": "business",
+      "purpose": "Target attachment, buffered references and synchronous delivery",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "false-target",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1420-L1424",
+          "source_outcome": {
+            "buffer": [
+              "A",
+              "B"
+            ],
+            "calls": []
+          },
+          "stimulus": "Set a target whose __bool__ returns False on MemoryHandler(1). Emit INFO A and INFO B, then call flush()."
+        },
+        {
+          "id": "retarget",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1405-L1410",
+          "source_outcome": {
+            "X": [],
+            "Y": [],
+            "Z": [
+              "A",
+              "B"
+            ],
+            "buffer": []
+          },
+          "stimulus": "Capacity 8, target X, pending A. Call setTarget(Y), then setTarget(None), emit ERROR B and attach Z before calling flush()."
+        },
+        {
+          "id": "target-policy",
+          "path": "logging/__init__.py",
+          "reference": "logging/__init__.py:L1022-L1028",
+          "source_outcome": {
+            "buffer": [],
+            "targetEmit": [
+              "B"
+            ]
+          },
+          "stimulus": "Queue INFO A and INFO B. Flush to a Handler with level CRITICAL and a filter that rejects A and permits B."
+        },
+        {
+          "id": "target-switch-in-callback",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1421-L1424",
+          "source_outcome": {
+            "X": [
+              "A"
+            ],
+            "Y": [
+              "B"
+            ],
+            "buffer": []
+          },
+          "stimulus": "With A and B pending, flush to X whose handle(A) calls setTarget(Y), then returns normally. Y records its arguments."
+        },
+        {
+          "id": "shared-buffer",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1421-L1424",
+          "source_outcome": {
+            "messages": [
+              "new",
+              "new"
+            ],
+            "originalList": [],
+            "sameRecord": true
+          },
+          "stimulus": "Keep a reference to h.buffer. Emit the same INFO record A twice with capacity 8, change A.msg to 'new', then flush to a collecting target."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "retry",
+      "kind": "business",
+      "purpose": "Target failure, retention and replay",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "failure-replay",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1421-L1424",
+          "source_outcome": {
+            "T": [
+              "A"
+            ],
+            "U": [
+              "A",
+              "B",
+              "C"
+            ],
+            "atError": [
+              "A",
+              "B",
+              "C"
+            ],
+            "buffer": [],
+            "error": "OSError"
+          },
+          "stimulus": "With capacity 3, target T returns normally on A and raises OSError on B before recording it. Emit INFO A, B and C. Replace T by collector U and flush."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "closure",
+      "kind": "business",
+      "purpose": "Explicit close, cleanup, dispatch and later use",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "close-default",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1431-L1437",
+          "source_outcome": {
+            "T": [
+              "A"
+            ],
+            "buffer": [],
+            "namedLookup": null,
+            "target": null,
+            "targetCloseCalls": 0,
+            "targetFlushCalls": 0
+          },
+          "stimulus": "On a uniquely named default MemoryHandler(8) with target T and INFO A pending, call close() twice."
+        },
+        {
+          "id": "close-disabled",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1431-L1437",
+          "source_outcome": {
+            "T": [],
+            "U": [
+              "A",
+              "B"
+            ],
+            "atClose": [
+              "A"
+            ],
+            "buffer": [],
+            "handleResult": "B"
+          },
+          "stimulus": "With flushOnClose=False, target T and INFO A pending below capacity 8, call close(), handle(INFO B), attach U, then flush()."
+        },
+        {
+          "id": "close-exception",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1431-L1437",
+          "source_outcome": {
+            "T": [
+              "A"
+            ],
+            "U": [
+              "A",
+              "B"
+            ],
+            "atError": [
+              "A",
+              "B"
+            ],
+            "error": "RuntimeError",
+            "namedLookup": null,
+            "targetAtError": null
+          },
+          "stimulus": "On a uniquely named, flushOnClose=True handler holding A,B, T records A and raises RuntimeError on B. Call close(), catch the exception, attach U and call flush()."
+        },
+        {
+          "id": "inherited-hooks",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1367-L1370",
+          "source_outcome": {
+            "T": [
+              "A"
+            ],
+            "buffer": [],
+            "flushTargets": [
+              "T",
+              null
+            ]
+          },
+          "stimulus": "Use a MemoryHandler subclass whose flush logs its current target and calls super(). With flushOnClose=True, target T and A pending, call close()."
+        },
+        {
+          "id": "post-close-capacity",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1348-L1350",
+          "source_outcome": {
+            "T": [
+              "A",
+              "B"
+            ],
+            "buffer": [],
+            "first": "A",
+            "second": "B"
+          },
+          "stimulus": "Close a default handler with capacity 1 and no target. Call handle(INFO A), setTarget(T), and handle(INFO B)."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "base-buffer",
+      "kind": "business",
+      "purpose": "Base discard and virtual flush behavior",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "plain-base",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1332-L1370",
+          "source_outcome": {
+            "afterA": [
+              "A"
+            ],
+            "afterB": [],
+            "afterClose": [],
+            "query": false,
+            "sameList": true
+          },
+          "stimulus": "On a plain BufferingHandler(2), keep a reference to its buffer, emit ERROR A, query shouldFlush(ERROR B), then emit B. Next emit C and close."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "other-logging",
+      "kind": "business",
+      "purpose": "Other logging entry points and handlers in these two files",
+      "reason": "User restricted the slice to MemoryHandler and directly relevant single-threaded inheritance. Shutdown, GC, unrelated handlers and logger routing as product surfaces are excluded.",
+      "requirements": [],
+      "source_cases": [],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "excluded"
+    },
+    {
+      "id": "ignore-file",
+      "kind": "supporting",
+      "purpose": "Git ignore patterns in the initialized consumer",
+      "reason": "No runtime caller reads this generated ignore file.",
+      "requirements": [],
+      "sources": [
+        ".gitignore"
+      ],
+      "status": "excluded"
+    }
+  ],
+  "scope": "limited"
+}

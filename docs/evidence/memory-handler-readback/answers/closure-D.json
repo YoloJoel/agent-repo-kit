@@ -1,0 +1,294 @@
+[
+  {
+    "id": "D1",
+    "fields": {
+      "first": {
+        "status": "full",
+        "value": [
+          [],
+          [
+            "seed",
+            "outer"
+          ],
+          []
+        ],
+        "reqs": [
+          "REQ-MEM-001",
+          "REQ-MEM-002",
+          "REQ-MEM-003",
+          "REQ-MEM-004",
+          "REQ-MEM-005"
+        ],
+        "quotes": [
+          "With no filters, the input object is the final record",
+          "The standard numeric levels are NOTSET 0, DEBUG 10, INFO 20, WARNING (WARN) 30, ERROR 40 and CRITICAL (FATAL) 50.",
+          "flushLevel=logging.ERROR",
+          "Below both thresholds, the entire buffer stays pending.",
+          "An ordinary `MemoryHandler` used as a target is truthy, including when its own buffer is empty or its own target is None.",
+          "On admission the receiver buffers the effective record and applies its own capacity, severity and downstream target rules.",
+          "At entry to a flush, a missing or otherwise false-valued target causes the flush to return None with all entries retained.",
+          "When the traversal finishes normally, flush clears the existing buffer in place and returns None, irrespective of the targets' return values."
+        ]
+      },
+      "second": {
+        "status": "full",
+        "value": [
+          [
+            "last"
+          ],
+          [
+            "seed",
+            "outer"
+          ],
+          []
+        ],
+        "reqs": [
+          "REQ-MEM-002",
+          "REQ-MEM-003",
+          "REQ-MEM-004"
+        ],
+        "quotes": [
+          "Direct `emit(record)` skips these filters, appends its argument",
+          "Below both thresholds, the entire buffer stays pending.",
+          "`setTarget(target)` SHALL replace the destination immediately and return None, leaving pending records untouched.",
+          "It makes no delivery to the previous or new target."
+        ]
+      },
+      "third": {
+        "status": "full",
+        "value": [
+          [
+            [],
+            [],
+            [
+              [
+                "handle",
+                "seed"
+              ],
+              [
+                "handle",
+                "outer"
+              ],
+              [
+                "handle",
+                "last"
+              ]
+            ]
+          ],
+          true,
+          true
+        ],
+        "reqs": [
+          "REQ-MEM-001",
+          "REQ-MEM-003",
+          "REQ-MEM-004",
+          "REQ-MEM-005",
+          "REQ-MEM-007"
+        ],
+        "quotes": [
+          "flushOnClose=True",
+          "`close()` SHALL first call flush with the current target if flushOnClose is truthy, regardless of count or severity.",
+          "On admission the receiver buffers the effective record and applies its own capacity, severity and downstream target rules.",
+          "If the count is at least capacity, it returns True without inspecting record severity.",
+          "visit pending entries in insertion order",
+          "synchronously calling the current target's `handle(record)` with each actual buffered object",
+          "When the traversal finishes normally, flush clears the existing buffer in place and returns None, irrespective of the targets' return values.",
+          "it sets target to None and performs inherited close cleanup.",
+          "Close does not call the target's close or flush."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "D2",
+    "fields": {
+      "setup": {
+        "status": "full",
+        "value": [
+          [
+            "handle",
+            "sample"
+          ],
+          [
+            "flush"
+          ]
+        ],
+        "reqs": [],
+        "quotes": [
+          "A target call, the target's own emission, and a side effect performed by the target are distinct observations."
+        ]
+      },
+      "dispatch": {
+        "status": "full",
+        "value": [
+          [
+            [
+              "handle",
+              "sample"
+            ],
+            [
+              "flush"
+            ],
+            [
+              "filter",
+              "sample"
+            ],
+            [
+              "filter",
+              "fresh"
+            ]
+          ],
+          [
+            "sample",
+            "fresh"
+          ]
+        ],
+        "reqs": [
+          "REQ-MEM-002",
+          "REQ-MEM-003",
+          "REQ-MEM-004"
+        ],
+        "quotes": [
+          "For each filter it calls its `filter(current_record)` method if present, otherwise the filter itself.",
+          "A false result stops the chain, returns the boolean False and skips emission.",
+          "Any other truthy result keeps the current record.",
+          "With no veto, the handler returns the final record object on normal completion and emits it if it tests true.",
+          "Ordinary LogRecord instances test true.",
+          "Direct `emit(record)` skips these filters, appends its argument",
+          "Below both thresholds, the entire buffer stays pending.",
+          "The constructor and `setTarget` SHALL store the supplied target without testing its truth."
+        ]
+      },
+      "after_close": {
+        "status": "full",
+        "value": [
+          [
+            [
+              "handle",
+              "sample"
+            ],
+            [
+              "flush"
+            ],
+            [
+              "filter",
+              "sample"
+            ],
+            [
+              "filter",
+              "fresh"
+            ],
+            [
+              "handle",
+              "sample"
+            ],
+            [
+              "handle",
+              "fresh"
+            ]
+          ],
+          [],
+          true
+        ],
+        "reqs": [
+          "REQ-MEM-001",
+          "REQ-MEM-005",
+          "REQ-MEM-007"
+        ],
+        "quotes": [
+          "flushOnClose=True",
+          "`close()` SHALL first call flush with the current target if flushOnClose is truthy, regardless of count or severity.",
+          "visit pending entries in insertion order",
+          "synchronously calling the current target's `handle(record)` with each actual buffered object",
+          "It does no sender-side level check, filtering, copying or formatting during this traversal.",
+          "When the traversal finishes normally, flush clears the existing buffer in place and returns None, irrespective of the targets' return values.",
+          "it sets target to None and performs inherited close cleanup.",
+          "Close does not call the target's close or flush."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "D3",
+    "fields": {
+      "trigger": {
+        "status": "full",
+        "value": "LookupError",
+        "reqs": [
+          "REQ-MEM-003",
+          "REQ-MEM-004"
+        ],
+        "quotes": [
+          "`emit` SHALL append the record object first, query with that record, and call `flush()` once if either condition is true.",
+          "If the count is at least capacity, it returns True without inspecting record severity.",
+          "The constructor and `setTarget` SHALL store the supplied target without testing its truth.",
+          "Each flush tests the current target once before examining any entries, even when the buffer is empty.",
+          "If the test raises, the caller receives that same exception."
+        ]
+      },
+      "between": {
+        "status": "full",
+        "value": [
+          [
+            [
+              "test"
+            ]
+          ],
+          [
+            "one",
+            "two"
+          ],
+          true
+        ],
+        "reqs": [
+          "REQ-MEM-004"
+        ],
+        "quotes": [
+          "Each flush tests the current target once before examining any entries, even when the buffer is empty.",
+          "The sender makes no `handle` call and does not clear the buffer.",
+          "Effects of the truth test persist.",
+          "an explicit or threshold-triggered flush leaves the target installed and the entire batch pending, including any entry just appended by the triggering emission."
+        ]
+      },
+      "retry": {
+        "status": "full",
+        "value": [
+          "ok",
+          [
+            [
+              "test"
+            ],
+            [
+              "test"
+            ],
+            [
+              "handle",
+              "one"
+            ],
+            [
+              "handle",
+              "two"
+            ]
+          ],
+          [],
+          true
+        ],
+        "reqs": [
+          "REQ-MEM-004",
+          "REQ-MEM-005"
+        ],
+        "quotes": [
+          "A retry tests the then-current target again and, if it tests true, starts at the first pending entry.",
+          "Each flush tests the current target once before examining any entries, even when the buffer is empty.",
+          "visit pending entries in insertion order",
+          "synchronously calling the current target's `handle(record)` with each actual buffered object",
+          "When the traversal finishes normally, flush clears the existing buffer in place and returns None, irrespective of the targets' return values.",
+          "No call to the target's flush method is part of delivery."
+        ]
+      }
+    },
+    "conflicts": []
+  }
+]

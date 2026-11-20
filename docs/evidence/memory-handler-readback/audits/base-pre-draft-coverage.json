@@ -1,0 +1,124 @@
+{
+  "capabilities": [
+    {
+      "id": "construction",
+      "kind": "business",
+      "requirements": [],
+      "source_files": 2,
+      "status": "pending"
+    },
+    {
+      "id": "admission",
+      "kind": "business",
+      "requirements": [],
+      "source_files": 2,
+      "status": "pending"
+    },
+    {
+      "id": "threshold",
+      "kind": "business",
+      "requirements": [],
+      "source_files": 2,
+      "status": "pending"
+    },
+    {
+      "id": "target",
+      "kind": "business",
+      "requirements": [],
+      "source_files": 2,
+      "status": "pending"
+    },
+    {
+      "id": "retry",
+      "kind": "business",
+      "requirements": [],
+      "source_files": 2,
+      "status": "pending"
+    },
+    {
+      "id": "closure",
+      "kind": "business",
+      "requirements": [],
+      "source_files": 2,
+      "status": "pending"
+    },
+    {
+      "id": "base-buffer",
+      "kind": "business",
+      "requirements": [],
+      "source_files": 2,
+      "status": "pending"
+    },
+    {
+      "id": "other-logging",
+      "kind": "business",
+      "requirements": [],
+      "source_files": 2,
+      "status": "excluded"
+    },
+    {
+      "id": "ignore-file",
+      "kind": "supporting",
+      "requirements": [],
+      "source_files": 1,
+      "status": "excluded"
+    }
+  ],
+  "findings": [
+    {
+      "code": "capability-incomplete",
+      "message": "Business scope is not fully specified: construction",
+      "status": "PENDING"
+    },
+    {
+      "code": "capability-incomplete",
+      "message": "Business scope is not fully specified: admission",
+      "status": "PENDING"
+    },
+    {
+      "code": "capability-incomplete",
+      "message": "Business scope is not fully specified: threshold",
+      "status": "PENDING"
+    },
+    {
+      "code": "capability-incomplete",
+      "message": "Business scope is not fully specified: target",
+      "status": "PENDING"
+    },
+    {
+      "code": "capability-incomplete",
+      "message": "Business scope is not fully specified: retry",
+      "status": "PENDING"
+    },
+    {
+      "code": "capability-incomplete",
+      "message": "Business scope is not fully specified: closure",
+      "status": "PENDING"
+    },
+    {
+      "code": "capability-incomplete",
+      "message": "Business scope is not fully specified: base-buffer",
+      "status": "PENDING"
+    },
+    {
+      "code": "capability-incomplete",
+      "message": "Business scope is not fully specified: other-logging",
+      "status": "PENDING"
+    },
+    {
+      "code": "baseline-unverified",
+      "message": "Baseline needs source/document review: logging/__init__.py",
+      "status": "PENDING"
+    },
+    {
+      "code": "baseline-unverified",
+      "message": "Baseline needs source/document review: logging/handlers.py",
+      "status": "PENDING"
+    }
+  ],
+  "mapped_files": 3,
+  "meaning": "Declared source/capability/current-requirement coverage; counts and mappings do not prove semantic completeness or assertion quality.",
+  "production_files": 3,
+  "status": "PENDING",
+  "unmapped_files": 0
+}

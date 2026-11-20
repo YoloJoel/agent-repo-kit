@@ -1,0 +1,74 @@
+[
+  {
+    "id": "D1",
+    "fields": {
+      "first": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004 explicitly describes truthy ordinary MemoryHandler recipients even with no downstream target. REQ-MEM-002/003/005 append outer after seed in inner, trigger inner's capacity-two detached flush and clear only outer. Meter sees no call."
+      },
+      "second": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004 installs Meter without draining inner's seed,outer backlog. The final INFO is below outer's two thresholds under REQ-MEM-001/003 and stays in outer. The cumulative Meter log remains empty."
+      },
+      "third": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004/005/007 make closing outer deliver last to the truthy inner and detach only outer. Inner reaches at least capacity two and offers seed,outer,last to the explicitly truthy Meter in order. Normal False returns still clear the two buffers; inner's target remains Meter."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "D2",
+    "fields": {
+      "setup": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "The two direct setup calls precede handler construction. The explicit Meter contract and snapshot semantics alone give the cumulative handle/sample then flush sequence; no MemoryHandler requirement is needed. The reader's quotation comes from the Purpose paragraph, outside the numbered requirements, and is only contextual; the fixture supplies the exact two method calls, order and cumulative history."
+      },
+      "dispatch": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002/003 and fixture keep make the first source handle log filter/sample and veto it, direct emit then buffer sample, and the next source handle log filter/fresh and buffer fresh. Count two and severity 17 remain below their limits. The earlier setup events persist."
+      },
+      "after_close": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-005/007 send sample and fresh to Meter on default close, ignore its normal False returns, clear the buffer and detach. No target flush/close is added and the fixture preserves the complete earlier event history."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "D3",
+    "fields": {
+      "trigger": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-003 appends two and triggers at capacity two. REQ-MEM-004 now explicitly says construction does not test the target, each flush tests once before visiting entries, and a failing test delivers the same exception to the caller. The first fixture __bool__ raises LookupError, so the observer reports that class."
+      },
+      "between": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004 now expressly retains both the installed target and the full batch on an entry truth-test failure in a threshold-triggered flush. There are no handle calls, and the single test event survives. The fixture's identity comparison adds no event and is true."
+      },
+      "retry": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004 starts a retry with a fresh truth test, and the fixture's second test returns true. REQ-MEM-005 visits one then two and clears after their normal False returns. The earlier test, second test and both receipt events are cumulative. No retargeting occurs and outcome returns 'ok'."
+      }
+    },
+    "conflicts": []
+  }
+]

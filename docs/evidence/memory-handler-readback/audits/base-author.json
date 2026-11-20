@@ -1,0 +1,157 @@
+{
+  "review_mode": "same-agent-separate-pass",
+  "passes": [
+    {
+      "kind": "source-first",
+      "sources": [
+        {
+          "path": "logging/handlers.py",
+          "evidence": "logging/handlers.py:L1318-L1437",
+          "checked": "Rebuilt construction, base virtual dispatch, ordered predicate, identity, loop error/clear boundary, live callback retarget/append, close cleanup and reuse."
+        },
+        {
+          "path": "logging/__init__.py",
+          "evidence": "logging/__init__.py:L820-L874 logging/__init__.py:L907-L1058 logging/__init__.py:L1731-L1737",
+          "checked": "Reopened the filter chain and result, abstract emit and handle, level routing versus direct admission and the name cleanup."
+        }
+      ],
+      "artifacts": [
+        {
+          "path": "openspec/specs/memory-handler/spec.md",
+          "checked": "Compared seven current requirements and examples against the independently reopened branch checklist and the draft-only prediction record."
+        },
+        {
+          "path": "docs/baseline/contracts/memory-handler.md",
+          "checked": "Checked source fact rows, inherited method dispatch, target boundary and replay consequences."
+        },
+        {
+          "path": "docs/baseline/memory-handler-cases.md",
+          "checked": "Checked case inputs and typed predicted results, including target return, false target and callback assumptions."
+        },
+        {
+          "path": "docs/baseline/memory-handler-coverage.json",
+          "checked": "Compared the two discovery walks and pre-draft registered case conditions with the scoped source."
+        }
+      ],
+      "findings": [
+        {
+          "id": "MH-A01",
+          "issue": "The draft's veto scenario claims no calls whatsoever on a false-valued target, although truth testing calls its __bool__. Define the recorded calls as handle calls.",
+          "evidence": "logging/handlers.py:L1420-L1424",
+          "status": "open"
+        },
+        {
+          "id": "MH-A02",
+          "issue": "A target-filter example permits a bare Handler. Its base emit raises NotImplementedError, which changes final buffer state. State the target implementation for the success case and cover the bare Handler exception.",
+          "evidence": "logging/__init__.py:L1001-L1028",
+          "status": "open"
+        },
+        {
+          "id": "MH-A03",
+          "issue": "The partial-failure case implies an observation at T without specifying whether T records A. The identity case needs a below-threshold initial state. Tighten the stimuli and distinguish method attempts from completed recordings.",
+          "evidence": "logging/handlers.py:L1412-L1424",
+          "status": "open"
+        },
+        {
+          "id": "MH-A04",
+          "issue": "The text describes retargeting and absent targets but leaves the return from setTarget implicit. Specify its return and delayed checking of the supplied target. Add a direct predicate example that returns true on an empty buffer without initiating output.",
+          "evidence": "logging/handlers.py:L1398-L1424",
+          "status": "open"
+        },
+        {
+          "id": "MH-A05",
+          "issue": "For an incompatible capacity the very first comparison can fail even on a severe record. The draft illustrates failure of the second comparison but does not give the observable error for the first. A detached close-dispatch exception in a subclass also needs an explicit outcome if it supersedes an earlier error.",
+          "evidence": "logging/handlers.py:L1348-L1350 logging/handlers.py:L1367-L1370 logging/handlers.py:L1398-L1403 logging/handlers.py:L1431-L1437",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "kind": "source-recheck",
+      "sources": [
+        {
+          "path": "logging/handlers.py",
+          "evidence": "logging/handlers.py:L1324-L1370 logging/handlers.py:L1392-L1437",
+          "checked": "Reread both base and overriding paths. Traced malformed capacity, severity short-circuit, false-valued/dynamically switched target, interrupted iteration and the finally-ordered double virtual flush."
+        },
+        {
+          "path": "logging/__init__.py",
+          "evidence": "logging/__init__.py:L826-L838 logging/__init__.py:L865-L874 logging/__init__.py:L931-L956 logging/__init__.py:L1001-L1028 logging/__init__.py:L1045-L1058",
+          "checked": "Followed return and exception paths in filters, direct handle and bare target emit. Rechecked name property versus removal from lookup during close."
+        }
+      ],
+      "artifacts": [
+        {
+          "path": "openspec/specs/memory-handler/spec.md",
+          "checked": "Read the final seven clauses and their 29 scenarios for observable input, ordering, errors and target state. Compared final-readback results with the re-opened source."
+        },
+        {
+          "path": "docs/baseline/contracts/memory-handler.md",
+          "checked": "Checked revised callback, constructor, target and detached close explanations against the source. Both files have precise source references."
+        },
+        {
+          "path": "docs/baseline/memory-handler-cases.md",
+          "checked": "Rechecked stimulus wording and typed fields on four clarified cases and adjacent threshold/close/retry cases."
+        },
+        {
+          "path": "docs/baseline/memory-handler-coverage.json",
+          "checked": "Confirmed 21 source-side cases across seven specified groups and two explicit exclusions. Kept case IDs through the four justified edits."
+        }
+      ],
+      "findings": [
+        {
+          "id": "MH-A01",
+          "issue": "The draft's veto scenario claims no calls whatsoever on a false-valued target, although truth testing calls its __bool__. Define the recorded calls as handle calls.",
+          "evidence": "logging/handlers.py:L1420-L1424",
+          "status": "fixed",
+          "resolution": "Corrected the delivery observation to handle calls and retained the target truth-test entry condition."
+        },
+        {
+          "id": "MH-A02",
+          "issue": "A target-filter example permits a bare Handler. Its base emit raises NotImplementedError, which changes final buffer state. State the target implementation for the success case and cover the bare Handler exception.",
+          "evidence": "logging/__init__.py:L1001-L1028",
+          "status": "fixed",
+          "resolution": "Specified an inherited handle with recording emit returning normally and added the bare Handler error and whole-batch retention outcome."
+        },
+        {
+          "id": "MH-A03",
+          "issue": "The partial-failure case implies an observation at T without specifying whether T records A. The identity case needs a below-threshold initial state. Tighten the stimuli and distinguish method attempts from completed recordings.",
+          "evidence": "logging/handlers.py:L1412-L1424",
+          "status": "fixed",
+          "resolution": "Reworded source stimuli, recorded source-case dispositions, and preserved previous snapshots; callback attempts and completed recordings now have separate meanings."
+        },
+        {
+          "id": "MH-A04",
+          "issue": "The text describes retargeting and absent targets but leaves the return from setTarget implicit. Specify its return and delayed checking of the supplied target. Add a direct predicate example that returns true on an empty buffer without initiating output.",
+          "evidence": "logging/handlers.py:L1398-L1424",
+          "status": "fixed",
+          "resolution": "Added setTarget's None return, deferred target validation, and the side-effect-free positive shouldFlush query."
+        },
+        {
+          "id": "MH-A05",
+          "issue": "For an incompatible capacity the very first comparison can fail even on a severe record. The draft illustrates failure of the second comparison but does not give the observable error for the first. A detached close-dispatch exception in a subclass also needs an explicit outcome if it supersedes an earlier error.",
+          "evidence": "logging/handlers.py:L1348-L1350 logging/handlers.py:L1367-L1370 logging/handlers.py:L1398-L1403 logging/handlers.py:L1431-L1437",
+          "status": "fixed",
+          "resolution": "Added the first comparison TypeError path after append and described the second flush exception reaching the close caller after named cleanup."
+        }
+      ]
+    }
+  ],
+  "quality_checks": [
+    {
+      "topic": "project-entry",
+      "status": "PENDING",
+      "checked": "The initialized entry accurately warns that project checks are unestablished. Project-wide entry completion was outside the explicit scope."
+    },
+    {
+      "topic": "capability-coverage",
+      "status": "PENDING",
+      "checked": "Two logging files contain seven scoped groups. Other logging capabilities are explicitly excluded; neither whole file was marked completely understood."
+    },
+    {
+      "topic": "spec-self-containment",
+      "status": "PASS",
+      "checked": "Same-author readback with source evidence set aside, followed by comparison against effective paths. Clarified target emit and truth-test cases; external independent testing and executable assertions remain separate."
+    }
+  ]
+}

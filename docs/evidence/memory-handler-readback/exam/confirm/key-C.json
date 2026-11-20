@@ -1,0 +1,422 @@
+{
+  "set": "C",
+  "runtime": {
+    "implementation": "CPython",
+    "version": "3.13.5",
+    "executable": "/usr/bin/python3",
+    "source_root": "/usr/lib/python3.13",
+    "sha256": {
+      "logging/__init__.py": "dc42e5cf19a2dd03bd95ed3600803effa9c5f107927ab5f66cacf3eebcfd9a47",
+      "logging/handlers.py": "464980a72ce4c0ca1e6a6724a9760f5e101475a4e347329272ba6d2c4b39dffd"
+    }
+  },
+  "questions": [
+    {
+      "id": "C1",
+      "actual_observations": {
+        "one": [
+          [
+            "fern"
+          ],
+          [],
+          []
+        ],
+        "two": [
+          [],
+          [
+            "fern",
+            "elm"
+          ],
+          []
+        ],
+        "three": [
+          [],
+          [],
+          [
+            "fern",
+            "elm",
+            "oak"
+          ]
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:98-105",
+          "rule": "Definitions of the public symbolic level constants."
+        },
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, substitute if a record, emit conditionally, return the filter result; exceptions are not intercepted."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Each emit appends the supplied object then tests that record and may call flush."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Inclusive capacity or supplied level check."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "One truth test before iteration, fresh target attribute access per queued entry, then a single clear."
+        }
+      ],
+      "field_rationale": {
+        "one": "After fern at INFO the front handler is below its WARNING threshold. No target call occurs.",
+        "two": "Elm equals the front threshold, causing ordered forwarding to mid.handle. Both INFO and WARNING lie below mid’s ERROR threshold and both stay pending there.",
+        "three": "CRITICAL exceeds both WARNING and ERROR. The front flush forwards oak, and mid’s flush forwards its two retained entries and oak to the tap."
+      }
+    },
+    {
+      "id": "C2",
+      "actual_observations": {
+        "predicates": [
+          true,
+          false,
+          true
+        ],
+        "first": [
+          "xi",
+          [
+            "xi"
+          ],
+          []
+        ],
+        "second": [
+          "psi",
+          [],
+          [
+            "xi",
+            "psi"
+          ]
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:98-105",
+          "rule": "Definitions of the public symbolic level constants."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Inclusive capacity or supplied level check."
+        },
+        {
+          "location": "logging/__init__.py:865-874",
+          "rule": "Ordered application of filter objects/callables, with veto or LogRecord replacement."
+        },
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, substitute if a record, emit conditionally, return the filter result; exceptions are not intercepted."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Each emit appends the supplied object then tests that record and may call flush."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "One truth test before iteration, fresh target attribute access per queued entry, then a single clear."
+        }
+      ],
+      "field_rationale": {
+        "predicates": "Direct shouldFlush uses the supplied record and current empty occupancy, bypassing the source filter. Relative to INFO, ERROR and WARNING pass and DEBUG does not.",
+        "first": "The filter supplies xi. Its DEBUG level keeps it pending, and handle returns that accepted replacement record.",
+        "second": "The replacement psi is WARNING, reaching the INFO threshold. It causes ordered delivery of xi then psi; handle returns psi."
+      }
+    },
+    {
+      "id": "C3",
+      "actual_observations": {
+        "first_result": "ValueError",
+        "first_state": [
+          [
+            [
+              "L",
+              "i"
+            ],
+            [
+              "R",
+              "j"
+            ]
+          ],
+          [
+            "i",
+            "j",
+            "k"
+          ],
+          true,
+          [
+            "i"
+          ],
+          []
+        ],
+        "retry": [
+          "ok",
+          [
+            [
+              [
+                "L",
+                "i"
+              ],
+              [
+                "R",
+                "j"
+              ],
+              [
+                "R",
+                "i"
+              ],
+              [
+                "R",
+                "j"
+              ],
+              [
+                "R",
+                "k"
+              ]
+            ],
+            [],
+            true,
+            [
+              "i"
+            ],
+            [
+              "i",
+              "j",
+              "k"
+            ]
+          ]
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Each emit appends the supplied object then tests that record and may call flush."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Inclusive capacity or supplied level check."
+        },
+        {
+          "location": "logging/__init__.py:958-963",
+          "rule": "The handler uses threading.RLock."
+        },
+        {
+          "location": "logging/handlers.py:1405-1410",
+          "rule": "setTarget directly assigns the new target under lock."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "One truth test before iteration, fresh target attribute access per queued entry, then a single clear."
+        }
+      ],
+      "field_rationale": {
+        "first_result": "Left handles i and switches to Right. The next call reaches Right.handle(j), which raises ValueError. The exception escapes the original flush.",
+        "first_state": "Reentrant setTarget changes the installed reference. Right records the j attempt before failing. Only Left stores a record; the buffer clear has not run.",
+        "retry": "A fresh flush starts at i using the already installed Right. The one-time error is disarmed, so Right handles all three and the batch clears."
+      }
+    },
+    {
+      "id": "C4",
+      "actual_observations": {
+        "first_close": [
+          [],
+          [
+            "sun",
+            "moon"
+          ],
+          false,
+          false,
+          0,
+          0
+        ],
+        "intervening": [
+          [
+            "star"
+          ],
+          [
+            "sun",
+            "moon"
+          ],
+          true,
+          false,
+          0,
+          0
+        ],
+        "second_close": [
+          [],
+          [
+            "sun",
+            "moon",
+            "star"
+          ],
+          false,
+          false,
+          0,
+          0
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Each emit appends the supplied object then tests that record and may call flush."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Inclusive capacity or supplied level check."
+        },
+        {
+          "location": "logging/handlers.py:1405-1410",
+          "rule": "setTarget directly assigns the new target under lock."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "One truth test before iteration, fresh target attribute access per queued entry, then a single clear."
+        },
+        {
+          "location": "logging/handlers.py:1378-1396",
+          "rule": "flushOnClose defaults to true and is stored."
+        },
+        {
+          "location": "logging/handlers.py:1431-1437",
+          "rule": "Optionally flush; detach the target and invoke BufferingHandler.close in finally, with no closed guard."
+        },
+        {
+          "location": "logging/handlers.py:1367-1370",
+          "rule": "Parent close invokes the dynamic flush method and calls Handler.close in finally."
+        },
+        {
+          "location": "logging/__init__.py:1055-1058",
+          "rule": "Base close marks closed; it does not prevent later direct handler methods."
+        }
+      ],
+      "field_rationale": {
+        "first_close": "Default close flushes while the target is initially truthy. The loop reads self.target but does not retest truth for moon. Close detaches it. No sink flush or close is invoked.",
+        "intervening": "The closed handler accepts direct setTarget and emit. The star record stays present after explicit flush because the target is now falsy.",
+        "second_close": "The next close performs its optional initial flush again. The relit target receives star and switches itself off. Successful delivery clears the buffer and close detaches the target."
+      }
+    },
+    {
+      "id": "C5",
+      "actual_observations": {
+        "returns": [
+          "shared",
+          "shared"
+        ],
+        "pending": [
+          [
+            "shared",
+            "shared"
+          ],
+          [
+            true,
+            true
+          ]
+        ],
+        "seen": [
+          [
+            "shared",
+            "shared!"
+          ],
+          "shared!!",
+          [],
+          [
+            true,
+            true
+          ]
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:865-874",
+          "rule": "Ordered application of filter objects/callables, with veto or LogRecord replacement."
+        },
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, substitute if a record, emit conditionally, return the filter result; exceptions are not intercepted."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Each emit appends the supplied object then tests that record and may call flush."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Inclusive capacity or supplied level check."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "One truth test before iteration, fresh target attribute access per queued entry, then a single clear."
+        }
+      ],
+      "field_rationale": {
+        "returns": "Each source filter result is the shared LogRecord and becomes the return value of its handle call.",
+        "pending": "emit appends one reference per accepted call. Both entries are references to the same shared record, at occupancy two below capacity.",
+        "seen": "The explicit flush forwards the same live object twice. Its second call sees the first mutation. Returning False causes no early exit; both mutations persist and the buffer clears."
+      }
+    },
+    {
+      "id": "C6",
+      "actual_observations": {
+        "first_result": "OSError",
+        "after_first": [
+          [
+            "n",
+            "p"
+          ],
+          [
+            "n",
+            "p"
+          ],
+          [
+            "n"
+          ]
+        ],
+        "after_repeat": [
+          "ok",
+          [
+            [
+              "n",
+              "p",
+              "n",
+              "p",
+              "p"
+            ],
+            [],
+            [
+              "n",
+              "n",
+              "p",
+              "p"
+            ]
+          ]
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:865-874",
+          "rule": "Ordered application of filter objects/callables, with veto or LogRecord replacement."
+        },
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, substitute if a record, emit conditionally, return the filter result; exceptions are not intercepted."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Each emit appends the supplied object then tests that record and may call flush."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Inclusive capacity or supplied level check."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "One truth test before iteration, fresh target attribute access per queued entry, then a single clear."
+        }
+      ],
+      "field_rationale": {
+        "first_result": "Appending p reaches capacity and immediately invokes flush. The OSError on p propagates out of the originating handle.",
+        "after_first": "Both n and p are retained after the failed flush; only n was accepted. The tap attempted both in that order.",
+        "after_repeat": "Repeating handle appends another reference to p before testing the already full buffer. The next flush restarts at n, accepts n,p,p and clears; cumulative delivery is n,n,p,p."
+      }
+    }
+  ]
+}

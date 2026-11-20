@@ -1,0 +1,569 @@
+[
+  {
+    "id": "C1",
+    "fields": {
+      "one": {
+        "status": "partial",
+        "known": {
+          "if INFO < WARNING": [
+            [
+              "fern"
+            ],
+            [],
+            []
+          ],
+          "if INFO >= WARNING": [
+            [],
+            [
+              "fern"
+            ],
+            []
+          ]
+        },
+        "missing": "The Spec establishes that INFO is below the default ERROR threshold in its direct-query example. It does not give the relative values of logging.INFO and logging.WARNING, which select between these two states.",
+        "reqs": [
+          "REQ-MH-002",
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "With no filters the input record passes unchanged.",
+          "`emit(record)` SHALL append the supplied object before calling `shouldFlush(record)`",
+          "Otherwise it compares `record.levelno >= flushLevel`.",
+          "a capacity-2 handler holds INFO A",
+          "shouldFlush(INFO B)",
+          "the query returns `False` and leaves A pending.",
+          "it calls `target.handle(record)` synchronously in buffer order"
+        ]
+      },
+      "two": {
+        "status": "partial",
+        "known": {
+          "if WARNING < ERROR": [
+            [],
+            [
+              "fern",
+              "elm"
+            ],
+            []
+          ],
+          "if WARNING >= ERROR": [
+            [],
+            [],
+            [
+              "fern",
+              "elm"
+            ]
+          ]
+        },
+        "missing": "The WARNING record reaches the front threshold by equality. At the middle handler the outcome depends on whether logging.WARNING reaches logging.ERROR, an ordering the Spec does not supply.",
+        "reqs": [
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "Otherwise it compares `record.levelno >= flushLevel`.",
+          "Reaching either threshold suffices, including equality.",
+          "it calls `target.handle(record)` synchronously in buffer order",
+          "After all calls return normally it empties the same buffer list in place and returns `None`."
+        ]
+      },
+      "three": {
+        "status": "partial",
+        "known": {
+          "if CRITICAL < WARNING and WARNING < ERROR": [
+            [
+              "oak"
+            ],
+            [
+              "fern",
+              "elm"
+            ],
+            []
+          ],
+          "if CRITICAL < WARNING and WARNING >= ERROR": [
+            [
+              "oak"
+            ],
+            [],
+            [
+              "fern",
+              "elm"
+            ]
+          ],
+          "if CRITICAL >= WARNING and CRITICAL < ERROR": [
+            [],
+            [
+              "fern",
+              "elm",
+              "oak"
+            ],
+            []
+          ],
+          "if CRITICAL >= WARNING and CRITICAL >= ERROR": [
+            [],
+            [],
+            [
+              "fern",
+              "elm",
+              "oak"
+            ]
+          ]
+        },
+        "missing": "The Spec does not rank the supplied logging.CRITICAL, logging.WARNING and logging.ERROR constants against each other, which is needed to select a state.",
+        "reqs": [
+          "REQ-MH-002",
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "With no filters the input record passes unchanged.",
+          "Otherwise it compares `record.levelno >= flushLevel`.",
+          "it calls `target.handle(record)` synchronously in buffer order",
+          "After all calls return normally it empties the same buffer list in place and returns `None`."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C2",
+    "fields": {
+      "predicates": {
+        "status": "partial",
+        "known": {
+          "elements_in_order": [
+            true,
+            "logging.DEBUG >= logging.INFO",
+            "logging.WARNING >= logging.INFO"
+          ],
+          "state_change": false
+        },
+        "missing": "The second and third Boolean results depend on the relative numeric severity of DEBUG and WARNING against INFO. The Spec gives no such ordering.",
+        "reqs": [
+          "REQ-MH-003"
+        ],
+        "quotes": [
+          "Otherwise it compares `record.levelno >= flushLevel`.",
+          "A direct predicate query changes no state and does not count its argument as a new entry.",
+          "a capacity-2 handler holds INFO A",
+          "shouldFlush(INFO B)",
+          "the query returns `False` and leaves A pending."
+        ]
+      },
+      "first": {
+        "status": "partial",
+        "known": {
+          "if DEBUG < INFO": [
+            "xi",
+            [
+              "xi"
+            ],
+            []
+          ],
+          "if DEBUG >= INFO": [
+            "xi",
+            [],
+            [
+              "xi"
+            ]
+          ]
+        },
+        "missing": "The replacement is x in both cases. The Spec does not assign relative values to DEBUG and INFO to select the buffering or delivery result.",
+        "reqs": [
+          "REQ-MH-002",
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "A truthy `LogRecord` replaces the current record for all later filters and emission.",
+          "admission returns the final `LogRecord` object.",
+          "`emit(record)` SHALL append the supplied object before calling `shouldFlush(record)`",
+          "Otherwise it compares `record.levelno >= flushLevel`.",
+          "it calls `target.handle(record)` synchronously in buffer order",
+          "After all calls return normally it empties the same buffer list in place and returns `None`."
+        ]
+      },
+      "second": {
+        "status": "partial",
+        "known": {
+          "if WARNING >= INFO": [
+            "psi",
+            [],
+            [
+              "xi",
+              "psi"
+            ]
+          ],
+          "if WARNING < INFO and DEBUG < INFO": [
+            "psi",
+            [
+              "xi",
+              "psi"
+            ],
+            []
+          ],
+          "if WARNING < INFO and DEBUG >= INFO": [
+            "psi",
+            [
+              "psi"
+            ],
+            [
+              "xi"
+            ]
+          ]
+        },
+        "missing": "The replacement is y in all cases. The specified threshold comparison requires relative severity values for WARNING and DEBUG against INFO to select the resulting buffer and received list.",
+        "reqs": [
+          "REQ-MH-002",
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "A truthy `LogRecord` replaces the current record for all later filters and emission.",
+          "admission returns the final `LogRecord` object.",
+          "Otherwise it compares `record.levelno >= flushLevel`.",
+          "it calls `target.handle(record)` synchronously in buffer order",
+          "After all calls return normally it empties the same buffer list in place and returns `None`."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C3",
+    "fields": {
+      "first_result": {
+        "status": "full",
+        "value": "ValueError",
+        "reqs": [
+          "REQ-MH-004",
+          "REQ-MH-005"
+        ],
+        "quotes": [
+          "During delivery each call uses the then-current target",
+          "propagate the exception, stop that drain and skip the final clear."
+        ]
+      },
+      "first_state": {
+        "status": "full",
+        "value": [
+          [
+            [
+              "L",
+              "i"
+            ],
+            [
+              "R",
+              "j"
+            ]
+          ],
+          [
+            "i",
+            "j",
+            "k"
+          ],
+          true,
+          [
+            "i"
+          ],
+          []
+        ],
+        "reqs": [
+          "REQ-MH-004",
+          "REQ-MH-005"
+        ],
+        "quotes": [
+          "`setTarget(target)` SHALL replace the target immediately and leave all pending records in place without forwarding.",
+          "During delivery each call uses the then-current target",
+          "the whole batch remains, including entries already offered and the entry whose emission triggered a flush.",
+          "Earlier target side effects persist."
+        ]
+      },
+      "retry": {
+        "status": "full",
+        "value": [
+          "ok",
+          [
+            [
+              [
+                "L",
+                "i"
+              ],
+              [
+                "R",
+                "j"
+              ],
+              [
+                "R",
+                "i"
+              ],
+              [
+                "R",
+                "j"
+              ],
+              [
+                "R",
+                "k"
+              ]
+            ],
+            [],
+            true,
+            [
+              "i"
+            ],
+            [
+              "i",
+              "j",
+              "k"
+            ]
+          ]
+        ],
+        "reqs": [
+          "REQ-MH-005",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "The next flush to a truthy target starts at the first retained entry",
+          "it calls `target.handle(record)` synchronously in buffer order",
+          "After all calls return normally it empties the same buffer list in place and returns `None`."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C4",
+    "fields": {
+      "first_close": {
+        "status": "full",
+        "value": [
+          [],
+          [
+            "sun",
+            "moon"
+          ],
+          false,
+          false,
+          0,
+          0
+        ],
+        "reqs": [
+          "REQ-MH-006",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "`close()` SHALL call the handler's `flush()` with its current target when `flushOnClose` is truthy",
+          "It then sets `target` to `None` in cleanup",
+          "The supplied target receives neither `flush()` nor `close()` from this cleanup.",
+          "it calls `target.handle(record)` synchronously in buffer order",
+          "After all calls return normally it empties the same buffer list in place",
+          "the attempt to call `handle` for B raises `AttributeError`"
+        ]
+      },
+      "intervening": {
+        "status": "full",
+        "value": [
+          [
+            "star"
+          ],
+          [
+            "sun",
+            "moon"
+          ],
+          true,
+          false,
+          0,
+          0
+        ],
+        "reqs": [
+          "REQ-MH-006",
+          "REQ-MH-004",
+          "REQ-MH-003"
+        ],
+        "quotes": [
+          "A closed memory handler continues accepting `handle`, `emit`, `setTarget` and `flush`.",
+          "The supplied target receives neither `flush()` nor `close()` from this cleanup.",
+          "`setTarget(target)` SHALL replace the target immediately and leave all pending records in place without forwarding.",
+          "With `None` or another falsy target it returns `None` and preserves all entries.",
+          "`emit(record)` SHALL append the supplied object before calling `shouldFlush(record)`",
+          "Otherwise it compares `record.levelno >= flushLevel`."
+        ]
+      },
+      "second_close": {
+        "status": "full",
+        "value": [
+          [],
+          [
+            "sun",
+            "moon",
+            "star"
+          ],
+          false,
+          false,
+          0,
+          0
+        ],
+        "reqs": [
+          "REQ-MH-006",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "`close()` SHALL call the handler's `flush()` with its current target when `flushOnClose` is truthy",
+          "It then sets `target` to `None` in cleanup",
+          "The supplied target receives neither `flush()` nor `close()` from this cleanup.",
+          "it calls `target.handle(record)` synchronously in buffer order",
+          "After all calls return normally it empties the same buffer list in place and returns `None`."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C5",
+    "fields": {
+      "returns": {
+        "status": "full",
+        "value": [
+          "shared",
+          "shared"
+        ],
+        "reqs": [
+          "REQ-MH-002"
+        ],
+        "quotes": [
+          "A truthy `LogRecord` replaces the current record for all later filters and emission.",
+          "admission returns the final `LogRecord` object."
+        ]
+      },
+      "pending": {
+        "status": "full",
+        "value": [
+          [
+            "shared",
+            "shared"
+          ],
+          [
+            true,
+            true
+          ]
+        ],
+        "reqs": [
+          "REQ-MH-002",
+          "REQ-MH-003"
+        ],
+        "quotes": [
+          "A truthy `LogRecord` replaces the current record for all later filters and emission.",
+          "`emit(record)` SHALL append the supplied object before calling `shouldFlush(record)`",
+          "Otherwise it compares `record.levelno >= flushLevel`."
+        ]
+      },
+      "seen": {
+        "status": "full",
+        "value": [
+          [
+            "shared",
+            "shared!"
+          ],
+          "shared!!",
+          [],
+          [
+            true,
+            true
+          ]
+        ],
+        "reqs": [
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "It passes the actual record objects, including repeated references, and ignores every normal return value.",
+          "it calls `target.handle(record)` synchronously in buffer order",
+          "After all calls return normally it empties the same buffer list in place and returns `None`."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C6",
+    "fields": {
+      "first_result": {
+        "status": "full",
+        "value": "OSError",
+        "reqs": [
+          "REQ-MH-002",
+          "REQ-MH-003",
+          "REQ-MH-004",
+          "REQ-MH-005"
+        ],
+        "quotes": [
+          "With no filters the input record passes unchanged.",
+          "`emit(record)` SHALL append the supplied object before calling `shouldFlush(record)`",
+          "It returns `True` when length is at least `capacity`.",
+          "it calls `target.handle(record)` synchronously in buffer order",
+          "propagate the exception, stop that drain and skip the final clear."
+        ]
+      },
+      "after_first": {
+        "status": "full",
+        "value": [
+          [
+            "n",
+            "p"
+          ],
+          [
+            "n",
+            "p"
+          ],
+          [
+            "n"
+          ]
+        ],
+        "reqs": [
+          "REQ-MH-004",
+          "REQ-MH-005"
+        ],
+        "quotes": [
+          "it calls `target.handle(record)` synchronously in buffer order",
+          "the whole batch remains, including entries already offered and the entry whose emission triggered a flush.",
+          "Earlier target side effects persist."
+        ]
+      },
+      "after_repeat": {
+        "status": "full",
+        "value": [
+          "ok",
+          [
+            [
+              "n",
+              "p",
+              "n",
+              "p",
+              "p"
+            ],
+            [],
+            [
+              "n",
+              "n",
+              "p",
+              "p"
+            ]
+          ]
+        ],
+        "reqs": [
+          "REQ-MH-003",
+          "REQ-MH-004",
+          "REQ-MH-005"
+        ],
+        "quotes": [
+          "`emit(record)` SHALL append the supplied object before calling `shouldFlush(record)`",
+          "It returns `True` when length is at least `capacity`.",
+          "It passes the actual record objects, including repeated references, and ignores every normal return value.",
+          "After all calls return normally it empties the same buffer list in place and returns `None`.",
+          "The next flush to a truthy target starts at the first retained entry"
+        ]
+      }
+    },
+    "conflicts": []
+  }
+]

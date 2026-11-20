@@ -1,0 +1,5 @@
+threshold handle: set [], failed [truth], retained [A,B], retry [truth,A,B], cleared
+explicit empty flush: constructor [], raised original error at truth, no handle call
+close: [truth], detached, removed registered name, retained [A], reattached retry delivered A
+hook retargets and mutates A before raising: both effects persist; retry uses replacement
+length fallback: emit propagated original error, retained triggering B, no handle call

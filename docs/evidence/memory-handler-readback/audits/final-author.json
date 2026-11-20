@@ -1,0 +1,249 @@
+{
+  "review_mode": "same-agent-separate-pass",
+  "quality_checks": [
+    {
+      "topic": "project-entry",
+      "status": "PENDING",
+      "checked": "Initialized entry located the mapped assets and declared no project checks. Whole project onboarding remains outside scope."
+    },
+    {
+      "topic": "capability-coverage",
+      "status": "PASS",
+      "checked": "Limited to the seven public responsibilities in the registered scoped map. Other logging facilities and whole-file coverage were excluded."
+    },
+    {
+      "topic": "spec-self-containment",
+      "status": "PASS",
+      "checked": "Scoped to the two missing premises and adjacent record/target truth branches only. REQ-MEM-002 states assignment-only installation and explicit use. REQ-MEM-004 establishes ordinary receiver truth and a custom false gate. Compared the actual inputs/observations with both clauses and local probes. No broad, blinded or whole-repository conclusion."
+    }
+  ],
+  "passes": [
+    {
+      "kind": "source-first",
+      "sources": [
+        {
+          "path": "logging/handlers.py",
+          "evidence": "logging/handlers.py:L1324-L1437",
+          "checked": "Rebuilt constructor -> direct emit -> count short circuit -> current target loop -> post-loop clear, and explicit close -> detach -> virtual flush -> base cleanup. Examined a nested non-triggering emit and retarget during a callback."
+        },
+        {
+          "path": "logging/__init__.py",
+          "evidence": "logging/__init__.py:L820-L1058",
+          "checked": "Retraced list admission, LogRecord substitution, the final truth test in handle, separate owner of level decisions, formatting, and final named-handler cleanup. Verified the standard severity constants at lines 98-105."
+        }
+      ],
+      "artifacts": [
+        {
+          "path": "openspec/specs/memory-handler/spec.md",
+          "checked": "Compared the seven requirements and their examples to effective methods on the two classes and their inherited entry points. Identified two precision gaps on callback and filter paths."
+        },
+        {
+          "path": "docs/baseline/capability-map.json",
+          "checked": "Reconciled 18 source cases across seven scoped capabilities to the reconstructed external call and buffer-state paths."
+        },
+        {
+          "path": "docs/baseline/contracts/memory-handler.md",
+          "checked": "Verified the decision expressions, count/level short circuit, target call and clear ordering, exception propagation, and dynamic dispatch during close."
+        },
+        {
+          "path": "docs/baseline/spec-predictions.json",
+          "checked": "Compared all 18 frozen same-author predictions against the same stimuli and the reached source branches."
+        }
+      ],
+      "findings": [
+        {
+          "id": "MH-A01",
+          "issue": "No-veto rule overlooks the separate truth check on the accepted record itself. A LogRecord subclass testing false with no filters is returned without emission.",
+          "evidence": "logging/__init__.py:L1022-L1028",
+          "status": "open"
+        },
+        {
+          "id": "MH-A02",
+          "issue": "Target loop reads the live list and the destination at each iteration while checking target truth only once. The draft covers replacing the target with truthy U but leaves a same-thread callback appending below threshold or switching to false-valued U underdetermined.",
+          "evidence": "logging/handlers.py:L1420-L1424",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "kind": "source-recheck",
+      "sources": [
+        {
+          "path": "logging/handlers.py",
+          "evidence": "logging/handlers.py:L1324-L1437",
+          "checked": "Independently reread post-append capacity/level short-circuit, target truth at loop entrance, current target per callback, live list and deferred clear. Simulated A appending C with capacity 10, then B and C on the same loop; checked close finally and dynamic flush again."
+        },
+        {
+          "path": "logging/__init__.py",
+          "evidence": "logging/__init__.py:L820-L1058",
+          "checked": "Reopened final filter truth, return and emission lines, including a false-valued LogRecord with no veto and target replacement. Rechecked unrelated logger-level gate, validation, formatter and name cleanup."
+        }
+      ],
+      "artifacts": [
+        {
+          "path": "openspec/specs/memory-handler/spec.md",
+          "checked": "Read corrected MH-002/MH-005 and neighboring success, failure and close cases. The record and target truth tests have distinct owners. The retarget and nested-low-emit examples state the resulting call sequence."
+        },
+        {
+          "path": "docs/baseline/capability-map.json",
+          "checked": "Read back all seven IDs and all 18 pre-draft stimuli after filling the selected requirements. No source stimulus or expected outcome was changed."
+        },
+        {
+          "path": "docs/baseline/contracts/memory-handler.md",
+          "checked": "Reviewed corrected callback and filter rows against the dynamic branches and replay/close discussion."
+        },
+        {
+          "path": "docs/baseline/spec-predictions.json",
+          "checked": "Recompared all 18 stored predictions to their recorded source outcomes. Predictions are same-author under constructed target behavior; this is not independent live evidence."
+        }
+      ],
+      "findings": [
+        {
+          "id": "MH-A01",
+          "issue": "No-veto rule overlooks the separate truth check on the accepted record itself. A LogRecord subclass testing false with no filters is returned without emission.",
+          "evidence": "logging/__init__.py:L1022-L1028",
+          "status": "fixed",
+          "resolution": "The revised admission rule states the final truth test and preserves the actual returned false-valued object, as shown by the separate if and return at lines 1025-1028."
+        },
+        {
+          "id": "MH-A02",
+          "issue": "Target loop reads the live list and the destination at each iteration while checking target truth only once. The draft covers replacing the target with truthy U but leaves a same-thread callback appending below threshold or switching to false-valued U underdetermined.",
+          "evidence": "logging/handlers.py:L1420-L1424",
+          "status": "fixed",
+          "resolution": "The revised flush rule and two same-thread callback scenarios state live buffer iteration, per-entry target lookup and the single truth test. A low-severity append at count 3 with capacity 10 does not recursively flush; the outer iteration subsequently reaches C."
+        }
+      ]
+    },
+    {
+      "kind": "source-recheck",
+      "reviewer": "codex-scoped-recheck",
+      "sources": [
+        {
+          "path": "logging/handlers.py",
+          "evidence": "logging/handlers.py:L1318-L1437",
+          "checked": "Traced MemoryHandler -> BufferingHandler -> logging.Handler, buffer initialization, append/threshold/virtual flush, the single target truth gate, per-entry dispatch and the deferred clear. A receiver with no downstream target retains its own records even on reaching a threshold."
+        },
+        {
+          "path": "logging/__init__.py",
+          "evidence": "logging/__init__.py:L815-L1058",
+          "checked": "Traced Handler -> Filterer -> object, verified neither magic truth nor length hooks occur in either module, checked the Python local MRO; ordinary handler truth is independent of buffer. Reopened filter veto/substitution, conditional emit, formatter assignment and explicit format dispatch; only format tests the installed formatter and calls its format method."
+        }
+      ],
+      "artifacts": [
+        {
+          "path": "openspec/specs/memory-handler/spec.md",
+          "checked": "Read REQ-MEM-002, -004 and -005 with their scenarios. Identified two uncovered premises: the ordinary receiver gate and the observable formatter installation step. Revisited the earlier final-record and live-iteration clarifications."
+        },
+        {
+          "path": "docs/baseline/capability-map.json",
+          "checked": "Checked IDs and owner mappings: admission, target-selection and target-dispatch are distinct existing units. The prior 18 source-case IDs are retained; this pass concerns two additional source observations."
+        },
+        {
+          "path": "docs/baseline/contracts/memory-handler.md",
+          "checked": "Identified relevant direct calls and formatting, target selection and forwarding rows. The assignment and target truth gate are present, but do not establish ordinary receiver truth for a reader of the current Spec or spell out the two observation windows there."
+        },
+        {
+          "path": "docs/baseline/spec-predictions.json",
+          "checked": "Checked existing same-author record structure and 18 prediction IDs for overlap only. The original record lacks a dedicated ordinary-MemoryHandler receiver or formatter installation/use case and supplies no independent result for either."
+        }
+      ],
+      "findings": [
+        {
+          "id": "MH-A01",
+          "issue": "No-veto rule overlooks the separate truth check on the accepted record itself. A LogRecord subclass testing false with no filters is returned without emission.",
+          "evidence": "logging/__init__.py:L1022-L1028",
+          "status": "fixed",
+          "resolution": "The revised admission rule states the final truth test and preserves the actual returned false-valued object, as shown by the separate if and return at lines 1025-1028."
+        },
+        {
+          "id": "MH-A02",
+          "issue": "Target loop reads the live list and the destination at each iteration while checking target truth only once. The draft covers replacing the target with truthy U but leaves a same-thread callback appending below threshold or switching to false-valued U underdetermined.",
+          "evidence": "logging/handlers.py:L1420-L1424",
+          "status": "fixed",
+          "resolution": "The revised flush rule and two same-thread callback scenarios state live buffer iteration, per-entry target lookup and the single truth test. A low-severity append at count 3 with capacity 10 does not recursively flush; the outer iteration subsequently reaches C."
+        },
+        {
+          "id": "MH-A03",
+          "issue": "REQ-MEM-004 states a truth gate but never establishes the truth of an ordinary MemoryHandler used as a receiving target. A reader could predict that its empty buffer suppresses admission, even when the sender has a pending entry.",
+          "evidence": "logging/handlers.py:L1372-L1424",
+          "status": "open"
+        },
+        {
+          "id": "MH-A04",
+          "issue": "REQ-MEM-002 says setFormatter configures format but permits an extra formatter callback during installation. An observation that starts at installation can therefore have two outcomes under the old wording.",
+          "evidence": "logging/__init__.py:L1030-L1034",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "kind": "source-recheck",
+      "reviewer": "codex-scoped-recheck",
+      "sources": [
+        {
+          "path": "logging/handlers.py",
+          "evidence": "logging/handlers.py:L1318-L1437",
+          "checked": "Reopened both complete class definitions, resolving inherited emit versus virtual shouldFlush/flush. Traced two separate instances: the sender gates on its receiver, while the receiver independently gates on its own destination after admitting each record. Checked per-entry target lookup after the initial truth test and close detachment. Profiled the ordinary instances at unchanged methods: flush entered on sender [A,B], then receiver [A], then receiver [A,B]."
+        },
+        {
+          "path": "logging/__init__.py",
+          "evidence": "logging/__init__.py:L815-L1109",
+          "checked": "Rechecked complete classes by AST and actual MRO: Filterer and Handler have no truth/length hook; also checked object in the runtime MRO. Reopened filter and handle final truth gate, assignment-only setter, initially None formatter and later truth test plus single fmt.format(record) call. Replayed both truth branches and delayed LookupError with local fixtures."
+        }
+      ],
+      "artifacts": [
+        {
+          "path": "openspec/specs/memory-handler/spec.md",
+          "checked": "Matched the two new scenarios and rules to staged observations. Both target truth branches, the receiver’s independent gate, and the install/use boundary are explicit. Rechecked REQ-MEM-002 and -004 alongside the original -003, -005 and -006: a false final record can skip receiving emission, and a target installed midway through an ongoing flush is not re-tested."
+        },
+        {
+          "path": "docs/baseline/capability-map.json",
+          "checked": "Compared the unchanged 18 historical source-case IDs and their owner IDs with the retained map. These two scoped findings supplement existing units. The registered source-case denominator has not been rewritten."
+        },
+        {
+          "path": "docs/baseline/contracts/memory-handler.md",
+          "checked": "Reopened Direct calls and formatting, Target selection, Forwarding, Failure/recovery and Close rows. Checked class declaration ranges, setter assignment, format dispatch, synchronous forwarding with a live per-entry destination, and preserved sender and receiver ownership of independent buffers."
+        },
+        {
+          "path": "docs/baseline/spec-predictions.json",
+          "checked": "Verified the historical readback file remains at its recorded digest and contains the same 18 prediction IDs. It predates these corrections. Two same-reviewer source/Spec comparisons were appended to the corresponding behavior inventory units; the historic predictions were not rewritten."
+        }
+      ],
+      "findings": [
+        {
+          "id": "MH-A01",
+          "issue": "No-veto rule overlooks the separate truth check on the accepted record itself. A LogRecord subclass testing false with no filters is returned without emission.",
+          "evidence": "logging/__init__.py:L1022-L1028",
+          "status": "fixed",
+          "resolution": "The revised admission rule states the final truth test and preserves the actual returned false-valued object, as shown by the separate if and return at lines 1025-1028."
+        },
+        {
+          "id": "MH-A02",
+          "issue": "Target loop reads the live list and the destination at each iteration while checking target truth only once. The draft covers replacing the target with truthy U but leaves a same-thread callback appending below threshold or switching to false-valued U underdetermined.",
+          "evidence": "logging/handlers.py:L1420-L1424",
+          "status": "fixed",
+          "resolution": "The revised flush rule and two same-thread callback scenarios state live buffer iteration, per-entry target lookup and the single truth test. A low-severity append at count 3 with capacity 10 does not recursively flush; the outer iteration subsequently reaches C."
+        },
+        {
+          "id": "MH-A03",
+          "issue": "REQ-MEM-004 states a truth gate but never establishes the truth of an ordinary MemoryHandler used as a receiving target. A reader could predict that its empty buffer suppresses admission, even when the sender has a pending entry.",
+          "evidence": "logging/handlers.py:L1372-L1424",
+          "status": "fixed",
+          "resolution": "REQ-MEM-004 now states the default truth of an ordinary receiver independent of its own buffer/target, and identifies false overrides. Code and probes showed both records reach an initially empty receiver, whose own threshold fires twice without clearing because its downstream target is None. Each overriding false-at-entry variant skipped receiver filtering and retained the upstream record."
+        },
+        {
+          "id": "MH-A04",
+          "issue": "REQ-MEM-002 says setFormatter configures format but permits an extra formatter callback during installation. An observation that starts at installation can therefore have two outcomes under the old wording.",
+          "evidence": "logging/__init__.py:L1030-L1034",
+          "status": "fixed",
+          "resolution": "REQ-MEM-002 now specifies storage of the exact supplied formatter with return None, no truth test or format call on installation, and selection on explicit use. A spy observed no calls on installation or forwarding, then one truth test and one format(A) on explicit use. A false formatter selected the default; a raising truth hook propagated only on explicit formatting."
+        }
+      ],
+      "supplemental_evidence": {
+        "behavior_inventory": "docs/baseline/behavior-inventory.json: confirmed updated full normative quotes, two same-reviewer comparisons and evidence roles for MH-admission and MH-target-selection. Historical seven units and their original 18 cases remain. No project test assertion mapping was added.",
+        "characterization": "From consumer: python -B - < ../scoped-probes.py. Output in ../probe-results.txt. Narrow local probes ran on Python 3.12.14 with explicit checks of both loaded source paths. Exact scenarios plus false hooks, independent filters, false formatter, raising formatter truth, an unaccepted record, and mid-flush retarget."
+      }
+    }
+  ],
+  "review_history": "The original source-first/recheck pair was the prior author. A separate reviewer received the two problem areas and pinned consumer, independently traced the implementations, then edited and rechecked in the same reviewer context (passes 3 and 4). No blind examiner data or independent review of this reviewer’s edits was used or claimed here."
+}

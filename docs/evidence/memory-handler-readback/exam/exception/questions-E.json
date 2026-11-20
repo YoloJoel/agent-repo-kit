@@ -1,0 +1,19 @@
+{
+  "set": "E",
+  "runtime": "CPython 3.13.5. A fresh fixture executes once, single-threaded; all observations precede interpreter teardown.",
+  "instructions": "Predict the named observation fields from the supplied specification. Identify any component the text leaves unresolved. State ordered events and state changes unambiguously.",
+  "fixture_semantics": "rec creates a fresh standard LogRecord with the stated name and levelno 12. Whenever Python truth-tests the caller-provided Receiver, its __bool__ appends a check event, raises ArithmeticError while ready is false and returns True while ready is true. Its handle appends one handle event and returns True; it performs no other action. Events accumulate from construction. state copies the current event list and record names, then checks target identity with the receiver and with None; the identity comparisons do not truth-test the receiver. No event list entry is mutated after creation. outcome calls its argument once and reports either 'ok' or the caught exception class name.",
+  "shared_fixture_python": "import logging\nfrom logging.handlers import MemoryHandler\n\ndef rec(label):\n    return logging.LogRecord(label, 12, \"unit.py\", 1, label, (), None)\n\nclass Receiver:\n    def __init__(self):\n        self.ready = False\n        self.events = []\n    def __bool__(self):\n        self.events.append([\"check\"])\n        if not self.ready:\n            raise ArithmeticError(\"offline\")\n        return True\n    def handle(self, record):\n        self.events.append([\"handle\", record.name])\n        return True\n\ndef state(h, t):\n    return [list(t.events), [r.name for r in h.buffer], h.target is t, h.target is None]\n\ndef outcome(fn):\n    try:\n        fn()\n    except Exception as exc:\n        return type(exc).__name__\n    return \"ok\"",
+  "questions": [
+    {
+      "id": "E1",
+      "question": "What is the result of close, what state can be observed immediately afterward, and what does the last flush leave?",
+      "observation_fields": [
+        "close_outcome",
+        "after_close",
+        "after_recovery"
+      ],
+      "stimulus_python": "t = Receiver()\nh = MemoryHandler(6, flushLevel=80)\nh.emit(rec(\"north\"))\nh.emit(rec(\"south\"))\nh.setTarget(t)\nclosed = outcome(h.close)\nafter = state(h, t)\nt.ready = True\nh.setTarget(t)\ndrained = outcome(h.flush)\nobservations = {\"close_outcome\": closed, \"after_close\": after, \"after_recovery\": [drained, state(h, t)]}"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "set": "D",
+  "runtime": "CPython 3.13.5. Single-threaded. Each stimulus executes after a fresh fixture and ends before interpreter teardown.",
+  "instructions": "Predict each named field from the supplied specification. State any component it leaves unresolved. A prose answer is sufficient when values and ordering are unambiguous.",
+  "fixture_semantics": "make creates a fresh standard LogRecord whose name and msg equal the given name and whose levelno equals the supplied severity. names returns a new ordered list of the current names. Meter is a plain truthy caller-provided object. Its event list is cumulative from construction. It appends exactly the event shown each time one of its methods is called, including calls written in the setup. Its handle always returns False after appending its event. Its methods do not forward records or call each other. A local subclass overrides only the operations shown. Every list(meter.events) snapshot copies the outer list; event entries are never subsequently mutated. The identity expression `is` tests object identity without asking for truth. outcome invokes its callable once and returns 'ok' after any normal return, or the exception class name on failure. Regular MemoryHandler instances use the standard implementation, including when passed as targets.",
+  "shared_fixture_python": "import logging\nfrom logging.handlers import MemoryHandler\n\ndef make(name, severity):\n    return logging.LogRecord(name, severity, \"case.py\", 1, name, (), None)\n\ndef names(records):\n    return [r.name for r in records]\n\nclass Meter:\n    def __init__(self):\n        self.events = []\n    def handle(self, r):\n        self.events.append([\"handle\", r.name])\n        return False\n    def flush(self):\n        self.events.append([\"flush\"])\n    def close(self):\n        self.events.append([\"close\"])\n\ndef outcome(fn):\n    try:\n        fn()\n    except Exception as e:\n        return type(e).__name__\n    return \"ok\"",
+  "questions": [
+    {
+      "id": "D1",
+      "question": "Where are the records at each of the three marked points?",
+      "observation_fields": [
+        "first",
+        "second",
+        "third"
+      ],
+      "stimulus_python": "meter = Meter()\ninner = MemoryHandler(2)\nouter = MemoryHandler(5, target=inner)\ninner.handle(make(\"seed\", logging.INFO))\nouter.handle(make(\"outer\", logging.INFO))\ndef state():\n    return [names(outer.buffer), names(inner.buffer), list(meter.events)]\nouter.flush()\nfirst = state()\ninner.setTarget(meter)\nouter.emit(make(\"last\", logging.INFO))\nsecond = state()\nouter.close()\nobservations = {\"first\": first, \"second\": second, \"third\": [state(), outer.target is None, inner.target is meter]}"
+    },
+    {
+      "id": "D2",
+      "question": "What does the cumulative observer record through setup, after the handler calls, and after close?",
+      "observation_fields": [
+        "setup",
+        "dispatch",
+        "after_close"
+      ],
+      "stimulus_python": "meter = Meter()\nsample = make(\"sample\", 17)\nmeter.handle(sample)\nmeter.flush()\nsetup = list(meter.events)\nh = MemoryHandler(3, flushLevel=100, target=meter)\ndef keep(r):\n    meter.events.append([\"filter\", r.name])\n    return r is not sample\nh.addFilter(keep)\nh.handle(sample)\nh.emit(sample)\nh.handle(make(\"fresh\", 17))\ndispatch = [list(meter.events), names(h.buffer)]\nh.close()\nobservations = {\"setup\": setup, \"dispatch\": dispatch, \"after_close\": [list(meter.events), names(h.buffer), h.target is None]}"
+    },
+    {
+      "id": "D3",
+      "question": "What happens at the two flushing operations, and what can be observed between them and after the retry?",
+      "observation_fields": [
+        "trigger",
+        "between",
+        "retry"
+      ],
+      "stimulus_python": "class WakingMeter(Meter):\n    def __init__(self):\n        super().__init__()\n        self.first_test = True\n    def __bool__(self):\n        self.events.append([\"test\"])\n        if self.first_test:\n            self.first_test = False\n            raise LookupError(\"asleep\")\n        return True\nmeter = WakingMeter()\nh = MemoryHandler(2, flushLevel=100, target=meter)\nh.emit(make(\"one\", 17))\ntrigger = outcome(lambda: h.emit(make(\"two\", 17)))\nbetween = [list(meter.events), names(h.buffer), h.target is meter]\nagain = outcome(h.flush)\nobservations = {\"trigger\": trigger, \"between\": between, \"retry\": [again, list(meter.events), names(h.buffer), h.target is meter]}"
+    }
+  ]
+}

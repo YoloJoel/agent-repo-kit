@@ -109,6 +109,12 @@ Check whether a different ordering, default or owner consistent with those claus
 change the observation. If so, record the missing premise even when the prediction matches
 execution. Distinguish assumptions made by an external test observer from rules owned by
 the capability. Apply this check across clauses when one actor hands work or state to another.
+If a supported component can itself be the receiving actor, evaluate the handoff condition
+for its ordinary instance and for a relevant override. When an observation spans configuration
+and use, check which of those calls actually produces the effect.
+When an admission check invokes caller-provided behavior, trace an exception from that check
+separately from an exception after delivery starts. Record what the caller sees and what
+state is available for a retry.
 Also review AGENTS as a project-specific entrance rather than a tool operation list. Include
 AGENTS, .ai/project-entry.json, applicable OpenSpec config, current Baseline README, the capability
 map and all claimed artifacts in audit scope. Discover contract files/references from disk, not

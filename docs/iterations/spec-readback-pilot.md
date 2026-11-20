@@ -55,3 +55,7 @@ Keep the original eight fixed questions for comparable core results. There is al
 `python tools/score_spec_readback.py --suite lifecycle --questions` and the candidate Spec.
 Use the same suite when scoring the frozen answers. The native probe starts the public sample
 and observes its final termination outcome. The lifecycle score has its own denominator.
+
+## Source-derived held-out questions
+
+The [MemoryHandler readback](../evidence/memory-handler-readback/README.md) records independent source-to-Spec generation, blind predictions, actual observations and post-fix source rechecks. It reports whether predictions match execution and whether the contract supplies the premises needed to reach them.

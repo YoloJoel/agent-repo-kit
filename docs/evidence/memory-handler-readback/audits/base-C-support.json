@@ -1,0 +1,146 @@
+[
+  {
+    "id": "C1",
+    "fields": {
+      "one": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "REQ-MH-003's INFO direct-query scenario establishes INFO below ERROR, so the tap is certainly empty. Whether fern remains at front or reaches mid depends on INFO versus WARNING. Their ordering is absent. REQ-MH-002/003/004 entail both reported branches; neither branch contradicts the key."
+      },
+      "two": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The front buffer is empty in both branches: elm equals the front threshold. Whichever handler held fern after the first call, fern reaches mid before elm. The pair is retained at mid or delivered to the tap depending on WARNING versus ERROR. REQ-MH-003/004 support both branches but do not rank those constants."
+      },
+      "three": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The alternatives resolve testable parts of the requested state: front contains neither fern nor elm, and those two records are together in their original order at mid or at the tap. The tap could still be empty, and oak's destination is unresolved. REQ-MH-002/003/004 plus the inferred INFO < ERROR support the branches; CRITICAL, WARNING and ERROR are not fully ordered in the text. Merely including the keyed branch does not identify it."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C2",
+    "fields": {
+      "predicates": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The first Boolean is unconditionally true: the low-INFO query example in REQ-MH-003 puts INFO strictly below default ERROR. The other two expressions describe comparisons but supply no definite Boolean values. They require DEBUG and WARNING to be situated relative to INFO. The no-state-change fact is correct but is not one of the three requested predicate values."
+      },
+      "first": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The returned label xi is unconditional under REQ-MH-002 and the supplied describe convention. The pending and received lists depend on DEBUG versus INFO in the REQ-MH-003 comparison; the scenario does not give that ordering. Both conditional states follow from REQ-MH-003/004."
+      },
+      "second": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The unconditional return label is psi under REQ-MH-002. REQ-MH-003/004 yield the three stated states. If WARNING reaches INFO, earlier delivery of xi and retention until psi converge on the same final tap order. Neither that threshold relation nor the DEBUG comparison needed on the other branch is fixed."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C3",
+    "fields": {
+      "first_result": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "With 10 < 100 and occupancy below 10, all three entries wait for explicit flush. REQ-MH-004 uses the current target per item, so i retargets and Right raises ValueError for j. REQ-MH-005 propagates it; the fixture outcome returns its class name."
+      },
+      "first_state": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-004/005 retain the retarget and the entire batch after the j failure. The shown Tap callbacks attempt L/i then R/j, and only Left stores i. The fixture specifies labels, lists and the target identity observation."
+      },
+      "retry": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-005 starts replay at i. Right remains installed and its once-only j fault is disarmed by the fixture. REQ-MH-004 delivers i, j, k in order then clears, producing the complete cumulative trace, sink states, identity and 'ok'."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C4",
+    "fields": {
+      "first_close": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-004 tests the target to begin the drain and calls the then-current target for each entry. Its detachment-during-drain scenario even attempts the next handle on None; a target remaining installed but turning falsy after sun is still called for moon. REQ-MH-006 then detaches without calling the target's flush or close. The fixture records both references and switches off."
+      },
+      "intervening": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-006 permits post-close retarget and emit. REQ-MH-003 retains star below both numerical limits. The explicit REQ-MH-004 flush starts on a falsy target, preserving it and star with no new target call. The fixture and first close establish the two prior records and both zero counters."
+      },
+      "second_close": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "The fixture relights the attached Lamp. Each close with truthy flushOnClose flushes its current target under REQ-MH-006. REQ-MH-004 delivers star and clears, then close detaches without touching target counters. The earlier deliveries and the callback's final switch-off are preserved."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C5",
+    "fields": {
+      "returns": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-002 replaces each distinct input with the shared LogRecord and returns that record. The explicit describe convention maps each to the same literal name."
+      },
+      "pending": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-002/003 buffer the chosen replacement on each call. Level 11 is below 100 and the second entry is still below capacity six. Both positions therefore hold the very same shared object, fixing names and both identity Booleans."
+      },
+      "seen": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-004 forwards both occurrences of the actual shared reference and ignores the False target return. The fixture supplies initial .msg and shows a read then one mutation per callback, yielding the two observed messages, the final double exclamation, two true identities and the cleared buffer."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C6",
+    "fields": {
+      "first_result": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-002/003 append p and reach capacity two. REQ-MH-004 offers n then p; the Gate raises OSError on p and REQ-MH-005 propagates it to outcome."
+      },
+      "after_first": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MH-004/005 establish order, the surviving n delivery and preservation of the full n,p batch. Gate appends both attempted names before its error but stores only n."
+      },
+      "after_repeat": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "The repeated handle appends p again before the occupancy test (REQ-MH-003). REQ-MH-004/005 replay n,p,p, including the repeated reference, with the Gate now disarmed. The new attempts and deliveries, added to the fixture's retained histories, give exactly the keyed sequences and empty final buffer."
+      }
+    },
+    "conflicts": []
+  }
+]
