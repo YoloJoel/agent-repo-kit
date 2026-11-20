@@ -24,8 +24,35 @@ business capability outside current scope stays pending/excluded and must be rep
 For an inspected business capability with actual current requirements set specified and list
 the existing IDs/titles; support-only files need no invented product requirements.
 
-Run `baseline coverage-record --document <map.json> --reviewer <actual identity>` and
-`baseline coverage-status`. Reconcile uncovered/stale files and capability gaps as work proceeds.
+Run `baseline coverage-record --document <map.json> --reviewer <actual identity>` before selecting
+the first batch. A pending row is an expected discovery result. Within the requested scope,
+walk entry/registration/caller paths forward, then trace externally visible effects, writers and
+build-selected components back to their owners. Record anything found by just one walk. One source
+file can implement several capabilities. For a scoped review keep other existing rows intact and
+report the requested slice and remaining repository coverage separately.
+
+Include a `source_cases` array on each business capability. A case in a read service might be
+`{"id":"missing-key","stimulus":"read absent key k from an empty store","path":"store.py","reference":"store.py:L7-L9","source_outcome":{"error":"missing","writes":0}}`.
+Use real evidence and JSON values. Include the actor, starting state and precise input in each
+stimulus. Sample reachable outcomes that would change an implementer's decision. Look for
+boundaries, alternative callers and operations with side effects as well as successful requests.
+When the source cannot establish an external outcome, phrase the case around the observable
+local action and keep the external uncertainty in Baseline. Keep case IDs and line evidence here.
+
+Give a fresh reader only the stimuli and the current Specs where possible. Have them identify the
+authoritative requirement, predict the result, quote its outcome and flag anything underdetermined.
+If separate contexts are unavailable, record the same-agent limitation. Compare against the recorded
+source answers afterwards. Reuse each original stimulus verbatim in the linked unit's
+`acceptance_cases`. A procedure or link in Baseline cannot supply a missing Spec outcome.
+Use `onboarding-status.source_cases` to see how many recorded questions received a grounded comparison.
+When retiring a case or correcting its input/outcome, add a fresh reason to
+`source_case_dispositions` keyed by the case ID on that capability. Keep unfinished questions.
+
+Reread this recorded list after each batch and fill its pending rows. For a genuine retirement,
+merge or reclassification, set `capability_dispositions.<previous ID>` on the same map to the
+specific reason, surviving ID/evidence as applicable. A batch boundary alone leaves a row pending.
+The checker reconciles IDs and business-to-supporting changes against the last recorded map.
+It cannot discover an entry neither walk found. Run `baseline coverage-status` to inspect remaining gaps.
 These are declared coverage, not proof of semantics. Independently reconstruct the capability
 checklist from source during audit; do not just approve the author's map. Report total production
 inputs, mapped/reviewed scope, excluded reasons and each unfinished capability. Large scopes
@@ -36,8 +63,8 @@ to continue normal work. Never say full onboarding is done after a small partial
 ## 2. Specs stand on their own
 
 Baseline explains observed code, provenance, internals, defects and gaps. Spec is the current
-observable promise. A Baseline/Source line cites evidence; it does not replace requirement text.
-Do not remove useful references, but do not reduce a spec to a directory of links either.
+observable promise. Use a stable Baseline contract link for provenance. Store exact source and test line locations
+in Baseline or audit evidence, keyed to the applicable requirement. Keep the deciding rule in the Spec.
 
 Give each capability its own Purpose explaining that capability's actual observable responsibility;
 do not paste the same generic source-snapshot/scope paragraph into all specs.
@@ -62,7 +89,7 @@ needs a spec. Depth follows actual observable complexity.
 
 Examples: “SHALL follow Baseline contract” is insufficient. A sufficient promise states which
 input is accepted/rejected, which output/error/state follows, and includes concrete scenarios.
-Keep source references alongside that content. Cross-spec reuse is valid only when the owning
+Keep stable contract links alongside that content. Cross-spec reuse is valid only when the owning
 requirement already exists at a current, precise reference. Use Depends-On: <actual REQ IDs> for
 essential delegated contract ownership. An uncreated future capability or an external Baseline
 payload definition cannot stand in for current normative payload/error/confirmation semantics.

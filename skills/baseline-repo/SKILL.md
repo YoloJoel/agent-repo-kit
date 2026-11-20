@@ -26,7 +26,14 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
    unavailable external sources and actual revision/workspace. Inventory is not understanding. Read `references/artifact-quality.md` before planning batches. Keep the whole repository
    inventory/capability map as the denominator unless the user explicitly limited scope.
    Derive a complete business/supporting capability map from actual production/build/config
-   sources, not from already generated specs. Record it with baseline coverage-record;
+   sources, independently of already generated specs. Before drafting, run baseline coverage-record on
+   this first map even when it reports PENDING. Walk the runnable entry points and registrations,
+   and separately work backwards from outputs, writers, build selections and background effects.
+   Reconcile the two lists within the user's scope. Many responsibilities can share one source file.
+   Before selecting clauses, record representative source_cases on the business rows. Vary a single
+   decisive condition and trace both observable results, including caller-visible failures or side
+   effects. Inspect registered operations even when the normal path never invokes them.
+   Return to this recorded map after each batch;
    uninspected capabilities remain pending. Inspect actual contract files and current-spec
    references independently of the registry; source-review/register all in-scope contracts,
    including any currently referenced but unregistered file. Do not present lifecycle-only or a partial module
@@ -52,9 +59,16 @@ Do not upgrade inferred behavior into SHALL/MUST or omit cross-module flows.
 7. By default, continue from Baseline to current behavior specifications; do not stop at
    explanations, inventory or contract documents. Read `references/specification.md`.
    Write/reuse current specs under policy.paths.specs for verified observable behavior,
-   with scenarios, Baseline/Source links and actual verification gaps. This is part of a
+   with scenarios, stable Baseline contract links and actual verification gaps. Store source/test line locations in the supporting evidence. This is part of a
    bare baseline-repo invocation, not an optional user prompt. Preserve existing specs/IDs;
    record conflicts, defects and unknowns separately without endorsing or silently fixing them.
+   Before promotion, read the candidate Spec alone and write a concrete input and predicted
+   outcome for each current behavior unit. Compare the prediction against the reachable source
+   for that same stimulus. Follow the acceptance_cases protocol in references/behavior-model.md.
+   Also give the reader the recorded source-case stimuli and the current Specs. Withhold source
+   answers and Baseline evidence until the reader commits the predictions. Record an ambiguous
+   answer for a missing deciding condition. Check onboarding-status for unanswered source cases.
+   Fix unsupported new wording or retain a gap. Include relevant infrastructure in the scope.
    Document routine preservation reasoning as the actual Agent analysis, not invented owner approval.
    Promote selected promises only after that compatibility record and current Spec exist: `ark baseline promote --document <path> --requirements <IDs> --decision <artifact>
    --reviewer <identity>`. Do not promote every implementation detail or defect. Retire
@@ -67,7 +81,10 @@ Do not upgrade inferred behavior into SHALL/MUST or omit cross-module flows.
    Then reopen source again for a separate post-fix pass and check affected/cross-cutting flows.
    Default to these two real passes, not two runs of a structural validator. Use a fresh reviewer
    when available; otherwise use an explicitly same-agent separate pass. Never claim independence
-   if unavailable. Keep unresolved/recurrent issues PENDING and save a checkpoint; no infinite loop.
+   if unavailable. When a recheck discovers a correctable issue, record it open, fix it and append
+   another source-recheck to the same report for that batch. Carry forward all finding IDs. Stop
+   when the last recheck closes the findings or further progress needs unavailable evidence or
+   a decision. In the latter case keep the findings PENDING and save a checkpoint.
    Record the actual report with `ark baseline audit-record`, then run `ark baseline audit-status`.
 9. Recheck project-specific AGENTS facts/commands and use initialize-repo project-entry guidance
    with `entry refresh` if necessary. Explicitly audit the three quality topics from

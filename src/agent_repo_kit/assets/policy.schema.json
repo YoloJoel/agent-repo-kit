@@ -220,6 +220,42 @@
         "minLength": 1
       },
       "description": "Additional runtime input paths/globs, including documents consumed as configuration. Unknown non-document files are already treated conservatively."
+    },
+    "artifact_rules": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^(?!none$)[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "requires",
+          "source"
+        ],
+        "properties": {
+          "source": {
+            "$ref": "#/$defs/path"
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "requires": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "enum": [
+                "spec",
+                "design",
+                "adr"
+              ]
+            }
+          }
+        }
+      }
     }
   },
   "$defs": {

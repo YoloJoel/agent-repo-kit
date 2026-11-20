@@ -35,7 +35,11 @@ Describe observable behavior in Spec; keep class names/algorithms/thread choices
 Identify requirements consistently with the repository's existing scheme. Give observable
 scenarios with conditions/inputs and expected outcomes. Identify automated, manual or
 external verification. Keep references from affected requirements to actual tests/evidence.
-Textual references establish navigation; reviewers still assess assertion quality.
+For a high-impact rule, derive a concrete input and predicted output, error or state change
+from the Spec alone. For current behavior compare that prediction with the reachable source
+branch for the same input. Preserve missing or conflicting evidence. For a proposed change
+use the accepted target as the expectation and verify it against the candidate implementation.
+Keep the assertion location and the actual test run as separate evidence.
 Check the complete effective-spec verification matrix even when this change has no delta;
 removing a test must not leave a current promise without a test reference or an explicit
 required delivery-check mapping. Proposed deltas can precede tests; current promises retain
@@ -143,7 +147,7 @@ change scope or create a global active-task pointer.
 ## Existing repository specification handoff
 
 Existing-code onboarding includes source-backed current specs, not only Baseline prose.
-Extract observable preserved behavior with scenarios and Baseline/Source references; reuse
+Extract observable preserved behavior with scenarios and stable Baseline contract links. Keep implementation/test line citations in Baseline evidence or audit records. Reuse
 existing IDs and native paths. Record routine preservation analysis without inventing owner
 approval. Keep defects, contradictions and unknowns in the single ledger. Use baseline
 spec-status to check declared handoff; specification and actual verification are separate.
@@ -180,3 +184,29 @@ After actual two-pass source/target/assertion review, baseline behavior-change-r
 candidate evidence without certifying the stale current inventory. Audit all native targets,
 affected/new sources and assertion tests. Actual ready/regression/target execution is still
 mandatory; delivery and close share the gate. Refresh current behavior after native archive.
+
+## One change across development tools
+
+Read the actual current spec, applicable accepted decisions and this repository's engineering
+standard before editing. Use the same scoped Change ID across OpenSpec, Superpowers and direct
+requests, including in a new conversation. Keep accepted behaviors in the mapped current specs.
+Use the Change delta for proposed behavior. A design draft or implementation plan is not a current
+spec. The user can describe only the desired behavior; the working agent maintains these records.
+
+- OpenSpec uses the native proposal, delta, design, tasks, synchronization and archive.
+- With Superpowers, write the design and implementation plan directly to the Change's design.md
+  and tasks.md when convenient. To reuse an existing local draft, put `Workflow-Source: <repo-relative.md>`
+  on a line in its matching native document. The local check follows one reference, includes the
+  source content in its fingerprint and reads unchecked tasks from the real plan. Keep the source
+  present through archival. Use the project's effective spec and ADR conventions throughout.
+- A direct request uses those same documents and local commands, with ordinary file edits.
+  For a change of entry or session, inspect the diff and active Change before creating a new one.
+- For a feature, give the delta a verifiable requirement and scenario. For a fix restoring a current
+  contract, cite its stable IDs in `Current-Requirements: ID1 ID2`. A production maintenance change
+  without a delta explains its preserved observable behavior on a `Preserves:` line. Write an explicit
+  `Kind:` when intent is ambiguous. The existing content-bound lightweight route applies to small edits.
+- Resolve the project's conditional obligations in policy.artifact_rules. Use `Risks: rule-id` in the
+  proposal for semantic triggers. For a reviewed exclusion use `Risks: none` and a concrete
+  `Risk-Reason:`. The actual candidate paths can still trigger rules. Reference an applicable decision
+  with `ADR: docs/adr/NNNN-name.md` using the actual mapped path. The decision can be Proposed during
+  specification and must be Accepted for implementation phases that require it.

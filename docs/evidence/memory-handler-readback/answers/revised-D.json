@@ -1,0 +1,374 @@
+[
+  {
+    "id": "D1",
+    "fields": {
+      "first": {
+        "status": "partial",
+        "known": {
+          "if_inner_tests_true": [
+            [],
+            [
+              "seed",
+              "outer"
+            ],
+            []
+          ],
+          "if_inner_tests_false": [
+            [
+              "outer"
+            ],
+            [
+              "seed"
+            ],
+            []
+          ]
+        },
+        "missing": "The Spec gives the truth-test branches for targets but does not say how a regular MemoryHandler instance tests as a target. The fixture explicitly declares Meter truthy and does not make that declaration for inner.",
+        "reqs": [
+          "REQ-MEM-002",
+          "REQ-MEM-003",
+          "REQ-MEM-004",
+          "REQ-MEM-005"
+        ],
+        "quotes": [
+          "Below both thresholds, the entire buffer stays pending.",
+          "At entry to a flush, a missing or otherwise false-valued target causes the flush to return None with all entries retained.",
+          "With a truthy target, an explicit or triggered flush SHALL visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "When the traversal finishes normally, flush clears the existing buffer in place and returns None, irrespective of the targets' return values."
+        ]
+      },
+      "second": {
+        "status": "partial",
+        "known": {
+          "if_inner_tested_true_at_first_flush": [
+            [
+              "last"
+            ],
+            [
+              "seed",
+              "outer"
+            ],
+            []
+          ],
+          "if_inner_tested_false_at_first_flush": [
+            [
+              "outer",
+              "last"
+            ],
+            [
+              "seed"
+            ],
+            []
+          ]
+        },
+        "missing": "The Spec gives the truth-test branches for targets but does not say how a regular MemoryHandler instance tests as a target. The fixture explicitly declares Meter truthy and does not make that declaration for inner.",
+        "reqs": [
+          "REQ-MEM-003",
+          "REQ-MEM-004"
+        ],
+        "quotes": [
+          "Below both thresholds, the entire buffer stays pending.",
+          "`setTarget(target)` SHALL replace the destination immediately and return None, leaving pending records untouched.",
+          "It makes no delivery to the previous or new target."
+        ]
+      },
+      "third": {
+        "status": "partial",
+        "known": {
+          "if_inner_tests_true_on_both_outer_flushes": [
+            [
+              [],
+              [],
+              [
+                [
+                  "handle",
+                  "seed"
+                ],
+                [
+                  "handle",
+                  "outer"
+                ],
+                [
+                  "handle",
+                  "last"
+                ]
+              ]
+            ],
+            true,
+            true
+          ],
+          "if_inner_tests_false_on_both": [
+            [
+              [
+                "outer",
+                "last"
+              ],
+              [
+                "seed"
+              ],
+              []
+            ],
+            true,
+            true
+          ],
+          "if_true_then_false": [
+            [
+              [
+                "last"
+              ],
+              [
+                "seed",
+                "outer"
+              ],
+              []
+            ],
+            true,
+            true
+          ],
+          "if_false_then_true": [
+            [
+              [],
+              [
+                "last"
+              ],
+              [
+                [
+                  "handle",
+                  "seed"
+                ],
+                [
+                  "handle",
+                  "outer"
+                ]
+              ]
+            ],
+            true,
+            true
+          ]
+        },
+        "missing": "The Spec gives the truth-test branches for targets but does not say how a regular MemoryHandler instance tests as a target. The fixture explicitly declares Meter truthy and does not make that declaration for inner.",
+        "reqs": [
+          "REQ-MEM-003",
+          "REQ-MEM-004",
+          "REQ-MEM-005",
+          "REQ-MEM-007"
+        ],
+        "quotes": [
+          "The triggering record belongs to the batch.",
+          "At entry to a flush, a missing or otherwise false-valued target causes the flush to return None with all entries retained.",
+          "With a truthy target, an explicit or triggered flush SHALL visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "When the traversal finishes normally, flush clears the existing buffer in place and returns None, irrespective of the targets' return values.",
+          "it sets target to None and performs inherited close cleanup.",
+          "Close does not call the target's close or flush."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "D2",
+    "fields": {
+      "setup": {
+        "status": "full",
+        "value": [
+          [
+            "handle",
+            "sample"
+          ],
+          [
+            "flush"
+          ]
+        ],
+        "reqs": [],
+        "quotes": []
+      },
+      "dispatch": {
+        "status": "full",
+        "value": [
+          [
+            [
+              "handle",
+              "sample"
+            ],
+            [
+              "flush"
+            ],
+            [
+              "filter",
+              "sample"
+            ],
+            [
+              "filter",
+              "fresh"
+            ]
+          ],
+          [
+            "sample",
+            "fresh"
+          ]
+        ],
+        "reqs": [
+          "REQ-MEM-002",
+          "REQ-MEM-003"
+        ],
+        "quotes": [
+          "A false result stops the chain, returns the boolean False and skips emission.",
+          "Any other truthy result keeps the current record.",
+          "Direct `emit(record)` skips these filters, appends its argument, and returns None on normal completion.",
+          "Below both thresholds, the entire buffer stays pending."
+        ]
+      },
+      "after_close": {
+        "status": "full",
+        "value": [
+          [
+            [
+              "handle",
+              "sample"
+            ],
+            [
+              "flush"
+            ],
+            [
+              "filter",
+              "sample"
+            ],
+            [
+              "filter",
+              "fresh"
+            ],
+            [
+              "handle",
+              "sample"
+            ],
+            [
+              "handle",
+              "fresh"
+            ]
+          ],
+          [],
+          true
+        ],
+        "reqs": [
+          "REQ-MEM-005",
+          "REQ-MEM-007"
+        ],
+        "quotes": [
+          "With a truthy target, an explicit or triggered flush SHALL visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "When the traversal finishes normally, flush clears the existing buffer in place and returns None, irrespective of the targets' return values.",
+          "`close()` SHALL first call flush with the current target if flushOnClose is truthy, regardless of count or severity.",
+          "it sets target to None and performs inherited close cleanup.",
+          "Close does not call the target's close or flush."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "D3",
+    "fields": {
+      "trigger": {
+        "status": "unspecified",
+        "known": "The second append satisfies the count condition. The first target truth test logs ['test'] and raises LookupError inside the triggered flush.",
+        "missing": "Whether outcome observes 'LookupError' (ordinary propagation), 'ok' or some other exception class. There is no explicit exceptional-exit rule for the target's truth test. REQ-MEM-006 describes exceptions from record delivery and the emission predicate; the target's __bool__ fails before the first handle(record), after the count predicate has already returned True.",
+        "reqs": [
+          "REQ-MEM-003",
+          "REQ-MEM-005",
+          "REQ-MEM-006"
+        ],
+        "quotes": [
+          "If the count is at least capacity, it returns True without inspecting record severity.",
+          "call `flush()` once if either condition is true.",
+          "the target truth test ran only at flush entry",
+          "If a target call raises, the memory handler SHALL propagate that exception synchronously to the caller, stop before the next entry and skip clearing the buffer."
+        ]
+      },
+      "between": {
+        "status": "partial",
+        "known": {
+          "at_first_truth_test_failure": {
+            "events": [
+              [
+                "test"
+              ]
+            ],
+            "pending": [
+              "one",
+              "two"
+            ],
+            "target_is_meter": true
+          },
+          "if_failure_propagates_without_recovery": [
+            [
+              [
+                "test"
+              ]
+            ],
+            [
+              "one",
+              "two"
+            ],
+            true
+          ],
+          "guaranteed_event_prefix": [
+            [
+              "test"
+            ]
+          ]
+        },
+        "missing": "The post-failure snapshot depends on handling of the failed truth test, including retention of the batch. There is no explicit exceptional-exit rule for the target's truth test. REQ-MEM-006 describes exceptions from record delivery and the emission predicate; the target's __bool__ fails before the first handle(record), after the count predicate has already returned True.",
+        "reqs": [
+          "REQ-MEM-003",
+          "REQ-MEM-005",
+          "REQ-MEM-006"
+        ],
+        "quotes": [
+          "`emit` SHALL append the record object first",
+          "the target truth test ran only at flush entry",
+          "The sender leaves the entire batch pending, including any entries whose target calls already returned and the entry whose call raised.",
+          "Side effects already performed by callbacks persist."
+        ]
+      },
+      "retry": {
+        "status": "partial",
+        "known": {
+          "if_the_failed_test_leaves_the_original_batch_and_target_intact": [
+            "ok",
+            [
+              [
+                "test"
+              ],
+              [
+                "test"
+              ],
+              [
+                "handle",
+                "one"
+              ],
+              [
+                "handle",
+                "two"
+              ]
+            ],
+            [],
+            true
+          ],
+          "on_reentry": "If the meter remains installed, its truth test now adds ['test'] and returns True. Its handle logs each surviving pending entry in order and returns False. A normal traversal clears the buffer; the meter's return value does not interrupt it."
+        },
+        "missing": "The state carried from the first flush's truth-test error, and hence the exact cumulative events and retry snapshot. There is no explicit exceptional-exit rule for the target's truth test. REQ-MEM-006 describes exceptions from record delivery and the emission predicate; the target's __bool__ fails before the first handle(record), after the count predicate has already returned True.",
+        "reqs": [
+          "REQ-MEM-004",
+          "REQ-MEM-005",
+          "REQ-MEM-006"
+        ],
+        "quotes": [
+          "the target truth test ran only at flush entry",
+          "With a truthy target, an explicit or triggered flush SHALL visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "When the traversal finishes normally, flush clears the existing buffer in place and returns None, irrespective of the targets' return values.",
+          "The sender leaves the entire batch pending, including any entries whose target calls already returned and the entry whose call raised."
+        ]
+      }
+    },
+    "conflicts": []
+  }
+]

@@ -6,6 +6,7 @@ The journal is a scoped demonstration, not a production WAL or multi-writer guar
 import argparse
 import importlib.util
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -21,7 +22,8 @@ SPEC.loader.exec_module(kit)
 def qualify(root):
     records = []
     def run(argv):
-        result = subprocess.run(argv, cwd=root, capture_output=True, encoding="utf-8", timeout=240)
+        environment = {**os.environ, "OPENSPEC_TELEMETRY": "0", "DO_NOT_TRACK": "1", "CI": "1"}
+        result = subprocess.run(argv, cwd=root, capture_output=True, encoding="utf-8", timeout=240, env=environment)
         records.append({"argv": argv, "exit_code": result.returncode, "stdout": result.stdout[-10000:], "stderr": result.stderr[-2000:]})
         if result.returncode:
             raise RuntimeError(json.dumps(records[-1], ensure_ascii=False))
@@ -57,9 +59,20 @@ def qualify(root):
     run(["git", "commit", "-m", "Initialize local-only engineering"])
     block = "### Requirement: Durable idempotent event append REQ-JOURNAL-001\nThe journal SHALL replay durable events, suppress identical IDs without appending, reject conflicts and report corrupt input explicitly.\n#### Scenario: Replay and retry\n- WHEN an event is appended, the journal is reopened and the same event retried\n- THEN one record remains and the retry returns false\n"
     work("add-event-journal", "Add a single-writer offline event journal with explicit corruption handling.", "event-journal", block)
+    # Use the real CLI to archive a native Change whose work was planned with another layout.
+    write("docs/superpowers/specs/event-journal-design.md", "# Design\nOne local append-only file stores single-writer events.\n")
+    write("docs/superpowers/plans/event-journal.md", "# Plan\n- [ ] Verify first write, duplicate handling and replay.\n")
+    change_path = "openspec/changes/add-event-journal"
+    write(change_path + "/design.md", "# Design\nWorkflow-Source: docs/superpowers/specs/event-journal-design.md\n")
+    write(change_path + "/tasks.md", "# Tasks\nWorkflow-Source: docs/superpowers/plans/event-journal.md\n")
     shutil.copyfile(ROOT / "examples/event-journal/journal.py", root / "journal.py")
     (root / "tests").mkdir(exist_ok=True)
     shutil.copyfile(ROOT / "examples/event-journal/tests/test_journal.py", root / "tests/test_journal.py")
+    vendored = [sys.executable, str(root / "hack/ai/ark.py"), "check", "--base", "HEAD"]
+    pending = subprocess.run(vendored, cwd=root, capture_output=True, text=True, check=False)
+    assert pending.returncode == 2 and "unfinished-tasks" in pending.stdout, pending
+    write("docs/superpowers/plans/event-journal.md", "# Plan\n- [x] Verify first write, duplicate handling and replay.\n")
+    require(json.loads(run(vendored)))
     first = require(kit.verify(root, p, "delivery", "add-event-journal"))
     native("validate", "add-event-journal", "--strict")
     native("archive", "add-event-journal", "--yes", "--json")
@@ -102,7 +115,7 @@ def qualify(root):
     assert not list(root.glob("openspec/changes/**/ark.json"))
     assert not run(["git", "remote"]).strip()
     assert not (root / ".github").exists()
-    return {"status": "PASS", "workspace": str(root), "python": sys.version.split()[0], "openspec": "2.0.0", "entry": "installed initialize helper then native OpenSpec/direct implementation; no delivery Skill/pointer/sidecar", "remote": None, "consumer_ci": None, "first": first, "first_archive": first_archive, "baseline_before_second": before, "target": target, "negative_mutation": mutation, "repaired": repaired, "final": {"status": final["status"], "business_checks_executed": final["business_checks_executed"]}, "commands": records}
+    return {"status": "PASS", "workspace": str(root), "python": sys.version.split()[0], "openspec": "2.0.0", "entry": "installed initialize helper then native OpenSpec/direct implementation; no delivery Skill/pointer/sidecar", "handoff": "Superpowers-format design and plan; vendored check refused incomplete plan, then passed; native OpenSpec archived. No hosted model session.", "remote": None, "consumer_ci": None, "first": first, "first_archive": first_archive, "baseline_before_second": before, "target": target, "negative_mutation": mutation, "repaired": repaired, "final": {"status": final["status"], "business_checks_executed": final["business_checks_executed"]}, "commands": records}
 
 
 def main():
@@ -115,6 +128,9 @@ def main():
     if any(root.iterdir()):
         raise SystemExit("Qualification workspace must be empty")
     report = qualify(root)
+    report["privacy"] = {"fixture": "public synthetic event journal", "workspace_initially_empty": True,
+                         "telemetry": "disabled", "version_check": "disabled",
+                         "package_resolution": "offline-cache" if os.environ.get("npm_config_offline") == "true" else "npm-cache-or-registry"}
     Path(args.output).write_text(kit.dump(report), encoding="utf-8")
     print(json.dumps({"status": report["status"], "workspace": str(root), "output": args.output}))
 

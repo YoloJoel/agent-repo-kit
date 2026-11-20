@@ -1,0 +1,46 @@
+[
+  {
+    "id": "E1",
+    "fields": {
+      "close_outcome": {
+        "status": "full",
+        "value": "ArithmeticError",
+        "reqs": ["REQ-MEM-001", "REQ-MEM-004", "REQ-MEM-007"],
+        "quotes": [
+          "target=None, flushOnClose=True",
+          "`close()` SHALL first call flush with the current target if flushOnClose is truthy",
+          "If the test raises, the caller receives that same exception.",
+          "A close-triggered failure runs the cleanup in REQ-MEM-007 before propagating the exception."
+        ]
+      },
+      "after_close": {
+        "status": "full",
+        "value": [[["check"]], ["north", "south"], false, true],
+        "reqs": ["REQ-MEM-003", "REQ-MEM-004", "REQ-MEM-007"],
+        "quotes": [
+          "Below both thresholds, the entire buffer stays pending.",
+          "The constructor and `setTarget` SHALL store the supplied target without testing its truth.",
+          "Each flush tests the current target once before examining any entries",
+          "The sender makes no `handle` call and does not clear the buffer.",
+          "Effects of the truth test persist.",
+          "it sets target to None and performs inherited close cleanup.",
+          "another call to the memory handler's flush runs with the target detached and preserves any remaining entries."
+        ]
+      },
+      "after_recovery": {
+        "status": "full",
+        "value": ["ok", [[["check"], ["check"], ["handle", "north"], ["handle", "south"]], [], true, false]],
+        "reqs": ["REQ-MEM-004", "REQ-MEM-005", "REQ-MEM-007"],
+        "quotes": [
+          "Closing SHALL leave subsequent direct handle, emit, setTarget and flush calls usable.",
+          "`setTarget(target)` SHALL replace the destination immediately and return None, leaving pending records untouched.",
+          "The constructor and `setTarget` SHALL store the supplied target without testing its truth.",
+          "Each flush tests the current target once before examining any entries",
+          "visit pending entries in insertion order, synchronously calling the current target's `handle(record)` with each actual buffered object.",
+          "flush clears the existing buffer in place and returns None"
+        ]
+      }
+    },
+    "conflicts": []
+  }
+]

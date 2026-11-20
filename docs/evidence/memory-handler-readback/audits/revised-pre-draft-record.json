@@ -1,0 +1,12 @@
+{
+  "document": "docs/baseline/capability-map.json",
+  "level": "agent-declared-capability-map",
+  "recorded_at": "2026-11-20T04:44:03+00:00",
+  "reviewer": "codex-spec-author",
+  "sha256": "5291353404b0bfb39968c40565ca199723e15d3107f79672045afe49531c5661",
+  "sources": {
+    ".gitignore": "13e78b172a43adbbb328e4498f43c7cc161ca79b441359ac3328742a483609e1",
+    "logging/__init__.py": "dc42e5cf19a2dd03bd95ed3600803effa9c5f107927ab5f66cacf3eebcfd9a47",
+    "logging/handlers.py": "464980a72ce4c0ca1e6a6724a9760f5e101475a4e347329272ba6d2c4b39dffd"
+  }
+}

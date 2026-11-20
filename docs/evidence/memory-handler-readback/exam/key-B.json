@@ -1,0 +1,380 @@
+{
+  "set": "B",
+  "runtime": {
+    "implementation": "CPython",
+    "version": "3.13.5",
+    "executable": "/usr/bin/python3",
+    "source_root": "/usr/lib/python3.13",
+    "sha256": {
+      "logging/__init__.py": "dc42e5cf19a2dd03bd95ed3600803effa9c5f107927ab5f66cacf3eebcfd9a47",
+      "logging/handlers.py": "464980a72ce4c0ca1e6a6724a9760f5e101475a4e347329272ba6d2c4b39dffd"
+    }
+  },
+  "questions": [
+    {
+      "id": "B1",
+      "actual_observations": {
+        "empty_probe": [
+          true,
+          false,
+          true
+        ],
+        "capacity_zero": {
+          "buffer": [],
+          "delivered": [
+            "low"
+          ]
+        },
+        "custom_level": [
+          {
+            "buffer": [
+              "low"
+            ],
+            "delivered": []
+          },
+          {
+            "buffer": [],
+            "delivered": [
+              "low",
+              "edge"
+            ]
+          }
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, possibly substitute, emit conditionally under the lock and return the filter result."
+        },
+        {
+          "location": "logging/handlers.py:1328-1330",
+          "rule": "BufferingHandler stores capacity and starts with an empty list."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Append the record, test shouldFlush, then invoke flush when true."
+        },
+        {
+          "location": "logging/handlers.py:1378-1396",
+          "rule": "MemoryHandler constructor defaults and stored configuration."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Current occupancy and supplied severity are inclusive disjunctive trigger conditions."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Check target truth, iterate stored records, call current target.handle, then clear in place."
+        }
+      ],
+      "field_rationale": {
+        "empty_probe": "Capacity zero is stored unchanged. At empty occupancy zero meets zero. With capacity five the level branch distinguishes DEBUG from the inclusive WARNING boundary.",
+        "capacity_zero": "Appending the low record leaves occupancy greater than zero and dispatches that record immediately.",
+        "custom_level": "With capacity five the first low record stays buffered. The next record matches flushLevel and triggers delivery of the entire pair."
+      }
+    },
+    {
+      "id": "B2",
+      "actual_observations": {
+        "disabled": [
+          true,
+          {
+            "buffer": [
+              "a"
+            ],
+            "delivered": []
+          }
+        ],
+        "enabled": {
+          "buffer": [],
+          "delivered": [
+            "a"
+          ]
+        },
+        "final": {
+          "buffer": [],
+          "delivered": [
+            "a",
+            "b",
+            "c"
+          ]
+        }
+      },
+      "source_anchors": [
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Append the record, test shouldFlush, then invoke flush when true."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Current occupancy and supplied severity are inclusive disjunctive trigger conditions."
+        },
+        {
+          "location": "logging/handlers.py:1405-1410",
+          "rule": "setTarget assigns the reference while holding the lock."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Check target truth, iterate stored records, call current target.handle, then clear in place."
+        }
+      ],
+      "field_rationale": {
+        "disabled": "The target reference is installed. Its Boolean conversion is false, so the high-level and explicit flush attempts leave a buffered.",
+        "enabled": "The same target object becomes truthy. The next explicit flush sends the retained record and clears it.",
+        "final": "With target None, b remains pending. Reinstalling t only changes the pointer; c then reaches capacity, so b and c join a at the sink in that order."
+      }
+    },
+    {
+      "id": "B3",
+      "actual_observations": {
+        "target_filters": [
+          [
+            "a",
+            "b"
+          ],
+          [
+            "x",
+            "b"
+          ]
+        ],
+        "source_returns": [
+          true,
+          true
+        ],
+        "final": {
+          "buffer": [],
+          "delivered": [
+            "x"
+          ]
+        }
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:826-832",
+          "rule": "Unique filters are appended in registration order."
+        },
+        {
+          "location": "logging/__init__.py:865-874",
+          "rule": "Invoke filters in order; false vetoes, a LogRecord replaces the current record, and the final record is returned."
+        },
+        {
+          "location": "logging/__init__.py:982-986",
+          "rule": "setLevel stores the checked handler level."
+        },
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, possibly substitute, emit conditionally under the lock and return the filter result."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Append the record, test shouldFlush, then invoke flush when true."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Current occupancy and supplied severity are inclusive disjunctive trigger conditions."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Check target truth, iterate stored records, call current target.handle, then clear in place."
+        }
+      ],
+      "field_rationale": {
+        "target_filters": "MemoryHandler uses target.handle for each queued record. Target filters run in registration order; the second filter sees x for a and b for b.",
+        "source_returns": "The source inherited handle returns its own accepted record in each case. Target return values do not influence the source result.",
+        "final": "The direct target handler call does not compare handler level. Its two filters accept x and veto b. Returning False does not interrupt flush or prevent the clear."
+      }
+    },
+    {
+      "id": "B4",
+      "actual_observations": {
+        "close_and_old_sink": [
+          "RuntimeError",
+          [
+            "a"
+          ],
+          0,
+          0
+        ],
+        "after_close": [
+          true,
+          [
+            "a",
+            "b"
+          ]
+        ],
+        "recovery": [
+          "ok",
+          [],
+          [
+            "a",
+            "b"
+          ]
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, possibly substitute, emit conditionally under the lock and return the filter result."
+        },
+        {
+          "location": "logging/__init__.py:1055-1058",
+          "rule": "Base close marks the handler closed and updates the name map."
+        },
+        {
+          "location": "logging/handlers.py:1367-1370",
+          "rule": "BufferingHandler.close dispatches self.flush and calls Handler.close in finally."
+        },
+        {
+          "location": "logging/handlers.py:1378-1396",
+          "rule": "MemoryHandler constructor defaults and stored configuration."
+        },
+        {
+          "location": "logging/handlers.py:1405-1410",
+          "rule": "setTarget assigns the reference while holding the lock."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Check target truth, iterate stored records, call current target.handle, then clear in place."
+        },
+        {
+          "location": "logging/handlers.py:1431-1437",
+          "rule": "Optional initial flush; detach target and delegate close in finally."
+        }
+      ],
+      "field_rationale": {
+        "close_and_old_sink": "Default close attempts delivery. The sink gets a and raises on b. MemoryHandler does not call the old sink’s flush or close. The exception propagates after cleanup.",
+        "after_close": "The finally clause clears the target. The parent’s dynamically dispatched flush now has no target; the failed first loop never cleared the original batch.",
+        "recovery": "Retargeting and flushing use the retained batch despite the close. Both entries reach the new sink and the buffer clears."
+      }
+    },
+    {
+      "id": "B5",
+      "actual_observations": {
+        "before": [
+          [
+            "a",
+            "b",
+            "c"
+          ],
+          []
+        ],
+        "events": [
+          [
+            "first",
+            "a"
+          ],
+          [
+            "second",
+            "b"
+          ],
+          [
+            "second",
+            "c"
+          ]
+        ],
+        "after": [
+          "ok",
+          true,
+          [],
+          [
+            "a"
+          ],
+          [
+            "b",
+            "c"
+          ]
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:958-963",
+          "rule": "Default handler lock is a threading.RLock."
+        },
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, possibly substitute, emit conditionally under the lock and return the filter result."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Append the record, test shouldFlush, then invoke flush when true."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Current occupancy and supplied severity are inclusive disjunctive trigger conditions."
+        },
+        {
+          "location": "logging/handlers.py:1405-1410",
+          "rule": "setTarget assigns the reference while holding the lock."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Check target truth, iterate stored records, call current target.handle, then clear in place."
+        }
+      ],
+      "field_rationale": {
+        "before": "All three inputs stay below capacity and flush level; no target emission occurs before the explicit flush.",
+        "events": "The loop reads self.target anew for each call. First.emit sets a different target during delivery of a. The reentrant lock permits that public setter on this thread; b and c reach second.",
+        "after": "Normal loop completion clears the buffer and does not change the newly installed target. Each sink retains only its own received records."
+      }
+    },
+    {
+      "id": "B6",
+      "actual_observations": {
+        "second_call": "LookupError",
+        "after_handle": [
+          [
+            "a",
+            "b"
+          ],
+          {
+            "buffer": [
+              "a"
+            ],
+            "delivered": []
+          }
+        ],
+        "after_emit": [
+          "ok",
+          [
+            "a",
+            "b"
+          ],
+          {
+            "buffer": [],
+            "delivered": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:865-874",
+          "rule": "Invoke filters in order; false vetoes, a LogRecord replaces the current record, and the final record is returned."
+        },
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, possibly substitute, emit conditionally under the lock and return the filter result."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Append the record, test shouldFlush, then invoke flush when true."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Current occupancy and supplied severity are inclusive disjunctive trigger conditions."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Check target truth, iterate stored records, call current target.handle, then clear in place."
+        }
+      ],
+      "field_rationale": {
+        "second_call": "The source filter raises while inherited handle is selecting the record, before emit. No handler code catches the exception.",
+        "after_handle": "The source filter has seen both a and b. Only a was appended; the unsuccessful second handle never triggers a flush.",
+        "after_emit": "Direct emit bypasses the raising filter. It appends b and the inclusive ERROR trigger flushes the two records to the sink."
+      }
+    }
+  ]
+}

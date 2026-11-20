@@ -79,6 +79,12 @@ Input mutation during checks SHALL fail. Handwritten/committed PASS alone SHALL 
 - WHEN its executable is missing
 - THEN the check is NOT_RUN and delivery is PENDING
 
+#### Scenario: Lightweight command mutates reviewed inputs
+
+- GIVEN a content-bound lightweight declaration and a required command
+- WHEN that command passes but changes reviewed inputs or the candidate diff during execution
+- THEN the same run fails input currency and retains the actual command output
+
 ### Requirement: Preserve specification synchronization through archive (REQ-ARCHIVE-001)
 
 Verification: automated
@@ -94,6 +100,13 @@ as proof of semantic equivalence.
 - WHEN delivery passes and the Change is archived
 - THEN the artifact reference resolves, candidate CI rechecks successfully and context
   does not point at a missing active checkpoint
+
+#### Scenario: File-native archive remains native
+
+- GIVEN a verified file-native change with no toolkit metadata sidecar
+- WHEN toolkit close is requested before native synchronization and archive
+- THEN it reports PENDING/native-archive-required with exit 2 and preserves the active files
+- AND the selected native workflow remains responsible for synchronization and archive
 
 ### Requirement: Isolate resumable work and bound hook continuation (REQ-CONTEXT-001)
 
@@ -182,6 +195,13 @@ The toolkit SHALL validate applicable current/delta scenarios, identities, refer
 - WHEN valid native proposal/tasks/delta files still contain unfinished implementation tasks
 - THEN specification review can pass without running business commands
 - AND delivery remains pending until applicable checks and tasks are complete
+
+#### Scenario: Complete composite dependency identity
+
+- WHEN Depends-On names a composite REQ identity whose current owner is missing
+- THEN validation reports that complete missing identity as pending
+- WHEN the actual complete identity is current
+- THEN that missing-owner finding is cleared
 
 ### Requirement: Execute preserved and target behavior verification (REQ-BEHAVIOR-001)
 
@@ -275,8 +295,14 @@ An explicit analysis-only scope SHALL be honored and reported as excluding speci
 
 #### Scenario: Ungoverned existing repository
 - WHEN baseline-repo is invoked without extra parameters
-- THEN it writes/reuses meaningful current specs and scenarios with Baseline/Source links
+- THEN it writes/reuses meaningful current specs and scenarios with stable Baseline contract links
 - AND does not require native OpenSpec CLI initialization for authoring files
+
+#### Scenario: Preserve implementation evidence when revising a specification
+- WHEN drafting or revising a current Spec or change delta
+- THEN the promise retains its preconditions, observable results and stable contract links
+- AND exact implementation/test line citations belong in supporting evidence
+- AND a direct code line citation in Spec prose produces a file-and-line validation finding
 
 #### Scenario: Missing specification or verification
 - WHEN reviewed contracts lack current requirements or links
@@ -316,6 +342,9 @@ checkpoint rather than loop indefinitely.
 #### Scenario: Unresolved conflict or second-pass discovery
 - WHEN an accepted spec conflicts with source or a new unreviewed issue appears
 - THEN it remains explicitly unresolved rather than being silently closed for PASS
+- WHEN the Agent corrects a new issue and repeats the scoped source review
+- THEN it can append another source-recheck to the same report, retaining all prior finding IDs
+- AND newly discovered findings start open, and the final recheck determines outstanding findings
 
 ### Requirement: Generate usable project artifacts (REQ-ARTIFACT-QUALITY-001)
 
@@ -478,6 +507,12 @@ The toolkit SHALL bind behavior reviews to actual source/spec/test/policy inputs
 - WHEN an assertion sees original, deliberately broken and restored bounded sample behavior
 - THEN actual pass/fail/pass results and logs are retained without certifying arbitrary projects
 
+#### Scenario: Executable assertion location and native command cwd
+- WHEN a claimed assertion exists only in a Python literal/docstring or supported C-family literal/comment, or only by joining disjoint selected ranges
+- THEN it cannot satisfy the executable assertion-location obligation
+- WHEN a configured relative executable uses the repository root or a declared subdirectory as cwd
+- THEN readiness resolves it from that cwd and reports availability separately from execution
+
 ### Requirement: REQ-SOURCE-FACTS-001 Current clauses follow decisive source observations
 Verification: manual
 
@@ -494,6 +529,29 @@ observed assertion. Missing or unrelated assertions SHALL remain verification ga
 test execution reported separately. The runtime SHALL continue to label declaration consistency
 and currency within their actual scope.
 
+The reviewer SHALL derive concrete acceptance predictions from the current Spec before comparing
+them to the effective source outcomes for the same stimuli. The behavior review SHALL flag
+differing declared outcomes, retain unclear or ungrounded cases as pending, and continue to
+read older inventories without awarding the new review from old records.
+
+#### Scenario: A valid reference accompanies an incorrect expected result
+- GIVEN the cited requirement and source anchors exist and unrelated tests pass
+- WHEN the recorded Spec prediction differs from the recorded source outcome for the same stimulus
+- THEN the current behavior review fails and identifies the behavior unit
+
+#### Scenario: A legacy inventory lacks a Spec-only case
+- WHEN the existing inventory is reviewed again
+- THEN the missing comparison stays pending until the Spec and source have been reviewed
+
+The baseline workflow SHALL record its source-derived capability map before drafting batches and
+reconcile it during later reviews. Re-recording SHALL require a disposition for a previously
+discovered capability that disappears or changes from business to supporting.
+
+#### Scenario: A pending alternative shares a file with a specified capability
+- WHEN a later batch omits the previously recorded alternative without a disposition
+- THEN recording is rejected and the previous review snapshot remains available
+- AND the changed live map cannot establish current coverage
+
 #### Scenario: A definition disagrees with an effective path
 - GIVEN a declared constant, validator or callback differs from effective registration, use or final installation
 - WHEN current clauses are drafted and rechecked
@@ -505,3 +563,10 @@ and currency within their actual scope.
 - WHEN its clause/scenario mapping is reviewed
 - THEN that promise retains a verification gap
 - AND execution counts remain separate from assertion and source-review coverage
+
+#### Scenario: A mapped business capability has an unanswered source-derived question
+- GIVEN an existing repository has two recorded source-derived inputs for the same capability
+- WHEN a current requirement has a grounded readback for only one input
+- THEN onboarding SHALL report one answered out of two and retain the other question as pending
+- AND a comparison that disagrees with the recorded source outcome SHALL fail
+- AND retiring a question or revising its stimulus or outcome SHALL require a disposition

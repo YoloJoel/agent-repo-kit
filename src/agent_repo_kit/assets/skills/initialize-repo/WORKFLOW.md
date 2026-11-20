@@ -35,7 +35,7 @@ reproducible environment evidence. Run `engineering-status`; readiness is not ex
    execution before adding them to `checks`. Candidates are suggestions, not gates.
    Read `references/onboarding.md` for configuration, discovery and upgrade details.
    Read `references/project-entry.md` and curate .ai/project-entry.json from source evidence,
-   then run `entry refresh`. Read `references/configuration.md`; generate or reconcile
+   then run `entry refresh`. Translate project-specific Spec/Design/ADR triggers into policy.artifact_rules using project-entry.md. Verify that the same rule reaches OpenSpec, Superpowers and a direct request. Read `references/configuration.md`; generate or reconcile
    the actual OpenSpec schema/context/rules and record source-backed configuration review.
    CLI setup or spec-file creation alone does not complete project configuration. Produce a project-specific seven-section AGENTS entrance, not
    a tool manual or build-file dump. Preserve native/human entry structure without duplicating it.
@@ -43,8 +43,10 @@ reproducible environment evidence. Run `engineering-status`; readiness is not ex
    complete the coverage/gap ledger and create/reuse source-backed current behavior specs.
    Initialization does not end at inventory or Baseline prose; follow baseline-repo through
    its specification handoff AND default source-first/post-fix semantic audit.
+   Before writing the first batch, record the capability map derived from actual entries and consumers.
+   Keep pending capabilities in view throughout drafting, including separate responsibilities in one source file.
    Use baseline-repo's source-facts.md: complete each behavior batch through source facts,
-   clauses, real assertion review and source recheck. Report source audit, specification
+   clauses, Spec-only acceptance cases, same-input source comparison and actual assertion review. Report source audit, specification
    and verification gaps separately. Save checkpoints for large repositories, then continue the next pending batch
    automatically. Keep the whole inventory/capability map as the completion denominator;
    never pass the first batch as the declared whole scope. Stop only for an actual blocker,

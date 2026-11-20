@@ -1,0 +1,68 @@
+{
+  "set": "A",
+  "runtime": "CPython 3.13.5. Each question starts fresh and uses only the shared fixture and its own stimulus. Runs are single-threaded. All observations occur before interpreter teardown.",
+  "instructions": "Predict the observations mapping for each question from the supplied specification. An output may be given in ordinary language if its fields and sequence are unambiguous. For a field the specification leaves unresolved, state the unresolved part and give any result it does determine.",
+  "shared_fixture_python": "import logging\nfrom logging.handlers import MemoryHandler\nDEBUG, INFO, WARNING, ERROR, CRITICAL = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL)\n\ndef rec(label, level):\n    return logging.LogRecord(label, level, \"example.py\", 1, label, (), None)\n\ndef labels(records):\n    return [r.name for r in records]\n\nclass Sink(logging.Handler):\n    def __init__(self):\n        super().__init__()\n        self.received = []\n        self.flushes = 0\n        self.closes = 0\n\n    def emit(self, r):\n        self.received.append(r)\n\n    def flush(self):\n        self.flushes += 1\n\n    def close(self):\n        self.closes += 1\n        super().close()\n\ndef snapshot(h, t):\n    return {\"buffer\": labels(h.buffer), \"delivered\": labels(t.received)}\n\ndef outcome(f):\n    try:\n        f()\n        return \"ok\"\n    except Exception as exc:\n        return type(exc).__name__",
+  "questions": [
+    {
+      "id": "A1",
+      "question": "What are the two predicate results, the two capacity snapshots, and the final snapshot?",
+      "observation_fields": [
+        "predicate",
+        "capacity",
+        "severity"
+      ],
+      "stimulus_python": "t = Sink()\nh = MemoryHandler(3, target=t)\na, b, c, d = rec(\"a\", INFO), rec(\"b\", WARNING), rec(\"c\", DEBUG), rec(\"d\", ERROR)\np = h.shouldFlush(a)\nh.emit(a)\nh.emit(b)\nbefore = snapshot(h, t)\nq = h.shouldFlush(c)\nh.emit(c)\nafter = snapshot(h, t)\nh.emit(d)\nobservations = {\"predicate\": [p, q], \"capacity\": [before, after], \"severity\": snapshot(h, t)}"
+    },
+    {
+      "id": "A2",
+      "question": "What is stored after the no-target calls, what is visible at each target change, and what is visible after the final flush?",
+      "observation_fields": [
+        "waiting",
+        "switches",
+        "final"
+      ],
+      "stimulus_python": "first, second = Sink(), Sink()\nh = MemoryHandler(1)\nh.emit(rec(\"a\", ERROR))\nh.emit(rec(\"b\", DEBUG))\nh.flush()\nwaiting = labels(h.buffer)\nh.setTarget(first)\none = [labels(h.buffer), labels(first.received)]\nh.setTarget(second)\ntwo = [labels(h.buffer), labels(first.received), labels(second.received)]\nh.flush()\nobservations = {\"waiting\": waiting, \"switches\": [one, two], \"final\": [labels(h.buffer), labels(first.received), labels(second.received)]}"
+    },
+    {
+      "id": "A3",
+      "question": "Which records do the source filter and the sink observe, which object or Boolean does each call return, and what is left in the buffer?",
+      "observation_fields": [
+        "filter_calls",
+        "returns",
+        "delivery"
+      ],
+      "stimulus_python": "t = Sink()\nt.setLevel(CRITICAL)\nh = MemoryHandler(4, target=t)\nh.setLevel(CRITICAL)\na, b, x, c = rec(\"a\", INFO), rec(\"b\", INFO), rec(\"x\", ERROR), rec(\"c\", ERROR)\nseen = []\ndef pick(r):\n    seen.append(r.name)\n    return x if r is a else False\nh.addFilter(pick)\nra = h.handle(a)\nrb = h.handle(b)\nrc = h.emit(c)\ndef describe(value):\n    if isinstance(value, logging.LogRecord):\n        return value.name\n    return value\nobservations = {\"filter_calls\": seen, \"returns\": [describe(ra), describe(rb), describe(rc)], \"delivery\": snapshot(h, t)}"
+    },
+    {
+      "id": "A4",
+      "question": "What does the first flush report, how far has the target got then, and what does the second flush leave at both objects?",
+      "observation_fields": [
+        "first_call",
+        "after_first",
+        "after_second"
+      ],
+      "stimulus_python": "class Once(Sink):\n    def __init__(self):\n        super().__init__()\n        self.attempts = []\n        self.armed = True\n\n    def emit(self, r):\n        self.attempts.append(r.name)\n        if self.armed and r.name == \"b\":\n            self.armed = False\n            raise ValueError(\"stop\")\n        super().emit(r)\nt = Once()\nh = MemoryHandler(8, target=t)\nfor name in (\"a\", \"b\", \"c\"):\n    h.emit(rec(name, INFO))\nfirst_call = outcome(h.flush)\nfirst = [list(t.attempts), snapshot(h, t)]\nsecond_call = outcome(h.flush)\nobservations = {\"first_call\": first_call, \"after_first\": first, \"after_second\": [second_call, list(t.attempts), snapshot(h, t)]}"
+    },
+    {
+      "id": "A5",
+      "question": "What does the close call leave, what happens on the next handle call, and what happens after attaching the second sink and flushing?",
+      "observation_fields": [
+        "at_close",
+        "after_handle",
+        "final"
+      ],
+      "stimulus_python": "first, second = Sink(), Sink()\nh = MemoryHandler(4, target=first, flushOnClose=False)\nh.handle(rec(\"a\", INFO))\nclosed = outcome(h.close)\nat_close = [closed, h.target is None, snapshot(h, first), first.flushes, first.closes]\nb = rec(\"b\", ERROR)\nreturned = h.handle(b)\nafter_handle = [returned is b, labels(h.buffer), labels(first.received)]\nh.setTarget(second)\nh.flush()\nobservations = {\"at_close\": at_close, \"after_handle\": after_handle, \"final\": [labels(h.buffer), labels(first.received), labels(second.received)]}"
+    },
+    {
+      "id": "A6",
+      "question": "How many formatter calls occur, what is visible before the explicit flush, and what message and object does the sink receive?",
+      "observation_fields": [
+        "format_calls",
+        "before_flush",
+        "after_flush"
+      ],
+      "stimulus_python": "class F(logging.Formatter):\n    def __init__(self):\n        super().__init__()\n        self.calls = 0\n\n    def format(self, r):\n        self.calls += 1\n        return \"formatted\"\nt, f = Sink(), F()\nh = MemoryHandler(4, target=t)\nh.setFormatter(f)\na, b = rec(\"a\", INFO), rec(\"b\", DEBUG)\na.msg = \"old\"\nh.handle(a)\na.msg = \"revised\"\na.levelno = CRITICAL\nh.handle(b)\nbefore = snapshot(h, t)\nh.flush()\nobservations = {\"format_calls\": f.calls, \"before_flush\": before, \"after_flush\": [snapshot(h, t), [r.getMessage() for r in t.received], any(r is a for r in t.received)]}"
+    }
+  ]
+}

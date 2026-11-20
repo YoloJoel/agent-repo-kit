@@ -1,0 +1,146 @@
+[
+  {
+    "id": "A1",
+    "fields": {
+      "predicate": {
+        "status": "full",
+        "value": [false, false],
+        "reqs": ["REQ-MH-001", "REQ-MH-003"],
+        "quotes": ["The default `flushLevel` is 40.", "It returns `True` when length is at least `capacity`. Otherwise it compares `record.levelno >= flushLevel`.", "A direct predicate query changes no state and does not count its argument as a new entry."]
+      },
+      "capacity": {
+        "status": "full",
+        "value": [{"buffer": ["a", "b"], "delivered": []}, {"buffer": [], "delivered": ["a", "b", "c"]}],
+        "reqs": ["REQ-MH-003", "REQ-MH-004"],
+        "quotes": ["append the supplied object before calling `shouldFlush(record)` and call `flush()` once if the result is truthy", "It returns `True` when length is at least `capacity`.", "synchronously in buffer order", "After all calls return normally it empties the same buffer list in place"]
+      },
+      "severity": {
+        "status": "full",
+        "value": {"buffer": [], "delivered": ["a", "b", "c", "d"]},
+        "reqs": ["REQ-MH-001", "REQ-MH-003", "REQ-MH-004"],
+        "quotes": ["The default `flushLevel` is 40.", "Reaching either threshold suffices, including equality.", "synchronously in buffer order", "After all calls return normally it empties the same buffer list in place"]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A2",
+    "fields": {
+      "waiting": {
+        "status": "full",
+        "value": ["a", "b"],
+        "reqs": ["REQ-MH-001", "REQ-MH-003", "REQ-MH-004"],
+        "quotes": ["target=None", "Pending entries can accumulate beyond capacity while a target is absent.", "With `None` or another falsy target it returns `None` and preserves all entries."]
+      },
+      "switches": {
+        "status": "full",
+        "value": [[["a", "b"], []], [["a", "b"], [], []]],
+        "reqs": ["REQ-MH-004"],
+        "quotes": ["replace the target immediately and leave all pending records in place without forwarding"]
+      },
+      "final": {
+        "status": "full",
+        "value": [[], [], ["a", "b"]],
+        "reqs": ["REQ-MH-004"],
+        "quotes": ["With a truthy target it calls `target.handle(record)` synchronously in buffer order, starting at the first entry regardless of thresholds.", "After all calls return normally it empties the same buffer list in place"]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A3",
+    "fields": {
+      "filter_calls": {
+        "status": "full",
+        "value": ["a", "b"],
+        "reqs": ["REQ-MH-002"],
+        "quotes": ["apply the handler's filters before emission", "`handle` does not compare `record.levelno` to the handler's `level`.", "A direct `emit(record)` skips the handler's filters."]
+      },
+      "returns": {
+        "status": "full",
+        "value": ["x", false, null],
+        "reqs": ["REQ-MH-002", "REQ-MH-003"],
+        "quotes": ["a veto returns `False`, and admission returns the final `LogRecord` object", "A truthy `LogRecord` replaces the current record", "A successful `emit` returns `None`."]
+      },
+      "delivery": {
+        "status": "full",
+        "value": {"buffer": [], "delivered": ["x", "c"]},
+        "reqs": ["REQ-MH-002", "REQ-MH-003", "REQ-MH-004"],
+        "quotes": ["A truthy `LogRecord` replaces the current record for all later filters and emission.", "A direct `emit(record)` skips the handler's filters.", "Reaching either threshold suffices, including equality.", "neither tests the target handler's level nor calls its `emit`, `flush`, formatter or `close` directly", "After all calls return normally it empties the same buffer list in place"]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A4",
+    "fields": {
+      "first_call": {
+        "status": "full",
+        "value": "ValueError",
+        "reqs": ["REQ-MH-005"],
+        "quotes": ["If obtaining or calling a target's `handle` raises, the memory handler SHALL propagate the exception"]
+      },
+      "after_first": {
+        "status": "full",
+        "value": [["a", "b"], {"buffer": ["a", "b", "c"], "delivered": ["a"]}],
+        "reqs": ["REQ-MH-004", "REQ-MH-005"],
+        "quotes": ["synchronously in buffer order", "stop that drain and skip the final clear", "the whole batch remains", "Earlier target side effects persist."]
+      },
+      "after_second": {
+        "status": "full",
+        "value": ["ok", ["a", "b", "a", "b", "c"], {"buffer": [], "delivered": ["a", "a", "b", "c"]}],
+        "reqs": ["REQ-MH-004", "REQ-MH-005"],
+        "quotes": ["The next flush to a truthy target starts at the first retained entry", "synchronously in buffer order", "After all calls return normally it empties the same buffer list in place and returns `None`."]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A5",
+    "fields": {
+      "at_close": {
+        "status": "full",
+        "value": ["ok", true, {"buffer": ["a"], "delivered": []}, 0, 0],
+        "reqs": ["REQ-MH-006"],
+        "quotes": ["sets `target` to `None` in cleanup", "With falsy `flushOnClose` only the detached flush runs. The standard detached flush preserves the buffer.", "On normal completion `close()` returns `None`.", "The supplied target receives neither `flush()` nor `close()` from this cleanup."]
+      },
+      "after_handle": {
+        "status": "full",
+        "value": [true, ["a", "b"], []],
+        "reqs": ["REQ-MH-002", "REQ-MH-004", "REQ-MH-006"],
+        "quotes": ["admission returns the final `LogRecord` object", "With no filters the input record passes unchanged.", "With `None` or another falsy target it returns `None` and preserves all entries.", "A closed memory handler continues accepting `handle`, `emit`, `setTarget` and `flush`."]
+      },
+      "final": {
+        "status": "full",
+        "value": [[], [], ["a", "b"]],
+        "reqs": ["REQ-MH-004", "REQ-MH-006"],
+        "quotes": ["replace the target immediately and leave all pending records in place without forwarding", "synchronously in buffer order", "After all calls return normally it empties the same buffer list in place", "The same admission and delivery rules still apply."]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A6",
+    "fields": {
+      "format_calls": {
+        "status": "full",
+        "value": 0,
+        "reqs": ["REQ-MH-002"],
+        "quotes": ["The memory handler passes records through without formatting them."]
+      },
+      "before_flush": {
+        "status": "full",
+        "value": {"buffer": ["a", "b"], "delivered": []},
+        "reqs": ["REQ-MH-001", "REQ-MH-002", "REQ-MH-003"],
+        "quotes": ["The default `flushLevel` is 40.", "With no filters the input record passes unchanged.", "append the supplied object before calling `shouldFlush(record)`", "It returns `True` when length is at least `capacity`. Otherwise it compares `record.levelno >= flushLevel`."]
+      },
+      "after_flush": {
+        "status": "full",
+        "value": [{"buffer": [], "delivered": ["a", "b"]}, ["revised", "b"], true],
+        "reqs": ["REQ-MH-004"],
+        "quotes": ["synchronously in buffer order", "It passes the actual record objects", "both times with `msg` equal to `'new'`", "After all calls return normally it empties the same buffer list in place"]
+      }
+    },
+    "conflicts": []
+  }
+]

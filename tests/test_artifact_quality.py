@@ -91,6 +91,38 @@ class ArtifactQualityTests(RepositoryCase):
         self.assertIn('protocol.py', next(x for x in report['findings'] if x['code'] == 'capability-unmapped-sources')['sample'])
         self.assertEqual(kit.onboarding_status(self.root, p)['completion'], 'PARTIAL')
 
+    def test_partial_capability_in_shared_file_survives_until_disposed(self):
+        p = self.prepare()
+        kit.baseline_inventory(self.root, p)
+        self.write('manual/module.md', '# Lookup\n## Purpose\nRead keys.\n## Flow\nIndex a dictionary.\n'
+                   '## State and failure\nMissing keys raise.\n## Evidence\napp.py:L1-L2\n## Gaps\nNo deployed runtime.\n')
+        kit.baseline_review(self.root, p, 'manual/module.md', ['app.py'], 'agent')
+        self.write('openspec/specs/lookup/spec.md', '# Lookup\n## Requirements\n### Requirement: REQ-LOOKUP-001 Lookup\n'
+                   'The service SHALL return a stored value.\n#### Scenario: Known key\n- WHEN reading a known key\n- THEN return its value\n')
+        present = {'id': 'present', 'kind': 'business', 'purpose': 'Read a stored value.', 'sources': ['app.py'],
+                   'status': 'specified', 'requirements': ['REQ-LOOKUP-001']}
+        absent = {**present, 'id': 'absent', 'purpose': 'Observe the missing-key outcome.', 'status': 'pending', 'requirements': []}
+        path = 'manual/map.json'
+        self.write(path, json.dumps({'capabilities': [present, absent]}))  # Noncanonical legacy input.
+        first = kit.coverage_record(self.root, p, path, 'reader')
+        self.assertEqual(first['mapped_files'], first['production_files'])
+        self.assertEqual(first['status'], 'PENDING')
+        ledger = (self.root / '.ai/capability-coverage-review.json').read_bytes()
+        for replacement in ([present], [present, {**absent, 'kind': 'supporting', 'status': 'excluded', 'reason': 'Support only.'}]):
+            self.write(path, kit.dump({'capabilities': replacement}))
+            with self.assertRaisesRegex(kit.KitError, 'Capability absent'):
+                kit.coverage_record(self.root, p, path, 'reader')
+            self.assertEqual((self.root / '.ai/capability-coverage-review.json').read_bytes(), ledger)
+            self.assertEqual(kit.coverage_status(self.root, p)['status'], 'PENDING')
+
+        # Merge the rows only after the surviving requirement actually describes both outcomes.
+        spec = self.root / 'openspec/specs/lookup/spec.md'
+        spec.write_text(spec.read_text().replace('return a stored value.', 'return a stored value or raise KeyError for an absent key.')
+                        + '#### Scenario: Missing key\n- WHEN reading an absent key\n- THEN raise KeyError\n')
+        self.write(path, kit.dump({'capabilities': [present], 'capability_dispositions': {
+            'absent': 'Merged into present; its missing-key scenario in REQ-LOOKUP-001 now states the observable error.'}}))
+        self.assertEqual(kit.coverage_record(self.root, p, path, 'reader')['status'], 'PASS')
+
     def test_exclusions_require_rationale_and_do_not_hide_business_scope(self):
         p = self.prepare()
         item = {'id': 'lookup', 'kind': 'business', 'purpose': 'Lookup.', 'sources': ['app.py'], 'status': 'excluded'}
@@ -154,7 +186,7 @@ class ArtifactQualityTests(RepositoryCase):
         kit.knowledge_record(self.root, p, 'contract', contract, ['app.py'], 'agent')
         self.write('manual/preserve.md', '# Preservation\nRetain dictionary lookup result and missing-key failure. Agent analysis, not owner approval.\n')
         spec = 'openspec/specs/lookup/spec.md'
-        self.write(spec, '# Lookup\n## Requirements\n### Requirement: REQ-LOOKUP-001 Lookup\nVerification: automated\nBaseline: ' + contract + '\nSource: app.py:L1-L2\nThe system SHALL return the stored value for an existing key and raise KeyError for a missing key without changing the dictionary.\n#### Scenario: Lookup\n- WHEN an existing key is requested\n- THEN its stored value is returned\n#### Scenario: Missing\n- WHEN an absent key is requested\n- THEN KeyError is raised and the dictionary is unchanged\n')
+        self.write(spec, '# Lookup\n## Requirements\n### Requirement: REQ-LOOKUP-001 Lookup\nVerification: automated\nBaseline: ' + contract + '\nThe system SHALL return the stored value for an existing key and raise KeyError for a missing key without changing the dictionary.\n#### Scenario: Lookup\n- WHEN an existing key is requested\n- THEN its stored value is returned\n#### Scenario: Missing\n- WHEN an absent key is requested\n- THEN KeyError is raised and the dictionary is unchanged\n')
         kit.knowledge_transition(self.root, p, contract, 'agent', 'manual/preserve.md', ['REQ-LOOKUP-001'])
         self.write('tests/test_lookup.py', 'import unittest\nfrom app import lookup\nclass TestLookup(unittest.TestCase):\n    def test_lookup(self):\n        # REQ-LOOKUP-001\n        values = {"a": 2}\n        self.assertEqual(lookup(values, "a"), 2)\n        with self.assertRaises(KeyError): lookup(values, "b")\n        self.assertEqual(values, {"a": 2})\n')
         run = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests'], cwd=self.root, capture_output=True)

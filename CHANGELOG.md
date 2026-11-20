@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.4.0-rc.2 — Spec readback pilot
+
+- Derive acceptance cases from the current Spec alone and compare the same stimulus with the
+  effective source behavior. A declared disagreement fails review. Unclear or absent cases
+  remain pending, including after upgrade of an existing inventory.
+- Add an eight-question public sample scored against actual native output, with an
+  intentionally flawed control. See the [blind reading procedure](docs/iterations/spec-readback-pilot.md).
+
+## 0.4.0-rc.1 — local pilot
+
+- Classify ambiguous file-native changes before implementing or delivering them. Reuse current
+  contracts for restorative fixes and reviewed preservation evidence for maintenance.
+- Apply project-defined Spec, Design and ADR obligations using scoped paths and declared semantic
+  risks. Report missing evidence alongside executed checks.
+- Route designs and plans from OpenSpec, Superpowers or direct requests into one Change. Follow
+  local source references, unfinished tasks and changes to the referenced work.
+- See [pilot instructions and evaluation](docs/iterations/workflow-contract-pilot.md).
+
+## 0.3.2 — 2026-11-19
+
+- Reject lightweight PASS when commands change source, reviewed declarations, candidate bytes/modes or policy within the same run.
+- Resolve compound requirement dependencies as complete identities and diagnose relative executables from their declared cwd.
+- Hand file-native close back to its selected native archive workflow with PENDING/exit 2, retaining legacy archive compatibility.
+- Exclude quoted/doc/raw/comment-only assertion locations, preserve real C++ numeric-separator statements, and handle C++ line splicing without corrupting raw literals.
+- Consolidate fixed-source/retained-asset onboarding, actual upgrade/continuation, native multilanguage counterexamples and historical publication records.
+- Disable native OpenSpec qualification telemetry/version checks; qualify the public synthetic fixture from an offline package cache when available.
+
 ## 0.3.1 — 2026-11-18
 
 - Complete each behavior batch through a source fact table, current clauses, assertion review and source recheck.

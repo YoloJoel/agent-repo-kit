@@ -1,0 +1,350 @@
+{
+  "capabilities": [
+    {
+      "id": "construction",
+      "kind": "business",
+      "purpose": "Establish independent pending records and effective delivery settings.",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "defaults",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1378-L1396",
+          "source_outcome": {
+            "buffer": [],
+            "capacity": 2,
+            "flushLevel": 40,
+            "flushOnClose": true,
+            "level": 0,
+            "target": null
+          },
+          "stimulus": "Create MemoryHandler(2) and inspect the buffer, capacity, flushLevel, target, flushOnClose and handler level."
+        },
+        {
+          "id": "no-normalization",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1398-L1403",
+          "source_outcome": {
+            "buffer": [
+              "A"
+            ],
+            "error": "TypeError"
+          },
+          "stimulus": "Create MemoryHandler(3, flushLevel=\"ERROR\") and directly emit INFO record A into its empty buffer."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "admission",
+      "kind": "business",
+      "purpose": "Determine what direct handle, filter and emit calls admit and return.",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "replacement",
+          "path": "logging/__init__.py",
+          "reference": "logging/__init__.py:L1019-L1028",
+          "source_outcome": {
+            "buffer": [],
+            "returned": "B",
+            "target_calls": [
+              "B"
+            ]
+          },
+          "stimulus": "Set the buffer handler level to CRITICAL, add a filter replacing INFO A with ERROR B, then a callable returning True. Directly handle A with capacity 9 and a truthy recording target."
+        },
+        {
+          "id": "bypass",
+          "path": "logging/__init__.py",
+          "reference": "logging/__init__.py:L1022-L1028",
+          "source_outcome": {
+            "buffer": [
+              "A"
+            ],
+            "emit_return": null,
+            "handle_return": false
+          },
+          "stimulus": "Install a filter returning False on the empty memory handler with capacity 9. Call handle(INFO A), then emit(INFO A)."
+        },
+        {
+          "id": "filter-failure",
+          "path": "logging/__init__.py",
+          "reference": "logging/__init__.py:L865-L874",
+          "source_outcome": {
+            "buffer": [
+              "A"
+            ],
+            "error": "LookupError",
+            "target_calls": []
+          },
+          "stimulus": "With INFO A already pending, add a filter that raises LookupError and call handle(ERROR B)."
+        }
+      ],
+      "sources": [
+        "logging/__init__.py",
+        "logging/handlers.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "flush-decision",
+      "kind": "business",
+      "purpose": "Append a record, query the current count without appending, and trigger by count or severity.",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "pure-query",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1398-L1403",
+          "source_outcome": {
+            "buffer": [
+              "A"
+            ],
+            "returned": false
+          },
+          "stimulus": "With capacity 2, pending INFO A and default flush level, call shouldFlush(INFO B) without emitting B."
+        },
+        {
+          "id": "count-equality",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1348-L1350",
+          "source_outcome": {
+            "buffer": [],
+            "target_calls": [
+              "A",
+              "B"
+            ]
+          },
+          "stimulus": "With capacity 2, pending INFO A and a truthy recording target, emit INFO B."
+        },
+        {
+          "id": "severity-equality",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1398-L1403",
+          "source_outcome": {
+            "buffer": [],
+            "target_calls": [
+              "A",
+              "B"
+            ]
+          },
+          "stimulus": "With capacity 8, WARN A pending and the default threshold, emit ERROR B to a truthy recording target."
+        },
+        {
+          "id": "zero",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1398-L1403",
+          "source_outcome": {
+            "buffer": [],
+            "target_calls": [
+              "A"
+            ]
+          },
+          "stimulus": "With capacity 0 and flushLevel=\"bad\", emit DEBUG A to a truthy recording target."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "target-selection",
+      "kind": "business",
+      "purpose": "Retain pending records across target absence, installation and replacement.",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "false-target",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1420-L1424",
+          "source_outcome": {
+            "buffer": [
+              "A",
+              "B"
+            ],
+            "target_calls": []
+          },
+          "stimulus": "Set a false-valued target whose handle method records calls on MemoryHandler(1), emit INFO A and INFO B, then explicitly flush."
+        },
+        {
+          "id": "retarget",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1405-L1410",
+          "source_outcome": {
+            "T": [],
+            "U": [
+              "A"
+            ],
+            "buffer": [],
+            "calls_at_set": []
+          },
+          "stimulus": "With INFO A pending and old target T, setTarget(U), then explicitly flush to truthy U."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "target-dispatch",
+      "kind": "business",
+      "purpose": "Pass live records to the current target and account for its handling results.",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "target-filter",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1420-L1424",
+          "source_outcome": {
+            "buffer": [],
+            "handle_calls": [
+              "A",
+              "B"
+            ],
+            "target_emits": [
+              "C"
+            ]
+          },
+          "stimulus": "Flush pending INFO A and INFO B to a Handler of level ERROR whose filter vetoes A and replaces B with C; its emit records its argument and returns normally."
+        },
+        {
+          "id": "callback-switch",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1420-L1424",
+          "source_outcome": {
+            "T": [
+              "A"
+            ],
+            "U": [
+              "B"
+            ],
+            "buffer": []
+          },
+          "stimulus": "Flush A then B to T. On receiving A, T sets the memory handler target to U and returns. U records calls and returns."
+        },
+        {
+          "id": "live-record",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1420-L1424",
+          "source_outcome": {
+            "buffer": [],
+            "msg": "new",
+            "same_object": true
+          },
+          "stimulus": "Buffer A with msg=\"old\", change A.msg to \"new\", then flush to a truthy target that observes the record and returns."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "partial-failure",
+      "kind": "business",
+      "purpose": "Propagate synchronous failures and replay retained records on a later flush.",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "failed-batch",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1420-L1424",
+          "source_outcome": {
+            "T": [
+              "A",
+              "B"
+            ],
+            "U": [
+              "A",
+              "B",
+              "C"
+            ],
+            "after_error": [
+              "A",
+              "B",
+              "C"
+            ],
+            "after_retry": [],
+            "error": "OSError"
+          },
+          "stimulus": "Explicitly flush A, B, C to T which returns on A and raises OSError on B; set a fresh successful U and flush again."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "close-lifecycle",
+      "kind": "business",
+      "purpose": "Conditionally drain, detach, close and allow later public calls on the same instance.",
+      "requirements": [],
+      "source_cases": [
+        {
+          "id": "disabled-close",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1431-L1437",
+          "source_outcome": {
+            "T": [],
+            "U": [
+              "A"
+            ],
+            "after_close": [
+              "A"
+            ],
+            "target_after_close": null
+          },
+          "stimulus": "With flushOnClose=False, INFO A pending and truthy target T, close the memory handler. Set target U and explicitly flush."
+        },
+        {
+          "id": "failed-close",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1431-L1437",
+          "source_outcome": {
+            "T": [
+              "A",
+              "B"
+            ],
+            "after_flush": [
+              "A",
+              "B"
+            ],
+            "error": "ValueError",
+            "target_after_close": null
+          },
+          "stimulus": "With the default close setting, close on A, B using T which raises ValueError on B. Inspect the buffer and target and explicitly flush before reattaching."
+        },
+        {
+          "id": "twice",
+          "path": "logging/handlers.py",
+          "reference": "logging/handlers.py:L1431-L1437",
+          "source_outcome": {
+            "T": [
+              "A"
+            ],
+            "buffer": [],
+            "target_after_close": null
+          },
+          "stimulus": "Explicitly close the default handler with pending A and truthy successful target T, then close again."
+        }
+      ],
+      "sources": [
+        "logging/handlers.py",
+        "logging/__init__.py"
+      ],
+      "status": "pending"
+    }
+  ],
+  "scope": "Single-threaded MemoryHandler public calls and direct caller-supplied target boundary only. Excludes other handlers, Logger routing, shutdown, collection, concurrency and broader repository onboarding."
+}

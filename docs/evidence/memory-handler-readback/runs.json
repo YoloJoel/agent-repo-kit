@@ -1,0 +1,130 @@
+[
+  {
+    "candidate": "base",
+    "suite": "A",
+    "spec": "candidates/base.md",
+    "spec_sha256": "776d38ab8b99f7251725a562ad83a3acb53a624545b5e3e16b845dbaf6911596",
+    "answers": "answers/base-A.json",
+    "review": "audits/base-AB-support.json"
+  },
+  {
+    "candidate": "base",
+    "suite": "B",
+    "spec": "candidates/base.md",
+    "spec_sha256": "776d38ab8b99f7251725a562ad83a3acb53a624545b5e3e16b845dbaf6911596",
+    "answers": "answers/base-B.json",
+    "review": "audits/base-AB-support.json"
+  },
+  {
+    "candidate": "base",
+    "suite": "C",
+    "spec": "candidates/base.md",
+    "spec_sha256": "776d38ab8b99f7251725a562ad83a3acb53a624545b5e3e16b845dbaf6911596",
+    "answers": "answers/base-C.json",
+    "review": "audits/base-C-support.json"
+  },
+  {
+    "candidate": "revised",
+    "suite": "A",
+    "spec": "candidates/revised.md",
+    "spec_sha256": "68d6fa455ea213a9d6065324e3374872840bdff4b503b4df95a1ec3470bedfdc",
+    "answers": "answers/revised-A.json",
+    "review": "audits/revised-AB-support.json"
+  },
+  {
+    "candidate": "revised",
+    "suite": "B",
+    "spec": "candidates/revised.md",
+    "spec_sha256": "68d6fa455ea213a9d6065324e3374872840bdff4b503b4df95a1ec3470bedfdc",
+    "answers": "answers/revised-B.json",
+    "review": "audits/revised-AB-support.json"
+  },
+  {
+    "candidate": "revised",
+    "suite": "C",
+    "spec": "candidates/revised.md",
+    "spec_sha256": "68d6fa455ea213a9d6065324e3374872840bdff4b503b4df95a1ec3470bedfdc",
+    "answers": "answers/revised-C.json",
+    "review": "audits/revised-C-support.json"
+  },
+  {
+    "candidate": "revised",
+    "suite": "D",
+    "spec": "candidates/revised.md",
+    "spec_sha256": "68d6fa455ea213a9d6065324e3374872840bdff4b503b4df95a1ec3470bedfdc",
+    "answers": "answers/revised-D.json",
+    "review": "audits/revised-D-support.json"
+  },
+  {
+    "candidate": "final",
+    "suite": "A",
+    "spec": "candidates/final.md",
+    "spec_sha256": "8debf8938559f14eef42e2ef42e1b4783f3cd63fddd9d4c83e6f38209bc15cb4",
+    "answers": "answers/final-A.json",
+    "review": "audits/final-A-support.json"
+  },
+  {
+    "candidate": "final",
+    "suite": "B",
+    "spec": "candidates/final.md",
+    "spec_sha256": "8debf8938559f14eef42e2ef42e1b4783f3cd63fddd9d4c83e6f38209bc15cb4",
+    "answers": "answers/final-B.json",
+    "review": "audits/final-B-support.json"
+  },
+  {
+    "candidate": "final",
+    "suite": "C",
+    "spec": "candidates/final.md",
+    "spec_sha256": "8debf8938559f14eef42e2ef42e1b4783f3cd63fddd9d4c83e6f38209bc15cb4",
+    "answers": "answers/final-C.json",
+    "review": "audits/final-C-support.json"
+  },
+  {
+    "candidate": "final",
+    "suite": "D",
+    "spec": "candidates/final.md",
+    "spec_sha256": "8debf8938559f14eef42e2ef42e1b4783f3cd63fddd9d4c83e6f38209bc15cb4",
+    "answers": "answers/final-D.json",
+    "review": "audits/final-D-support.json"
+  },
+  {
+    "candidate": "closure",
+    "suite": "A",
+    "spec": "candidates/closure.md",
+    "spec_sha256": "b4d335bd424978e8f7660599fb0067a4662e0354de88a278a9bdc328506bb960",
+    "answers": "answers/closure-A.json",
+    "review": "audits/closure-A-support.json"
+  },
+  {
+    "candidate": "closure",
+    "suite": "B",
+    "spec": "candidates/closure.md",
+    "spec_sha256": "b4d335bd424978e8f7660599fb0067a4662e0354de88a278a9bdc328506bb960",
+    "answers": "answers/closure-B.json",
+    "review": "audits/closure-B-support.json"
+  },
+  {
+    "candidate": "closure",
+    "suite": "C",
+    "spec": "candidates/closure.md",
+    "spec_sha256": "b4d335bd424978e8f7660599fb0067a4662e0354de88a278a9bdc328506bb960",
+    "answers": "answers/closure-C.json",
+    "review": "audits/closure-C-support.json"
+  },
+  {
+    "candidate": "closure",
+    "suite": "D",
+    "spec": "candidates/closure.md",
+    "spec_sha256": "b4d335bd424978e8f7660599fb0067a4662e0354de88a278a9bdc328506bb960",
+    "answers": "answers/closure-D.json",
+    "review": "audits/closure-D-support.json"
+  },
+  {
+    "candidate": "closure",
+    "suite": "E",
+    "spec": "candidates/closure.md",
+    "spec_sha256": "b4d335bd424978e8f7660599fb0067a4662e0354de88a278a9bdc328506bb960",
+    "answers": "answers/closure-E.json",
+    "review": "audits/closure-E-support.json"
+  }
+]

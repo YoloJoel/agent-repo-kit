@@ -1,0 +1,74 @@
+[
+  {
+    "id": "D1",
+    "fields": {
+      "first": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004 explicitly describes truthy ordinary MemoryHandler recipients even with no downstream target. REQ-MEM-002/003/005 append outer after seed in inner, trigger inner's capacity-two detached flush and clear only outer. Meter sees no call."
+      },
+      "second": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004 installs Meter without draining inner's seed,outer backlog. The final INFO is below outer's two thresholds under REQ-MEM-001/003 and stays in outer. The cumulative Meter log remains empty."
+      },
+      "third": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004/005/007 make closing outer deliver last to the truthy inner and detach only outer. Inner reaches at least capacity two and offers seed,outer,last to the explicitly truthy Meter in order. Normal False returns still clear the two buffers; inner's target remains Meter."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "D2",
+    "fields": {
+      "setup": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "The two direct setup calls precede handler construction. The explicit Meter contract and snapshot semantics alone give the cumulative handle/sample then flush sequence; no MemoryHandler requirement is needed."
+      },
+      "dispatch": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002/003 and fixture keep make the first source handle log filter/sample and veto it, direct emit then buffer sample, and the next source handle log filter/fresh and buffer fresh. Count two and severity 17 remain below their limits. The earlier setup events persist."
+      },
+      "after_close": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-005/007 send sample and fresh to Meter on default close, ignore its normal False returns, clear the buffer and detach. No target flush/close is added and the fixture preserves the complete earlier event history."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "D3",
+    "fields": {
+      "trigger": {
+        "accuracy": "U",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The single scored field is outcome's string. The reader correctly states where LookupError originates, but allows 'LookupError', 'ok' and other exceptions at the boundary. No returned string common to those alternatives is specified. REQ-MEM-006 addresses interrupted record delivery and predicate failures; its scope does not clearly cover failure of __bool__ before the first delivery."
+      },
+      "between": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The definite cumulative prefix ['test'] is a requested, observable component. The fixture logs it before raising, after REQ-MEM-003 has appended both inputs. The reader makes the full post-failure buffer, events and target snapshot conditional; REQ-MEM-004/005/006 do not explicitly govern error recovery from the entry truth test."
+      },
+      "retry": {
+        "accuracy": "P",
+        "support": "conditional",
+        "contract_support": "conditional",
+        "reason": "The question's guaranteed first ['test'] event remains a prefix of the retry's explicitly cumulative log because Meter's entries never mutate or disappear. The successful two-record retry and its complete state are expressly conditional on the original batch and destination surviving. REQ-MEM-004/005 determine traversal if those premises hold, but the failed entry truth test is not explicitly covered in REQ-MEM-006. Merely naming the keyed complete branch does not earn full credit."
+      }
+    },
+    "conflicts": []
+  }
+]

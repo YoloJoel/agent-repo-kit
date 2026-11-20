@@ -1,0 +1,32 @@
+--- baseline/spec.md
++++ contrast/spec.md
+@@ -27,26 +26,0 @@
+-### Requirement: REQ-MH-002 Admission through handle, filter and emit
+-Verification: automated
+-Baseline: docs/baseline/contracts/memory-handler.md
+-
+-`handle(record)` SHALL apply the handler's filters before emission and return the filter result after a successful call. With the inherited filter chain, a veto returns `False`, and admission returns the final `LogRecord` object. Filters run in insertion order, using a filter's `.filter(record)` when present and otherwise calling the filter itself. The first falsy result ends the chain. A truthy `LogRecord` replaces the current record for all later filters and emission. Other truthy results keep the current record. With no filters the input record passes unchanged. `filter(record)` alone performs this selection without emitting. `addFilter` skips a filter already present and `removeFilter` ignores an absent filter. `handle` does not compare `record.levelno` to the handler's `level`. A direct `emit(record)` skips the handler's filters. The memory handler passes records through without formatting them.
+-
+-#### Scenario: Replacement changes the flush decision
+-
+-- WHEN an empty capacity-8 handler has a collecting target and the default flush level, its first filter replaces INFO A with ERROR R, and the second filter returns `True`
+-- THEN the second filter receives R. `handle(A)` returns R, the target receives R alone, and the buffer is empty.
+-
+-#### Scenario: Veto and direct emission
+-
+-- WHEN a capacity-one handler with a collecting target and handler level CRITICAL has a filter returning 0, and the caller invokes `handle(INFO A)` followed by `emit(INFO B)`
+-- THEN `handle` returns `False` without buffering or forwarding A. `emit` returns `None`, B reaches the target and the buffer is empty.
+-
+-#### Scenario: A filter raises
+-
+-- WHEN A is pending and the first filter raises `LookupError` while `handle(B)` is consulting it
+-- THEN the error reaches the caller. Later filters and emission of B are skipped and the buffer still contains A.
+-
+-#### Scenario: Custom filter result
+-
+-- WHEN a subclass overrides the handler's `filter` method to return the non-record token `'ok'` for INFO A, with room to buffer A
+-- THEN `handle(A)` emits A and returns `'ok'`. A falsy result from that override would be returned as supplied and skip emission.
+-
+@@ -57,0 +32,2 @@
++
++Whenever the handler has buffered entries and the caller sets a truthy target, it SHALL flush those entries to the selected target before returning from the setter.

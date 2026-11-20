@@ -1,0 +1,10 @@
+{
+  "Q1": {"status": "predicted", "value": ["archive", "probe", "stream"], "quote": "The hub SHALL register stream, probe and archive resources."},
+  "Q2": {"status": "predicted", "value": false, "quote": "- THEN it returns an error without storing the value"},
+  "Q3": {"status": "predicted", "value": 42, "quote": "The receiver SHALL return the input Frame value."},
+  "Q4": {"status": "unclear", "missing": "Priority when both flags are enabled."},
+  "Q5": {"status": "unclear", "missing": "Whether ticking alone emits a report."},
+  "Q6": {"status": "unclear", "missing": "Ingestion behavior at equality."},
+  "Q7": {"status": "unclear", "missing": "Ingestion behavior after crossing the threshold."},
+  "Q8": {"status": "unclear", "missing": "Filter capacity and failure result."}
+}

@@ -39,6 +39,20 @@ the exact branch it reaches and the result that would contradict the claim. “R
 is decisive; use a safe native probe when practical. Keep unsafe experiments and absent external
 systems as explicit verification limits. Do not repair business code to make an observed fact fit.
 
+For a claim about the final outcome of a selectable handler, default, or writer, start at the
+actual launch/operation entry for the claimed configuration. Write down each assignment or
+installation in execution order, which one remains effective, and the observable result after
+control returns or transfers. Look for a second owner, later override or indirect writer even if
+the first definition appears to explain the whole outcome. For an exclusivity claim, bound the
+resource/key space and reconcile the other actual writers. For recovery, trace the counters,
+threshold and action together. Document a reproducible failure as an observed defect if appropriate.
+
+Choose a stimulus under which the first plausible interpretation and the final effective path
+predict different outputs. Record the competing outcomes in the existing challenge and acceptance
+records. Use an available safe test/probe on the in-scope sample when practical. When neither
+the static path nor an observation establishes the result, leave the claim open. In the current
+Spec, give the reader the deciding condition/value and local effect needed for an assertion.
+
 ## Close the discovery gaps
 
 Before drafting the first batch, inspect executable entry points, callback/dispatch registrations,

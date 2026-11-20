@@ -1,0 +1,376 @@
+{
+  "set": "A",
+  "runtime": {
+    "implementation": "CPython",
+    "version": "3.13.5",
+    "executable": "/usr/bin/python3",
+    "source_root": "/usr/lib/python3.13",
+    "sha256": {
+      "logging/__init__.py": "dc42e5cf19a2dd03bd95ed3600803effa9c5f107927ab5f66cacf3eebcfd9a47",
+      "logging/handlers.py": "464980a72ce4c0ca1e6a6724a9760f5e101475a4e347329272ba6d2c4b39dffd"
+    }
+  },
+  "questions": [
+    {
+      "id": "A1",
+      "actual_observations": {
+        "predicate": [
+          false,
+          false
+        ],
+        "capacity": [
+          {
+            "buffer": [
+              "a",
+              "b"
+            ],
+            "delivered": []
+          },
+          {
+            "buffer": [],
+            "delivered": [
+              "a",
+              "b",
+              "c"
+            ]
+          }
+        ],
+        "severity": {
+          "buffer": [],
+          "delivered": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ]
+        }
+      },
+      "source_anchors": [
+        {
+          "location": "logging/handlers.py:1328-1330",
+          "rule": "BufferingHandler stores capacity and starts with an empty list."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Append the record, test shouldFlush, then invoke flush when true."
+        },
+        {
+          "location": "logging/handlers.py:1378-1396",
+          "rule": "MemoryHandler constructor defaults and stored configuration."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Current occupancy and supplied severity are inclusive disjunctive trigger conditions."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Check target truth, iterate stored records, call current target.handle, then clear in place."
+        }
+      ],
+      "field_rationale": {
+        "predicate": "The direct predicate sees the current occupancy (0, then 2) and uses the supplied record’s level; neither record reaches ERROR.",
+        "capacity": "emit appends first. The third low-severity record reaches capacity exactly. The target receives all three in arrival order and the buffer clears.",
+        "severity": "The default flush level is ERROR. The equal-level d starts and flushes a new batch."
+      }
+    },
+    {
+      "id": "A2",
+      "actual_observations": {
+        "waiting": [
+          "a",
+          "b"
+        ],
+        "switches": [
+          [
+            [
+              "a",
+              "b"
+            ],
+            []
+          ],
+          [
+            [
+              "a",
+              "b"
+            ],
+            [],
+            []
+          ]
+        ],
+        "final": [
+          [],
+          [],
+          [
+            "a",
+            "b"
+          ]
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Append the record, test shouldFlush, then invoke flush when true."
+        },
+        {
+          "location": "logging/handlers.py:1378-1396",
+          "rule": "MemoryHandler constructor defaults and stored configuration."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Current occupancy and supplied severity are inclusive disjunctive trigger conditions."
+        },
+        {
+          "location": "logging/handlers.py:1405-1410",
+          "rule": "setTarget assigns the reference while holding the lock."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Check target truth, iterate stored records, call current target.handle, then clear in place."
+        }
+      ],
+      "field_rationale": {
+        "waiting": "With no target, automatic and explicit flushes retain both records despite the capacity of one.",
+        "switches": "Both setter calls only replace the reference. Neither drains the waiting records.",
+        "final": "The explicit flush sends both records to the target current at delivery and clears the list."
+      }
+    },
+    {
+      "id": "A3",
+      "actual_observations": {
+        "filter_calls": [
+          "a",
+          "b"
+        ],
+        "returns": [
+          "x",
+          false,
+          null
+        ],
+        "delivery": {
+          "buffer": [],
+          "delivered": [
+            "x",
+            "c"
+          ]
+        }
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:865-874",
+          "rule": "Invoke filters in order; false vetoes, a LogRecord replaces the current record, and the final record is returned."
+        },
+        {
+          "location": "logging/__init__.py:982-986",
+          "rule": "setLevel stores the checked handler level."
+        },
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, possibly substitute, emit conditionally under the lock and return the filter result."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Append the record, test shouldFlush, then invoke flush when true."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Current occupancy and supplied severity are inclusive disjunctive trigger conditions."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Check target truth, iterate stored records, call current target.handle, then clear in place."
+        }
+      ],
+      "field_rationale": {
+        "filter_calls": "Inherited handle invokes the source filter for a and b. Direct emit(c) bypasses that filter.",
+        "returns": "The filter substitutes x on the first call and vetoes the second. The inherited handle returns its filter result. Direct BufferingHandler.emit has no explicit return.",
+        "delivery": "Both x and c meet the inclusive flush level. Direct handler dispatch performs no level gate on the source or target; inherited target handle emits the supplied records."
+      }
+    },
+    {
+      "id": "A4",
+      "actual_observations": {
+        "first_call": "ValueError",
+        "after_first": [
+          [
+            "a",
+            "b"
+          ],
+          {
+            "buffer": [
+              "a",
+              "b",
+              "c"
+            ],
+            "delivered": [
+              "a"
+            ]
+          }
+        ],
+        "after_second": [
+          "ok",
+          [
+            "a",
+            "b",
+            "a",
+            "b",
+            "c"
+          ],
+          {
+            "buffer": [],
+            "delivered": [
+              "a",
+              "a",
+              "b",
+              "c"
+            ]
+          }
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, possibly substitute, emit conditionally under the lock and return the filter result."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Append the record, test shouldFlush, then invoke flush when true."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Check target truth, iterate stored records, call current target.handle, then clear in place."
+        }
+      ],
+      "field_rationale": {
+        "first_call": "The uncaught exception from the second target emission leaves the first flush as ValueError.",
+        "after_first": "Iteration stops during b. The target has accepted a. Buffer clearing follows the entire loop, so all three records are still present.",
+        "after_second": "Retry starts at the first buffered record. The target’s once-only failure is now disarmed, the earlier a is delivered a second time, and successful completion clears the buffer."
+      }
+    },
+    {
+      "id": "A5",
+      "actual_observations": {
+        "at_close": [
+          "ok",
+          true,
+          {
+            "buffer": [
+              "a"
+            ],
+            "delivered": []
+          },
+          0,
+          0
+        ],
+        "after_handle": [
+          true,
+          [
+            "a",
+            "b"
+          ],
+          []
+        ],
+        "final": [
+          [],
+          [],
+          [
+            "a",
+            "b"
+          ]
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, possibly substitute, emit conditionally under the lock and return the filter result."
+        },
+        {
+          "location": "logging/__init__.py:1055-1058",
+          "rule": "Base close marks the handler closed and updates the name map."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Append the record, test shouldFlush, then invoke flush when true."
+        },
+        {
+          "location": "logging/handlers.py:1367-1370",
+          "rule": "BufferingHandler.close dispatches self.flush and calls Handler.close in finally."
+        },
+        {
+          "location": "logging/handlers.py:1405-1410",
+          "rule": "setTarget assigns the reference while holding the lock."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Check target truth, iterate stored records, call current target.handle, then clear in place."
+        },
+        {
+          "location": "logging/handlers.py:1431-1437",
+          "rule": "Optional initial flush; detach target and delegate close in finally."
+        }
+      ],
+      "field_rationale": {
+        "at_close": "With flushOnClose false, close skips its optional flush, detaches the target, and the parent calls the dynamically dispatched flush with no target. No sink flush or close occurs.",
+        "after_handle": "The inherited handle method has no closed guard. The accepted b is appended and its severity triggers a flush attempt with no target.",
+        "final": "The setter and flush methods also have no closed guard. Once attached, the second sink receives both retained records."
+      }
+    },
+    {
+      "id": "A6",
+      "actual_observations": {
+        "format_calls": 0,
+        "before_flush": {
+          "buffer": [
+            "a",
+            "b"
+          ],
+          "delivered": []
+        },
+        "after_flush": [
+          {
+            "buffer": [],
+            "delivered": [
+              "a",
+              "b"
+            ]
+          },
+          [
+            "revised",
+            "b"
+          ],
+          true
+        ]
+      },
+      "source_anchors": [
+        {
+          "location": "logging/__init__.py:988-999",
+          "rule": "Handler.format explicitly dispatches to the configured formatter."
+        },
+        {
+          "location": "logging/__init__.py:1022-1028",
+          "rule": "Filter, possibly substitute, emit conditionally under the lock and return the filter result."
+        },
+        {
+          "location": "logging/__init__.py:1030-1034",
+          "rule": "setFormatter assigns the handler formatter."
+        },
+        {
+          "location": "logging/handlers.py:1348-1350",
+          "rule": "Append the record, test shouldFlush, then invoke flush when true."
+        },
+        {
+          "location": "logging/handlers.py:1398-1403",
+          "rule": "Current occupancy and supplied severity are inclusive disjunctive trigger conditions."
+        },
+        {
+          "location": "logging/handlers.py:1420-1424",
+          "rule": "Check target truth, iterate stored records, call current target.handle, then clear in place."
+        }
+      ],
+      "field_rationale": {
+        "format_calls": "setFormatter stores the formatter. Neither MemoryHandler’s inherited emit nor its flush calls format; the fixture’s sink emit only appends.",
+        "before_flush": "The buffer stores record references. The second emission tests the current record b and the current length, without scanning the earlier entry for changed severity.",
+        "after_flush": "Flush forwards the stored objects in order. The recipient sees the revised message of the same a object, plus b’s message."
+      }
+    }
+  ]
+}

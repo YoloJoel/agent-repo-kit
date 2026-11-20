@@ -38,6 +38,21 @@ class SpecificationValidationTests(RepositoryCase):
         self.write(base + "/specs/math/spec.md", "## ADDED Requirements\n" + block.replace("**THEN**", "**RESULT**"))
         self.assertIn("scenario-conditions", {x["code"] for x in kit.change_findings(self.root, p, "scale", "specification")})
 
+    def test_source_locations_in_change_delta_and_current_spec_prose(self):
+        p, base, block = self.prepare()
+        delta = base + "/specs/math/spec.md"
+        self.write(delta, "## ADDED Requirements\n" + block + "| Evidence | [branch](../src/scale.cpp#L12-L18) |\n")
+        self.assertIn("spec-source-line-reference", {x["code"] for x in kit.change_findings(self.root, p, "scale", "specification")})
+        current = "openspec/specs/math/spec.md"
+        citations = ["Source: ../tests/test_app.py:13:7", "See `Makefile`:4.", "参考 src/scale.go 第 3 至 6 行。",
+                     "See scale.swift lines 12–14.", "[branch](https://host/project/blob/hash/src/app.ts#L21)",
+                     "Source: bin/worker#L41", "src/custom.abc:L27"]
+        stable = "Limit: 12. Port: 8080. See [contract](docs/baseline/scale.md#accepted-inputs).\n"
+        self.write(current, block + stable + "\n".join(citations[:-1]) + "\n~~~text\n" + citations[-1] + "\n~~~\n")
+        rows = [x for x in kit.specification_findings(self.root, p) if x["code"] == "spec-source-line-reference"]
+        lines = (self.root / current).read_text(encoding="utf-8").splitlines()
+        self.assertEqual([lines[x["line"] - 1] for x in rows], citations)
+
     def test_fenced_examples_do_not_declare_requirements(self):
         p, _, block = self.prepare()
         self.write("openspec/specs/math/spec.md", block + "\n" + chr(96) * 3 + "markdown\n" + block + chr(96) * 3 + "\n")

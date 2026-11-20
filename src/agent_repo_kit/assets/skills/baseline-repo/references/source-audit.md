@@ -42,8 +42,12 @@ check every first-pass issue, affected assertions, neighboring error/side-effect
 cross-module effects. Do not merely reread the edited prose or rerun the checker. Retain
 every first-pass ID as fixed/rejected/open with evidence-backed reasoning; add newly found
 issues. Execute applicable checks and distinguish them from static analysis. Two meaningful
-passes are the default; if new/recurrent issues cannot be closed, report PENDING and checkpoint
-rather than repeat indefinitely. Do not claim zero defects or whole-repository coverage.
+passes are the default. If a recheck discovers a correctable issue, persist it as open, make
+the correction, then append another `source-recheck` to the same batch report. Reopen the
+batch's declared sources and artifacts, trace the correction and neighboring cases, and carry
+every prior finding ID forward. A new finding always starts open. Repeat only while there
+is evidence-backed progress. If a recurring issue, missing evidence or a decision prevents
+closure, retain it as open and checkpoint the remaining work.
 
 Use an independent fresh reviewer if the environment supports one: provide raw source, task
 scope and artifacts without the author's diagnosis. Otherwise perform the separate reread in
@@ -74,7 +78,7 @@ Write a JSON attachment under the mapped Baseline scope (for example source-audi
 }
 ```
 
-Replace examples with real scope/observations. Both passes must include every selected source
+Replace examples with real scope/observations. Every pass must include every selected source
 and artifact. Include module explanations, contracts, cases, specs and relevant diagrams/decision
 records; do not audit a token subset and claim all artifacts reviewed. Use [] when no findings.
 Empty/binary inputs use path@sha256:<actual digest> and explicit limits. A new second-pass
@@ -100,6 +104,17 @@ Use artifact-quality.md for the acceptance criteria. Rebuild the capability map 
 from source directories/call paths and compare to current specs. Read each spec with Baseline
 hidden: can concrete inputs/assertions/error and side-effect checks be written from the spec
 alone? Open the source afterward to prove those details, not to excuse their omission from spec.
+For each disputed prediction, identify the clauses and supplied inputs that determine it.
+Check whether a different ordering, default or owner consistent with those clauses would
+change the observation. If so, record the missing premise even when the prediction matches
+execution. Distinguish assumptions made by an external test observer from rules owned by
+the capability. Apply this check across clauses when one actor hands work or state to another.
+If a supported component can itself be the receiving actor, evaluate the handoff condition
+for its ordinary instance and for a relevant override. When an observation spans configuration
+and use, check which of those calls actually produces the effect.
+When an admission check invokes caller-provided behavior, trace an exception from that check
+separately from an exception after delivery starts. Record what the caller sees and what
+state is available for a retry.
 Also review AGENTS as a project-specific entrance rather than a tool operation list. Include
 AGENTS, .ai/project-entry.json, applicable OpenSpec config, current Baseline README, the capability
 map and all claimed artifacts in audit scope. Discover contract files/references from disk, not

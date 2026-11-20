@@ -1,0 +1,146 @@
+[
+  {
+    "id": "C1",
+    "fields": {
+      "one": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/002/003 establish INFO 20 < front's WARNING 30 and count one below six. fern stays at front, so this observation does not involve a truth test on mid."
+      },
+      "two": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 fix WARNING equal to front's threshold and below mid's ERROR threshold. REQ-MEM-004 explicitly establishes that the ordinary middle MemoryHandler is truthy and admits and processes each incoming record under its own configuration. REQ-MEM-005 fixes the synchronous order and clearing at the sender. Both references therefore remain at mid and the fixture Tap has no calls."
+      },
+      "three": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 establish CRITICAL 50 at least both configured thresholds. REQ-MEM-004/005 expressly supply nested-handler truth and ordinary admission: front forwards oak, mid appends it to fern,elm and forwards its entire batch to the fixture's truthy Tap in order. Both buffers clear."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C2",
+    "fields": {
+      "predicates": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/003 specify all four level values, query against current empty occupancy, and no filter dispatch during the predicate. ERROR 40 and WARNING 30 meet INFO 20; DEBUG 10 does not."
+      },
+      "first": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/002/003 select xi as the returned and emitted replacement. Its DEBUG level is below INFO, so only xi remains pending."
+      },
+      "second": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-001/002/003 select psi; WARNING 30 meets INFO 20. REQ-MEM-005 then drains xi,psi in order to the expressly truthy Tap and clears."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C3",
+    "fields": {
+      "first_result": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-003 holds the three 10-level entries below 100. REQ-MEM-004/005 continue at Right after Left retargets on i, and REQ-MEM-006 propagates Right's shown ValueError on j."
+      },
+      "first_state": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-004/005/006 preserve the new target, the full batch and the callbacks' side effects. Only L/i and R/j were attempted; only Left stored i."
+      },
+      "retry": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-005/006 start anew on i with Right still installed. The callback has disarmed its j error. It receives i,j,k, clearing follows and the fixture histories retain both earlier attempts."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C4",
+    "fields": {
+      "first_close": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-005 expressly checks truth only on entry and delivers to the current installed target for each subsequent item. Lamp therefore receives moon after switching itself off on sun. REQ-MEM-007 detaches and leaves both target counters alone."
+      },
+      "intervening": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-003/004/007 permit post-close retarget and buffering of the low-level star. The explicit flush sees Lamp falsy on entry, so only star stays pending, the prior two receipts and zero counters persist, and the same Lamp remains attached."
+      },
+      "second_close": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "When relit, Lamp receives star on the optional attached flush and turns itself off. REQ-MEM-005/007 then clear the buffer and detach, without invoking either target cleanup method."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C5",
+    "fields": {
+      "returns": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002 returns the final accepted replacement for each call; describe and the name shared are supplied by the fixture."
+      },
+      "pending": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002/003 append the shared reference on each selection. Neither numeric threshold is reached, so both entries are the identical object and report the quoted name."
+      },
+      "seen": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-005 forwards the same actual reference twice and ignores the target's False returns. Both pre-mutation messages, the double-mutated final .msg and both identity Booleans follow directly from Edit.handle and the supplied fixture semantics."
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "C6",
+    "fields": {
+      "first_result": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002/003 accept n then p, and capacity two triggers on p. REQ-MEM-005/006 offer n then p and propagate Gate's one-time OSError."
+      },
+      "after_first": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-005/006 retain the batch and the first sink side effect. Gate attempted n and p, stored only n and is now disarmed."
+      },
+      "after_repeat": {
+        "accuracy": "F",
+        "support": "entailed",
+        "contract_support": "entailed",
+        "reason": "REQ-MEM-002/003 append a second copy of the p reference on the repeated call. REQ-MEM-005/006 replay n,p,p and clear after success, giving the two complete cumulative fixture histories."
+      }
+    },
+    "conflicts": []
+  }
+]

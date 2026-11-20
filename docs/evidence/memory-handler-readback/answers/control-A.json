@@ -1,0 +1,517 @@
+[
+  {
+    "id": "A1",
+    "fields": {
+      "predicate": {
+        "status": "full",
+        "value": [
+          false,
+          false
+        ],
+        "reqs": [
+          "REQ-MH-001",
+          "REQ-MH-003"
+        ],
+        "quotes": [
+          "The default `flushLevel` is 40.",
+          "It returns `True` when length is at least `capacity`. Otherwise it compares `record.levelno >= flushLevel`.",
+          "A direct predicate query changes no state and does not count its argument as a new entry."
+        ]
+      },
+      "capacity": {
+        "status": "full",
+        "value": [
+          {
+            "buffer": [
+              "a",
+              "b"
+            ],
+            "delivered": []
+          },
+          {
+            "buffer": [],
+            "delivered": [
+              "a",
+              "b",
+              "c"
+            ]
+          }
+        ],
+        "reqs": [
+          "REQ-MH-003",
+          "REQ-MH-004",
+          "REQ-MH-005"
+        ],
+        "quotes": [
+          "append the supplied object before calling `shouldFlush(record)` and call `flush()` once if the result is truthy",
+          "It returns `True` when length is at least `capacity`. Otherwise it compares `record.levelno >= flushLevel`.",
+          "it calls `target.handle(record)` synchronously in buffer order, starting at the first entry regardless of thresholds",
+          "After all calls return normally it empties the same buffer list in place and returns `None`.",
+          "its inherited `handle` reaches its unimplemented `emit`"
+        ]
+      },
+      "severity": {
+        "status": "full",
+        "value": {
+          "buffer": [],
+          "delivered": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ]
+        },
+        "reqs": [
+          "REQ-MH-001",
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "The default `flushLevel` is 40.",
+          "append the supplied object before calling `shouldFlush(record)` and call `flush()` once if the result is truthy",
+          "It returns `True` when length is at least `capacity`. Otherwise it compares `record.levelno >= flushLevel`.",
+          "it calls `target.handle(record)` synchronously in buffer order, starting at the first entry regardless of thresholds",
+          "After all calls return normally it empties the same buffer list in place and returns `None`."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A2",
+    "fields": {
+      "waiting": {
+        "status": "full",
+        "value": [
+          "a",
+          "b"
+        ],
+        "reqs": [
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "append the supplied object before calling `shouldFlush(record)` and call `flush()` once if the result is truthy",
+          "With `None` or another falsy target it returns `None` and preserves all entries."
+        ]
+      },
+      "switches": {
+        "status": "partial",
+        "known": {
+          "if_003_governs_both_setters": [
+            [
+              [],
+              [
+                "a",
+                "b"
+              ]
+            ],
+            [
+              [],
+              [
+                "a",
+                "b"
+              ],
+              []
+            ]
+          ],
+          "if_004_governs_both_setters": [
+            [
+              [
+                "a",
+                "b"
+              ],
+              []
+            ],
+            [
+              [
+                "a",
+                "b"
+              ],
+              [],
+              []
+            ]
+          ],
+          "if_first_defers_and_second_forwards": [
+            [
+              [
+                "a",
+                "b"
+              ],
+              []
+            ],
+            [
+              [],
+              [],
+              [
+                "a",
+                "b"
+              ]
+            ]
+          ]
+        },
+        "missing": "Which snapshots apply. For each setter reached with a backlog, the Spec simultaneously requires and forbids forwarding.",
+        "reqs": [
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "Whenever the handler has buffered entries and the caller sets a truthy target, it SHALL flush those entries to the selected target before returning from the setter.",
+          "`setTarget(target)` SHALL replace the target immediately and leave all pending records in place without forwarding.",
+          "it calls `target.handle(record)` synchronously in buffer order, starting at the first entry regardless of thresholds",
+          "After all calls return normally it empties the same buffer list in place and returns `None`."
+        ]
+      },
+      "final": {
+        "status": "partial",
+        "known": {
+          "possible_final_values": [
+            [
+              [],
+              [
+                "a",
+                "b"
+              ],
+              []
+            ],
+            [
+              [],
+              [],
+              [
+                "a",
+                "b"
+              ]
+            ]
+          ]
+        },
+        "missing": "Which sink gets the two records. Either reading yields an empty final buffer.",
+        "reqs": [
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "Whenever the handler has buffered entries and the caller sets a truthy target, it SHALL flush those entries to the selected target before returning from the setter.",
+          "`setTarget(target)` SHALL replace the target immediately and leave all pending records in place without forwarding.",
+          "it calls `target.handle(record)` synchronously in buffer order, starting at the first entry regardless of thresholds",
+          "After all calls return normally it empties the same buffer list in place and returns `None`."
+        ]
+      }
+    },
+    "conflicts": [
+      {
+        "event": "setTarget(first) with [a,b] pending must forward [a,b] before returning and must leave [a,b] pending without forwarding. If the first setter preserves [a,b], setTarget(second) encounters the same conflict.",
+        "reqs": [
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "Whenever the handler has buffered entries and the caller sets a truthy target, it SHALL flush those entries to the selected target before returning from the setter.",
+          "`setTarget(target)` SHALL replace the target immediately and leave all pending records in place without forwarding."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "A3",
+    "fields": {
+      "filter_calls": {
+        "status": "unspecified",
+        "known": "Each actual pick call appends the name of its argument, per the stimulus. The explicit emit(c) must append c.",
+        "missing": "The source filter invocation sequence, including whether the below-level handle calls reach pick. Only the target-side inherited handle filter rule is explicit. The emit rule requires no call to pick.",
+        "reqs": [
+          "REQ-MH-004",
+          "REQ-MH-001",
+          "REQ-MH-003"
+        ],
+        "quotes": [
+          "A target using the inherited `handle` applies its own filters.",
+          "The handler level and the severity that triggers a flush are separate settings.",
+          "append the supplied object before calling `shouldFlush(record)` and call `flush()` once if the result is truthy"
+        ]
+      },
+      "returns": {
+        "status": "partial",
+        "known": {
+          "index_2": null
+        },
+        "missing": "The return values and types of handle(a) and handle(b) with the source level CRITICAL and this filter, including whether a LogRecord filter result replaces a and the return on rejection.",
+        "reqs": [
+          "REQ-MH-003",
+          "REQ-MH-004",
+          "REQ-MH-001"
+        ],
+        "quotes": [
+          "A successful `emit` returns `None`.",
+          "A target using the inherited `handle` applies its own filters.",
+          "The handler level and the severity that triggers a flush are separate settings."
+        ]
+      },
+      "delivery": {
+        "status": "partial",
+        "known": {
+          "buffer": [],
+          "delivered": "The list ends with c. Direct ERROR emission triggers a flush. The target sink emits admitted records even with its level at CRITICAL."
+        },
+        "missing": "The prefix before c depends on unspecified source handle level checks, source filter invocation, veto and replacement.",
+        "reqs": [
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "append the supplied object before calling `shouldFlush(record)` and call `flush()` once if the result is truthy",
+          "It returns `True` when length is at least `capacity`. Otherwise it compares `record.levelno >= flushLevel`.",
+          "it calls `target.handle(record)` synchronously in buffer order, starting at the first entry regardless of thresholds",
+          "After all calls return normally it empties the same buffer list in place and returns `None`.",
+          "The memory handler neither tests the target handler's level nor calls its `emit`, `flush`, formatter or `close` directly.",
+          "Only B reaches its `emit`",
+          "A target using the inherited `handle` applies its own filters."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A4",
+    "fields": {
+      "first_call": {
+        "status": "full",
+        "value": "ValueError",
+        "reqs": [
+          "REQ-MH-004",
+          "REQ-MH-005"
+        ],
+        "quotes": [
+          "it calls `target.handle(record)` synchronously in buffer order, starting at the first entry regardless of thresholds",
+          "its inherited `handle` reaches its unimplemented `emit`",
+          "propagate the exception, stop that drain and skip the final clear"
+        ]
+      },
+      "after_first": {
+        "status": "full",
+        "value": [
+          [
+            "a",
+            "b"
+          ],
+          {
+            "buffer": [
+              "a",
+              "b",
+              "c"
+            ],
+            "delivered": [
+              "a"
+            ]
+          }
+        ],
+        "reqs": [
+          "REQ-MH-004",
+          "REQ-MH-005"
+        ],
+        "quotes": [
+          "it calls `target.handle(record)` synchronously in buffer order, starting at the first entry regardless of thresholds",
+          "propagate the exception, stop that drain and skip the final clear",
+          "the whole batch remains, including entries already offered",
+          "Earlier target side effects persist."
+        ]
+      },
+      "after_second": {
+        "status": "full",
+        "value": [
+          "ok",
+          [
+            "a",
+            "b",
+            "a",
+            "b",
+            "c"
+          ],
+          {
+            "buffer": [],
+            "delivered": [
+              "a",
+              "a",
+              "b",
+              "c"
+            ]
+          }
+        ],
+        "reqs": [
+          "REQ-MH-005",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "The next flush to a truthy target starts at the first retained entry",
+          "Earlier target side effects persist.",
+          "it calls `target.handle(record)` synchronously in buffer order, starting at the first entry regardless of thresholds",
+          "After all calls return normally it empties the same buffer list in place and returns `None`."
+        ]
+      }
+    },
+    "conflicts": []
+  },
+  {
+    "id": "A5",
+    "fields": {
+      "at_close": {
+        "status": "full",
+        "value": [
+          "ok",
+          true,
+          {
+            "buffer": [
+              "a"
+            ],
+            "delivered": []
+          },
+          0,
+          0
+        ],
+        "reqs": [
+          "REQ-MH-001",
+          "REQ-MH-003",
+          "REQ-MH-006"
+        ],
+        "quotes": [
+          "start at handler level `NOTSET` (0) with no filters, formatter or name",
+          "the caller invokes `handle(ERROR A)` with no filters",
+          "A remains in the buffer without a target call",
+          "append the supplied object before calling `shouldFlush(record)` and call `flush()` once if the result is truthy",
+          "It returns `True` when length is at least `capacity`. Otherwise it compares `record.levelno >= flushLevel`.",
+          "With falsy `flushOnClose` only the detached flush runs. The standard detached flush preserves the buffer.",
+          "It then sets `target` to `None` in cleanup",
+          "The supplied target receives neither `flush()` nor `close()` from this cleanup."
+        ]
+      },
+      "after_handle": {
+        "status": "partial",
+        "known": {
+          "index_1": [
+            "a",
+            "b"
+          ],
+          "index_2": []
+        },
+        "missing": "Whether the successful closed handle(b) returns the identical ERROR record. The examples give identity returns on INFO calls, including a threshold-triggering one, but no general success-return rule covers handle.",
+        "reqs": [
+          "REQ-MH-006",
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "The same admission and delivery rules still apply.",
+          "`handle(B)` returns B",
+          "calls return A and B respectively",
+          "append the supplied object before calling `shouldFlush(record)` and call `flush()` once if the result is truthy",
+          "It returns `True` when length is at least `capacity`. Otherwise it compares `record.levelno >= flushLevel`.",
+          "With `None` or another falsy target it returns `None` and preserves all entries."
+        ]
+      },
+      "final": {
+        "status": "full",
+        "value": [
+          [],
+          [],
+          [
+            "a",
+            "b"
+          ]
+        ],
+        "reqs": [
+          "REQ-MH-006",
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "With falsy `flushOnClose` only the detached flush runs. The standard detached flush preserves the buffer.",
+          "The same admission and delivery rules still apply.",
+          "Whenever the handler has buffered entries and the caller sets a truthy target, it SHALL flush those entries to the selected target before returning from the setter.",
+          "`setTarget(target)` SHALL replace the target immediately and leave all pending records in place without forwarding.",
+          "it calls `target.handle(record)` synchronously in buffer order, starting at the first entry regardless of thresholds",
+          "After all calls return normally it empties the same buffer list in place and returns `None`."
+        ]
+      }
+    },
+    "conflicts": [
+      {
+        "event": "setTarget(second) with [a,b] pending after close must both deliver it immediately and preserve it without forwarding. Both readings give the same final observations because an explicit flush immediately follows.",
+        "reqs": [
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "Whenever the handler has buffered entries and the caller sets a truthy target, it SHALL flush those entries to the selected target before returning from the setter.",
+          "`setTarget(target)` SHALL replace the target immediately and leave all pending records in place without forwarding."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "A6",
+    "fields": {
+      "format_calls": {
+        "status": "unspecified",
+        "known": "The target emit in the stimulus just appends its argument. The target formatter is not called directly by the memory handler.",
+        "missing": "The count of calls to f on the source. No clause says whether the assigned source formatter is invoked.",
+        "reqs": [
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "append the supplied object before calling `shouldFlush(record)` and call `flush()` once if the result is truthy",
+          "The memory handler neither tests the target handler's level nor calls its `emit`, `flush`, formatter or `close` directly."
+        ]
+      },
+      "before_flush": {
+        "status": "full",
+        "value": {
+          "buffer": [
+            "a",
+            "b"
+          ],
+          "delivered": []
+        },
+        "reqs": [
+          "REQ-MH-001",
+          "REQ-MH-003",
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "start at handler level `NOTSET` (0) with no filters, formatter or name",
+          "the caller invokes `handle(ERROR A)` with no filters",
+          "A remains in the buffer without a target call",
+          "append the supplied object before calling `shouldFlush(record)` and call `flush()` once if the result is truthy",
+          "It returns `True` when length is at least `capacity`. Otherwise it compares `record.levelno >= flushLevel`.",
+          "It passes the actual record objects, including repeated references"
+        ]
+      },
+      "after_flush": {
+        "status": "full",
+        "value": [
+          {
+            "buffer": [],
+            "delivered": [
+              "a",
+              "b"
+            ]
+          },
+          [
+            "revised",
+            "b"
+          ],
+          true
+        ],
+        "reqs": [
+          "REQ-MH-004"
+        ],
+        "quotes": [
+          "it calls `target.handle(record)` synchronously in buffer order, starting at the first entry regardless of thresholds",
+          "After all calls return normally it empties the same buffer list in place and returns `None`.",
+          "It passes the actual record objects, including repeated references",
+          "the target receives that same record twice, both times with `msg` equal to `'new'`"
+        ]
+      }
+    },
+    "conflicts": []
+  }
+]

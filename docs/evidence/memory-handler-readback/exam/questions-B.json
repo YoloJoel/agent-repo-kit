@@ -1,0 +1,68 @@
+{
+  "set": "B",
+  "runtime": "CPython 3.13.5. Each question starts fresh and uses only the shared fixture and its own stimulus. Runs are single-threaded. All observations occur before interpreter teardown.",
+  "instructions": "Predict the observations mapping for each question from the supplied specification. An output may be given in ordinary language if its fields and sequence are unambiguous. For a field the specification leaves unresolved, state the unresolved part and give any result it does determine.",
+  "shared_fixture_python": "import logging\nfrom logging.handlers import MemoryHandler\nDEBUG, INFO, WARNING, ERROR, CRITICAL = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL)\n\ndef rec(label, level):\n    return logging.LogRecord(label, level, \"example.py\", 1, label, (), None)\n\ndef labels(records):\n    return [r.name for r in records]\n\nclass Sink(logging.Handler):\n    def __init__(self):\n        super().__init__()\n        self.received = []\n        self.flushes = 0\n        self.closes = 0\n\n    def emit(self, r):\n        self.received.append(r)\n\n    def flush(self):\n        self.flushes += 1\n\n    def close(self):\n        self.closes += 1\n        super().close()\n\ndef snapshot(h, t):\n    return {\"buffer\": labels(h.buffer), \"delivered\": labels(t.received)}\n\ndef outcome(f):\n    try:\n        f()\n        return \"ok\"\n    except Exception as exc:\n        return type(exc).__name__",
+  "questions": [
+    {
+      "id": "B1",
+      "question": "For each configuration, what does the predicate return and which records are at the buffer and the sink at the marked points?",
+      "observation_fields": [
+        "empty_probe",
+        "capacity_zero",
+        "custom_level"
+      ],
+      "stimulus_python": "low, edge = rec(\"low\", DEBUG), rec(\"edge\", WARNING)\nt, u = Sink(), Sink()\nh = MemoryHandler(0, flushLevel=CRITICAL, target=t)\nk = MemoryHandler(5, flushLevel=WARNING, target=u)\nempty_probe = [h.shouldFlush(low), k.shouldFlush(low), k.shouldFlush(edge)]\nh.handle(low)\nfirst = snapshot(h, t)\nk.emit(low)\nsecond = snapshot(k, u)\nk.emit(edge)\nobservations = {\"empty_probe\": empty_probe, \"capacity_zero\": first, \"custom_level\": [second, snapshot(k, u)]}"
+    },
+    {
+      "id": "B2",
+      "question": "What does the conditional sink observe during each explicit flush and after the final handle call?",
+      "observation_fields": [
+        "disabled",
+        "enabled",
+        "final"
+      ],
+      "stimulus_python": "class Switch(Sink):\n    def __init__(self):\n        super().__init__()\n        self.enabled = False\n\n    def __bool__(self):\n        return self.enabled\nt = Switch()\nh = MemoryHandler(2, target=t)\na, b, c = rec(\"a\", CRITICAL), rec(\"b\", INFO), rec(\"c\", DEBUG)\nh.handle(a)\nh.flush()\ndisabled = [h.target is t, snapshot(h, t)]\nt.enabled = True\nh.flush()\nenabled = snapshot(h, t)\nh.setTarget(None)\nh.emit(b)\nh.setTarget(t)\nh.handle(c)\nobservations = {\"disabled\": disabled, \"enabled\": enabled, \"final\": snapshot(h, t)}"
+    },
+    {
+      "id": "B3",
+      "question": "Which records enter each target filter, what does the source return, and which records remain or reach the sink?",
+      "observation_fields": [
+        "target_filters",
+        "source_returns",
+        "final"
+      ],
+      "stimulus_python": "t = Sink()\nt.setLevel(CRITICAL)\nh = MemoryHandler(2, target=t)\na, b, x = rec(\"a\", DEBUG), rec(\"b\", INFO), rec(\"x\", INFO)\nf1, f2 = [], []\ndef replace(r):\n    f1.append(r.name)\n    return x if r is a else True\ndef select(r):\n    f2.append(r.name)\n    return r is not b\nt.addFilter(replace)\nt.addFilter(select)\nra = h.handle(a)\nrb = h.handle(b)\nobservations = {\"target_filters\": [f1, f2], \"source_returns\": [ra is a, rb is b], \"final\": snapshot(h, t)}"
+    },
+    {
+      "id": "B4",
+      "question": "What does close report and leave at the old sink, what state can the caller inspect immediately after close, and what happens with the fresh sink?",
+      "observation_fields": [
+        "close_and_old_sink",
+        "after_close",
+        "recovery"
+      ],
+      "stimulus_python": "class Broken(Sink):\n    def emit(self, r):\n        if r.name == \"b\":\n            raise RuntimeError(\"stop\")\n        super().emit(r)\nold, fresh = Broken(), Sink()\nh = MemoryHandler(8, target=old)\nh.emit(rec(\"a\", INFO))\nh.emit(rec(\"b\", DEBUG))\nclosed = outcome(h.close)\nfirst = [closed, labels(old.received), old.flushes, old.closes]\nsecond = [h.target is None, labels(h.buffer)]\nh.setTarget(fresh)\nres = outcome(h.flush)\nobservations = {\"close_and_old_sink\": first, \"after_close\": second, \"recovery\": [res, labels(h.buffer), labels(fresh.received)]}"
+    },
+    {
+      "id": "B5",
+      "question": "Which records are visible before flush, which calls reach the two sinks and in what order, and what state is visible when flush returns?",
+      "observation_fields": [
+        "before",
+        "events",
+        "after"
+      ],
+      "stimulus_python": "events = []\nclass Second(Sink):\n    def emit(self, r):\n        events.append([\"second\", r.name])\n        super().emit(r)\nclass First(Sink):\n    def emit(self, r):\n        events.append([\"first\", r.name])\n        super().emit(r)\n        if r.name == \"a\":\n            h.setTarget(second)\nfirst, second = First(), Second()\nh = MemoryHandler(8, target=first)\nfor name in (\"a\", \"b\", \"c\"):\n    h.emit(rec(name, INFO))\nbefore = [labels(h.buffer), list(events)]\nres = outcome(h.flush)\nobservations = {\"before\": before, \"events\": events, \"after\": [res, h.target is second, labels(h.buffer), labels(first.received), labels(second.received)]}"
+    },
+    {
+      "id": "B6",
+      "question": "What happens before the observer resumes after the second handle call, and what does the subsequent emit call leave?",
+      "observation_fields": [
+        "second_call",
+        "after_handle",
+        "after_emit"
+      ],
+      "stimulus_python": "t = Sink()\nh = MemoryHandler(3, target=t)\na, b = rec(\"a\", INFO), rec(\"b\", ERROR)\nseen = []\ndef inspect(r):\n    seen.append(r.name)\n    if r is b:\n        raise LookupError(\"stop\")\n    return True\nh.addFilter(inspect)\nh.handle(a)\nsecond_call = outcome(lambda: h.handle(b))\nafter_handle = [list(seen), snapshot(h, t)]\nlast_call = outcome(lambda: h.emit(b))\nobservations = {\"second_call\": second_call, \"after_handle\": after_handle, \"after_emit\": [last_call, seen, snapshot(h, t)]}"
+    }
+  ]
+}
