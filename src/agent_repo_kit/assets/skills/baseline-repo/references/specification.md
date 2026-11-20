@@ -63,6 +63,9 @@ Use the registered Baseline contract as the stable provenance link. State the in
    For each high-impact alternative, try to write one discriminating case from the Spec alone.
    For example, “uses the configured limit” leaves acceptance at equality undecided. Specify the
    observable result at equality and just across it when the effective path establishes both.
+   If callers supply named values, trace their effective definitions as well as the comparison.
+   State the ordering, mapping or unit a reader needs to decide the outcome. Include only
+   distinctions that affect the contract. Preserve an unknown when the owning source is unavailable.
    Put the rule in this Spec. Keep source anchors and branch analysis in the evidence record.
    Follow the acceptance_cases comparison in behavior-model.md before completing this batch.
 6. Register contract/case evidence, then `baseline promote --document <contract> --requirements <IDs> --decision <preservation-record> --reviewer <actual identity>`.

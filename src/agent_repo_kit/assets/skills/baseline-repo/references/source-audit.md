@@ -104,6 +104,11 @@ Use artifact-quality.md for the acceptance criteria. Rebuild the capability map 
 from source directories/call paths and compare to current specs. Read each spec with Baseline
 hidden: can concrete inputs/assertions/error and side-effect checks be written from the spec
 alone? Open the source afterward to prove those details, not to excuse their omission from spec.
+For each disputed prediction, identify the clauses and supplied inputs that determine it.
+Check whether a different ordering, default or owner consistent with those clauses would
+change the observation. If so, record the missing premise even when the prediction matches
+execution. Distinguish assumptions made by an external test observer from rules owned by
+the capability. Apply this check across clauses when one actor hands work or state to another.
 Also review AGENTS as a project-specific entrance rather than a tool operation list. Include
 AGENTS, .ai/project-entry.json, applicable OpenSpec config, current Baseline README, the capability
 map and all claimed artifacts in audit scope. Discover contract files/references from disk, not
