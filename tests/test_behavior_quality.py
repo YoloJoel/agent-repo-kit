@@ -56,6 +56,95 @@ class BehaviorQualityTests(RepositoryCase):
     def codes(self, result):
         return {x['code'] for x in result['findings']}
 
+    def source_sample(self, cases):
+        return {'id': 'send', 'kind': 'business', 'purpose': 'Send a value and observe delivery status.',
+                'sources': ['app.py', 'transport.py'], 'status': 'specified', 'requirements': ['REQ-SEND-001'],
+                'source_cases': cases}
+
+    def record_sample(self, p, capability):
+        name = 'docs/baseline/capabilities.json'
+        self.write(name, kit.dump({'capabilities': [capability]}))
+        return kit.coverage_record(self.root, p, name, 'source reader')
+
+    def test_source_sample_exposes_unanswered_input_in_already_mapped_capability(self):
+        p, data = self.prepare()
+        cases = [{'id': 'offline', 'stimulus': 'send("offline")', 'path': 'transport.py',
+                  'reference': 'transport.py:L2', 'source_outcome': False},
+                 {'id': 'success', 'stimulus': 'send("ok")', 'path': 'transport.py',
+                  'reference': 'transport.py:L2', 'source_outcome': True}]
+        observation = subprocess.run([sys.executable, '-c', 'import json; from app import send; print(json.dumps([send("offline"), send("ok")]))'],
+                                     cwd=self.root, capture_output=True, text=True, check=True)
+        self.assertEqual(json.loads(observation.stdout), [case['source_outcome'] for case in cases])
+        self.record_sample(p, self.source_sample(cases))
+        self.assertEqual(self.record(p, data)['status'], 'PASS')
+        result = kit.onboarding_status(self.root, p)
+        self.assertIn('source-case-unanswered', self.codes(result))
+        self.assertEqual((result['source_cases']['registered'], result['source_cases']['answered']), (2, 1))
+        unit = data['units'][0]
+        spec = self.root / unit['spec_path']
+        spec.write_text(spec.read_text() + '#### Scenario: Success\n- WHEN a supplied value is published successfully\n'
+                        '- THEN return true\n', encoding='utf-8')
+        unit['acceptance_cases'].append({**unit['acceptance_cases'][0], 'stimulus': 'send("ok")',
+                                         'spec_quote': '- THEN return true', 'expected': True, 'source_outcome': True})
+        self.record(p, data)
+        self.assertEqual(kit.onboarding_status(self.root, p)['source_cases']['status'], 'PASS')
+        # The two fields of a reader's comparison can agree with each other and still be wrong.
+        unit['acceptance_cases'][1].update(expected=1, source_outcome=1)
+        self.record(p, data)
+        result = kit.onboarding_status(self.root, p)
+        self.assertIn('source-case-contradicted', self.codes(result))
+        self.assertEqual(result['source_cases']['answered'], 1)
+        self.assertEqual(result['source_cases']['status'], 'FAIL')
+
+    def test_source_sample_survives_replacement_and_legacy_maps_expose_missing_sample(self):
+        p, data = self.prepare()
+        capability = self.source_sample([])
+        del capability['source_cases']
+        self.record_sample(p, capability)
+        self.record(p, data)
+        result = kit.onboarding_status(self.root, p)
+        self.assertIn('source-case-sample-missing', self.codes(result))
+        case = {'id': 'offline', 'stimulus': 'send("offline")', 'path': 'transport.py',
+                'reference': 'transport.py:L20', 'source_outcome': False}
+        with self.assertRaisesRegex(kit.KitError, 'source case'):
+            self.record_sample(p, self.source_sample([case]))
+        case['reference'] = 'transport.py:L2'
+        self.record_sample(p, self.source_sample([case]))
+        for cases in ([], [{**case, 'stimulus': 'send("ok")'}], [{**case, 'source_outcome': 0}]):
+            with self.subTest(cases=cases), self.assertRaisesRegex(kit.KitError, 'offline'):
+                self.record_sample(p, self.source_sample(cases))
+        changed = self.source_sample([])
+        changed['source_case_dispositions'] = {'offline': 'Superseded after source review. No replacement sample recorded yet.'}
+        self.record_sample(p, changed)
+        self.assertIn('source-case-sample-missing', self.codes(kit.onboarding_status(self.root, p)))
+
+    def test_source_case_needs_current_scoped_grounded_answer(self):
+        p, data = self.prepare()
+        case = {'id': 'offline', 'stimulus': 'send("offline")', 'path': 'transport.py',
+                'reference': 'transport.py:L2', 'source_outcome': False}
+        capability = self.source_sample([case])
+        self.record_sample(p, capability)
+        self.record(p, data)
+        for changes in ({'status': 'spec-ambiguous'}, {'spec_quote': 'Result described in the baseline.'},
+                        {'source_reference': 'app.py:L1'}, {'stimulus': 'send("other")'}):
+            with self.subTest(changes=changes):
+                edited = copy.deepcopy(data)
+                edited['units'][0]['acceptance_cases'][0].update(changes)
+                self.record(p, edited)
+                report = kit.onboarding_status(self.root, p)['source_cases']
+                self.assertEqual((report['status'], report['answered']), ('PENDING', 0))
+        self.record(p, data)
+        self.record_sample(p, {**capability, 'requirements': ['REQ-OTHER-001']})
+        self.assertEqual(kit.onboarding_status(self.root, p)['source_cases']['answered'], 0)
+        self.record_sample(p, capability)
+        spec = self.root / data['units'][0]['spec_path']
+        spec.write_text(spec.read_text() + '\nRevised context.\n', encoding='utf-8')
+        self.assertEqual(kit.onboarding_status(self.root, p)['source_cases']['answered'], 0)
+        self.write('transport.py', 'def publish(value):\n    return True\n')
+        stale = kit.onboarding_status(self.root, p)['source_cases']
+        self.assertIsNone(stale['registered'])
+        self.assertEqual(stale['status'], 'PENDING')
+
     def test_valid_branch_assertion_review_is_not_execution(self):
         p, data = self.prepare()
         result = self.record(p, data)

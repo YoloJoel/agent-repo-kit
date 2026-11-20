@@ -563,3 +563,10 @@ discovered capability that disappears or changes from business to supporting.
 - WHEN its clause/scenario mapping is reviewed
 - THEN that promise retains a verification gap
 - AND execution counts remain separate from assertion and source-review coverage
+
+#### Scenario: A mapped business capability has an unanswered source-derived question
+- GIVEN an existing repository has two recorded source-derived inputs for the same capability
+- WHEN a current requirement has a grounded readback for only one input
+- THEN onboarding SHALL report one answered out of two and retain the other question as pending
+- AND a comparison that disagrees with the recorded source outcome SHALL fail
+- AND retiring a question or revising its stimulus or outcome SHALL require a disposition

@@ -1031,11 +1031,32 @@ def capability_sources(root, p):
             and not any(under(name, prefix) for prefix in p["test_paths"])}
 
 
+def validate_source_cases(root, item, production_sources):
+    cases = item.get("source_cases", [])
+    if not isinstance(cases, list):
+        raise KitError("Capability source cases must be a list")
+    if not isinstance(item.get("source_case_dispositions", {}), dict):
+        raise KitError("source_case_dispositions must map case IDs to reasons")
+    ids, stimuli = set(), set()
+    for case in cases:
+        if not isinstance(case, dict) or not all(isinstance(case.get(k), str) and case[k].strip()
+                                                for k in ("id", "stimulus", "path", "reference")) or "source_outcome" not in case:
+            raise KitError("Each source case needs an ID, concrete stimulus, source anchor and typed outcome")
+        if case["id"] in ids or case["stimulus"] in stimuli:
+            raise KitError("Each source case within a capability needs a distinct ID and stimulus")
+        ids.add(case["id"])
+        stimuli.add(case["stimulus"])
+        if case["path"] not in production_sources or case["path"] not in item["sources"] or not source_reference_valid(
+                case["reference"], case["path"], safe(root, case["path"]).read_bytes()):
+            raise KitError(f"Invalid capability source case anchor: {case['id']}")
+
+
 def coverage_record(root, p, document, reviewer):
     data = read_json(safe(root, document))
     if not reviewer.strip() or not isinstance(data, dict) or not isinstance(data.get("capabilities"), list) or not data["capabilities"]:
         raise KitError("Map actual business/supporting capabilities with a reviewer before recording coverage")
     identities = set()
+    inputs = capability_sources(root, p)
     for item in data["capabilities"]:
         if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"].strip() or item["id"] in identities:
             raise KitError("Capability map needs unique stable IDs")
@@ -1051,6 +1072,7 @@ def coverage_record(root, p, document, reviewer):
             raise KitError("Exclusions need a concrete scope/supporting/generated/vendor rationale")
         if not isinstance(item.get("requirements", []), list) or any(not isinstance(identity, str) for identity in item.get("requirements", [])):
             raise KitError("Requirements must be actual declared IDs/titles")
+        validate_source_cases(root, item, inputs)
     ledger = ".ai/capability-coverage-review.json"
     previous = read_json(safe(root, ledger), {})
     if previous:
@@ -1062,16 +1084,25 @@ def coverage_record(root, p, document, reviewer):
             prior_file = safe(root, previous["document"])
             if not prior_file.is_file() or digest(prior_file.read_bytes()) != previous["sha256"]:
                 raise KitError("Previous capability snapshot unavailable; restore the recorded map before replacing its scope")
-        kinds = {item["id"]: item["kind"] for item in data["capabilities"]}
+        by_id = {item["id"]: item for item in data["capabilities"]}
         dispositions = data.get("capability_dispositions", {})
         if not isinstance(dispositions, dict):
             raise KitError("capability_dispositions must map prior capability IDs to their review reasons")
         for prior in read_json(prior_file)["capabilities"]:
             key = prior["id"]
-            if key not in kinds or (prior["kind"] == "business" and kinds[key] == "supporting"):
+            current = by_id.get(key)
+            if current is None or (prior["kind"] == "business" and current["kind"] == "supporting"):
                 if not isinstance(dispositions.get(key), str) or not dispositions[key].strip():
                     raise KitError(f"Capability {key} was removed or reclassified; retain it as pending or record its disposition")
-    inputs = capability_sources(root, p)
+                continue
+            cases = {case["id"]: case for case in current.get("source_cases", [])}
+            reasons = current.get("source_case_dispositions", {})
+            for old in prior.get("source_cases", []):
+                case = cases.get(old["id"])
+                if case is None or case["stimulus"] != old["stimulus"] or dump(case["source_outcome"]) != dump(old["source_outcome"]):
+                    reason = reasons.get(old["id"])
+                    if not isinstance(reason, str) or not reason.strip() or reason == prior.get("source_case_dispositions", {}).get(old["id"]):
+                        raise KitError(f"Record why source case {key}/{old['id']} was retired or its input/outcome changed")
     record = {"document": document, "sha256": digest(safe(root, document).read_bytes()), "sources": inputs,
               "reviewer": reviewer, "recorded_at": now(), "level": "agent-declared-capability-map"}
     snapshot = evidence_root(p) + "/capabilities/" + digest(dump(record).encode())
@@ -1819,9 +1850,66 @@ def baseline_index_findings(root, p):
     return []
 
 
+def source_case_status(root, p, map_record, coverage, behaviors):
+    """Reconcile declared source-side questions with independently recorded Spec readbacks."""
+    findings = []
+    if not map_record or any(f["code"] == "capability-map-stale" for f in coverage["findings"]):
+        return {"status": "PENDING", "registered": None, "answered": None, "findings": [
+            {"status": "PENDING", "code": "source-case-map-unavailable", "message": "Record a current source capability map to establish the question set."}]}
+    capabilities = read_json(safe(root, map_record["document"]))["capabilities"]
+    answers = {}
+    unavailable = {"behavior-inventory-missing", "behavior-evidence-invalid", "behavior-evidence-stale"}
+    if not any(f["code"] in unavailable for f in behaviors["findings"]):
+        _, inventory = behavior_data(root, p)
+        bodies = {(record["id"], path.relative_to(root).as_posix()): record["body"]
+                  for path in safe(root, p["paths"]["specs"]).rglob("*.md")
+                  for record in spec_records(path.read_text(encoding="utf-8"), path.parent.name)}
+        for unit in inventory["units"]:
+            requirement = unit.get("requirement")
+            body = bodies.get((requirement, unit.get("spec_path")))
+            if not body or unit["disposition"] != "current" or unit["confidence"] != "verified":
+                continue
+            cases = unit.get("acceptance_cases")
+            if not isinstance(cases, list):
+                continue
+            for case in cases:
+                if not isinstance(case, dict) or not isinstance(case.get("stimulus"), str):
+                    continue
+                valid = not any(acceptance_readback_findings({**unit, "acceptance_cases": [case]}, body))
+                answers.setdefault((requirement, case["stimulus"]), []).append((case, valid))
+    registered = answered = 0
+    for capability in capabilities:
+        if capability["kind"] != "business":
+            continue
+        cases = capability.get("source_cases", [])
+        if not cases:
+            findings.append({"status": "PENDING", "code": "source-case-sample-missing", "capability": capability["id"],
+                             "message": "Capture representative observable inputs and outcomes from source for this business capability."})
+        for case in cases:
+            registered += 1
+            matches = [answer for req in capability.get("requirements", []) for answer in answers.get((req, case["stimulus"]), [])]
+            compared = [answer for answer, _ in matches if answer.get("status") == "compared"]
+            outcome = dump(case["source_outcome"])
+            wrong = any(dump(answer[field]) != outcome for answer in compared
+                        for field in ("expected", "source_outcome") if field in answer)
+            if matches and all(valid for _, valid in matches) and not wrong:
+                answered += 1
+                continue
+            findings.append({"status": "FAIL" if wrong else "PENDING",
+                             "code": "source-case-contradicted" if wrong else "source-case-unanswered",
+                             "capability": capability["id"], "case": case["id"],
+                             "message": "Compare this exact input using current authoritative Spec wording and the recorded source outcome."})
+    return {"status": overall(findings, []) if registered or findings else "NOT_APPLICABLE",
+            "registered": registered, "answered": answered, "findings": findings,
+            "meaning": "Declared static answers for the recorded source sample. Sampling independence, exhaustiveness and runtime behavior require separate evidence."}
+
+
 def onboarding_inputs(root, p):
     paths = {POLICY, MANIFEST, "AGENTS.md", ".ai/project-entry.json", ".ai/project-entry-review.json", ".ai/capability-coverage-review.json", ".ai/openspec-review.json", "openspec/config.yaml", p["paths"]["baseline"] + "/README.md", p["paths"]["baseline"] + "/knowledge.json", p["paths"]["baseline"] + "/audits.json"}
     paths.update(capability_sources(root, p))
+    coverage_recorded = read_json(safe(root, ".ai/capability-coverage-review.json"), {})
+    if coverage_recorded:
+        paths.add(coverage_recorded["document"])
     behavior_review, _ = behavior_data(root, p)
     paths.add(".ai/behavior-review.json")
     paths.update(behavior_review.get("inputs", {}))
@@ -1887,6 +1975,7 @@ def onboarding_status(root, p, record=False):
             if item.get("decision"):
                 expected.add(item["decision"])
     coverage_recorded = read_json(safe(root, ".ai/capability-coverage-review.json"), {})
+    source_cases = source_case_status(root, p, coverage_recorded, coverage, behaviors)
     if coverage_recorded:
         expected.add(coverage_recorded["document"])
     behavior_review, _ = behavior_data(root, p)
@@ -1909,7 +1998,8 @@ def onboarding_status(root, p, record=False):
         findings.append({"status": "PENDING", "code": "onboarding-quality-unreviewed", "topics": sorted(required_topics - topics), "message": "Explicitly review project-specific entry, major capability omissions and whether specs are independently usable without Baseline."})
     verification = current_test_findings(root, p)
     overall_findings = entry["findings"] + configuration + baseline_orphan_findings(root, p) + baseline_index_findings(root, p) + structure_findings(root, p) + coverage["findings"] + behaviors["findings"] + specs["findings"] + audits["findings"] + findings + verification
-    result = {"status": overall(overall_findings, []), "completion": "COMPLETE_DECLARED" if not overall_findings else "PARTIAL",
+    overall_findings.extend(source_cases["findings"])
+    result = {"status": overall(overall_findings, []), "completion": "COMPLETE_DECLARED" if not overall_findings else "PARTIAL", "source_cases": source_cases,
             "entry_status": entry["status"], "configuration_status": overall(configuration, []), "coverage": coverage, "behavior_review": behaviors, "specification_status": specs["specification_status"],
             "audit_status": audits["status"], "verification_mapping_status": overall(verification, []), "findings": overall_findings,
             "execution": "Not assessed by this quality declaration; cite actual build/test/external runs separately. Compilation is not business testing.",

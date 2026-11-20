@@ -30,6 +30,9 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
    this first map even when it reports PENDING. Walk the runnable entry points and registrations,
    and separately work backwards from outputs, writers, build selections and background effects.
    Reconcile the two lists within the user's scope. Many responsibilities can share one source file.
+   Before selecting clauses, record representative source_cases on the business rows. Vary a single
+   decisive condition and trace both observable results, including caller-visible failures or side
+   effects. Inspect registered operations even when the normal path never invokes them.
    Return to this recorded map after each batch;
    uninspected capabilities remain pending. Inspect actual contract files and current-spec
    references independently of the registry; source-review/register all in-scope contracts,
@@ -62,6 +65,9 @@ Do not upgrade inferred behavior into SHALL/MUST or omit cross-module flows.
    Before promotion, read the candidate Spec alone and write a concrete input and predicted
    outcome for each current behavior unit. Compare the prediction against the reachable source
    for that same stimulus. Follow the acceptance_cases protocol in references/behavior-model.md.
+   Also give the reader the recorded source-case stimuli and the current Specs. Withhold source
+   answers and Baseline evidence until the reader commits the predictions. Record an ambiguous
+   answer for a missing deciding condition. Check onboarding-status for unanswered source cases.
    Fix unsupported new wording or retain a gap. Include relevant infrastructure in the scope.
    Document routine preservation reasoning as the actual Agent analysis, not invented owner approval.
    Promote selected promises only after that compatibility record and current Spec exist: `ark baseline promote --document <path> --requirements <IDs> --decision <artifact>
