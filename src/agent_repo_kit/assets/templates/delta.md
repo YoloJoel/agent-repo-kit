@@ -12,4 +12,4 @@ Verification: automated
 - WHEN the operation occurs
 - THEN the promised result is observable
 
-Use native OpenSpec ADDED/MODIFIED/REMOVED/RENAMED conventions as appropriate.
+Use native OpenSpec ADDED/MODIFIED/REMOVED/RENAMED conventions as appropriate. Keep implementation/test line locations in supporting evidence so a synchronized Spec retains only the behavior and stable links.

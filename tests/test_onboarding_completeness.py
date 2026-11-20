@@ -26,7 +26,7 @@ class OnboardingCompletenessTests(RepositoryCase):
         return path
 
     def spec(self, contract, identity='REQ-LOOKUP-001', capability='lookup'):
-        return self.write(f'openspec/specs/{capability}/spec.md', f'# {capability}\n## Purpose\nThe {capability} contract.\n## Requirements\n### Requirement: {identity} Lookup\nVerification: automated\nBaseline: {contract}\nSource: app.py:L1-L2\nThe system SHALL return a stored value and raise KeyError for a missing key without mutation.\n#### Scenario: Stored key\n- WHEN a stored key is queried\n- THEN its value is returned\n')
+        return self.write(f'openspec/specs/{capability}/spec.md', f'# {capability}\n## Purpose\nThe {capability} contract.\n## Requirements\n### Requirement: {identity} Lookup\nVerification: automated\nBaseline: {contract}\nThe system SHALL return a stored value and raise KeyError for a missing key without mutation.\n#### Scenario: Stored key\n- WHEN a stored key is queried\n- THEN its value is returned\n')
 
     def test_initializer_generates_content_but_does_not_claim_review_or_cli_execution(self):
         p = self.prepare()

@@ -295,8 +295,14 @@ An explicit analysis-only scope SHALL be honored and reported as excluding speci
 
 #### Scenario: Ungoverned existing repository
 - WHEN baseline-repo is invoked without extra parameters
-- THEN it writes/reuses meaningful current specs and scenarios with Baseline/Source links
+- THEN it writes/reuses meaningful current specs and scenarios with stable Baseline contract links
 - AND does not require native OpenSpec CLI initialization for authoring files
+
+#### Scenario: Preserve implementation evidence when revising a specification
+- WHEN drafting or revising a current Spec or change delta
+- THEN the promise retains its preconditions, observable results and stable contract links
+- AND exact implementation/test line citations belong in supporting evidence
+- AND a direct code line citation in Spec prose produces a file-and-line validation finding
 
 #### Scenario: Missing specification or verification
 - WHEN reviewed contracts lack current requirements or links

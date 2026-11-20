@@ -46,8 +46,8 @@ to continue normal work. Never say full onboarding is done after a small partial
 ## 2. Specs stand on their own
 
 Baseline explains observed code, provenance, internals, defects and gaps. Spec is the current
-observable promise. A Baseline/Source line cites evidence; it does not replace requirement text.
-Do not remove useful references, but do not reduce a spec to a directory of links either.
+observable promise. Use a stable Baseline contract link for provenance. Store exact source and test line locations
+in Baseline or audit evidence, keyed to the applicable requirement. Keep the deciding rule in the Spec.
 
 Give each capability its own Purpose explaining that capability's actual observable responsibility;
 do not paste the same generic source-snapshot/scope paragraph into all specs.
@@ -72,7 +72,7 @@ needs a spec. Depth follows actual observable complexity.
 
 Examples: “SHALL follow Baseline contract” is insufficient. A sufficient promise states which
 input is accepted/rejected, which output/error/state follows, and includes concrete scenarios.
-Keep source references alongside that content. Cross-spec reuse is valid only when the owning
+Keep stable contract links alongside that content. Cross-spec reuse is valid only when the owning
 requirement already exists at a current, precise reference. Use Depends-On: <actual REQ IDs> for
 essential delegated contract ownership. An uncreated future capability or an external Baseline
 payload definition cannot stand in for current normative payload/error/confirmation semantics.
