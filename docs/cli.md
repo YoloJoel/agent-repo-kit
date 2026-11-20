@@ -283,6 +283,14 @@ with responsibility, explicit scope status and current requirement identities. E
 reasons; business scope left uninspected stays partial. coverage-status also checks source
 review currency. Mapping and counts are declarations, never semantic coverage certification.
 
+For existing repositories, register representative source-derived inputs and outcomes as
+`capabilities[].source_cases` in the map before drafting. See the baseline-repo artifact-quality
+reference for the format. `ark onboarding-status` reports registered and answered questions
+under `source_cases`, matching the exact stimulus in each capability's current requirements.
+A legacy business row without a sample or an input with no grounded answer stays pending.
+A declared comparison inconsistent with the recorded source answer fails. Updated source or Spec
+inputs require a fresh review. New-repository initialization has no historical sampling obligation.
+
 Specs must state substantive observable contracts with concrete scenarios, provenance and
 existing current owners for essential delegated rules. A narrow pointer-only statement guard
 and explicit Depends-On checks catch deterministic mistakes; budget/payload/error completeness

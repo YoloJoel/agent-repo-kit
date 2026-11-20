@@ -31,6 +31,23 @@ build-selected components back to their owners. Record anything found by just on
 file can implement several capabilities. For a scoped review keep other existing rows intact and
 report the requested slice and remaining repository coverage separately.
 
+Include a `source_cases` array on each business capability. A case in a read service might be
+`{"id":"missing-key","stimulus":"read absent key k from an empty store","path":"store.py","reference":"store.py:L7-L9","source_outcome":{"error":"missing","writes":0}}`.
+Use real evidence and JSON values. Include the actor, starting state and precise input in each
+stimulus. Sample reachable outcomes that would change an implementer's decision. Look for
+boundaries, alternative callers and operations with side effects as well as successful requests.
+When the source cannot establish an external outcome, phrase the case around the observable
+local action and keep the external uncertainty in Baseline. Keep case IDs and line evidence here.
+
+Give a fresh reader only the stimuli and the current Specs where possible. Have them identify the
+authoritative requirement, predict the result, quote its outcome and flag anything underdetermined.
+If separate contexts are unavailable, record the same-agent limitation. Compare against the recorded
+source answers afterwards. Reuse each original stimulus verbatim in the linked unit's
+`acceptance_cases`. A procedure or link in Baseline cannot supply a missing Spec outcome.
+Use `onboarding-status.source_cases` to see how many recorded questions received a grounded comparison.
+When retiring a case or correcting its input/outcome, add a fresh reason to
+`source_case_dispositions` keyed by the case ID on that capability. Keep unfinished questions.
+
 Reread this recorded list after each batch and fill its pending rows. For a genuine retirement,
 merge or reclassification, set `capability_dispositions.<previous ID>` on the same map to the
 specific reason, surviving ID/evidence as applicable. A batch boundary alone leaves a row pending.
