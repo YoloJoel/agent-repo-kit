@@ -56,7 +56,7 @@ Do not upgrade inferred behavior into SHALL/MUST or omit cross-module flows.
 7. By default, continue from Baseline to current behavior specifications; do not stop at
    explanations, inventory or contract documents. Read `references/specification.md`.
    Write/reuse current specs under policy.paths.specs for verified observable behavior,
-   with scenarios, Baseline/Source links and actual verification gaps. This is part of a
+   with scenarios, stable Baseline contract links and actual verification gaps. Store source/test line locations in the supporting evidence. This is part of a
    bare baseline-repo invocation, not an optional user prompt. Preserve existing specs/IDs;
    record conflicts, defects and unknowns separately without endorsing or silently fixing them.
    Before promotion, read the candidate Spec alone and write a concrete input and predicted

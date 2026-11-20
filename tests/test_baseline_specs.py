@@ -29,7 +29,7 @@ class BaselineSpecTests(RepositoryCase):
         self.write(path, '# Math\n## Purpose\nNumeric doubling.\n## Requirements\n'
                    '### Requirement: REQ-DOUBLE-001 Double\nVerification: automated\n'
                    + ('Baseline: ' + self.document + '\n' if reference else '')
-                   + 'Source: app.py:L1-L2\nThe system SHALL return twice the numeric input.\n'
+                   + 'The system SHALL return twice the numeric input.\n'
                    '#### Scenario: Four\n- WHEN 4 is supplied\n- THEN 8 is returned\n')
         kit.knowledge_transition(self.root, p, self.document, 'agent', 'manual/preservation.md', ['REQ-DOUBLE-001'])
         return path
@@ -65,6 +65,24 @@ class BaselineSpecTests(RepositoryCase):
         self.assertIn('baseline-spec-evidence', {x['code'] for x in kit.baseline_spec_status(self.root, p)['findings']})
         (self.root / path).unlink()
         self.assertEqual(kit.baseline_spec_status(self.root, p)['status'], 'FAIL')
+
+    def test_line_evidence_stays_in_contract_on_existing_mapped_spec(self):
+        p = self.prepare(mapped=True)
+        path = self.promise(p)
+        clean = (self.root / path).read_text()
+        legacy = clean.replace('Verification: automated', 'Verification: automated\nSource: app.py:L1-L2')
+        self.write(path, legacy)
+        engine = self.root / 'hack/ai/ark.py'
+        result = subprocess.run([sys.executable, str(engine), '--repo', str(self.root),
+                                 'baseline', 'spec-status', '--scope', 'app.py'], capture_output=True, text=True)
+        report = json.loads(result.stdout)
+        self.assertEqual(report['specification_status'], 'FAIL')
+        finding = next(x for x in report['findings'] if x['code'] == 'spec-source-line-reference')
+        self.assertEqual((finding['path'], legacy.splitlines()[finding['line'] - 1]), (path, 'Source: app.py:L1-L2'))
+        self.assertEqual((self.root / path).read_text(), legacy)
+        self.write(path, clean)
+        self.assertEqual(kit.baseline_spec_status(self.root, p)['specification_status'], 'PASS')
+        self.assertIn('app.py:L1-L2', (self.root / self.document).read_text())
 
     def test_contract_and_decision_edits_make_handoff_stale(self):
         p = self.prepare()

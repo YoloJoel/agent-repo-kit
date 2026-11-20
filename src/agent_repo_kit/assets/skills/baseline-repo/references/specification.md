@@ -25,14 +25,14 @@ validation and event/timer/override behavior there. Review each scenario's real 
    authoring. Never auto-install packages just to probe availability. Native CLI setup and actual
    specs are separate results; neither a directory nor an unavailable CLI ends the baseline.
 Read `artifact-quality.md`: specs must be independently understandable and testable;
-Baseline/Source are provenance, not a replacement for normative input/rule/output details.
+Use the registered Baseline contract as the stable provenance link. State the input, rule and outcome in the Spec itself.
 
 2. Extract public observable behavior from traced source/config/callers and tests:
    normal results, validation/errors, state/side effects, ordering/idempotency, recovery
    and compatibility where actually present. Keep algorithms and class names in Baseline
    or design, not normative requirements. Cover meaningful branches rather than cloning
    source statements into specs. Record inspected revision and unresolved ranges.
-3. Reuse current requirement IDs/titles for the same promise. Add evidence links instead
+3. Reuse current requirement IDs/titles for the same promise. Add stable Baseline contract links instead
    of generating duplicates or overwriting accepted semantics. A source/spec conflict is
    an open discrepancy, not permission to rewrite either. Do not import target designs
    as current behavior. Known defects/ambiguous choices remain in the single ledger;
@@ -43,13 +43,17 @@ Baseline/Source are provenance, not a replacement for normative input/rule/outpu
    do not describe this as a human-approved ADR. Ask only for genuinely material choices.
 5. Write substantive requirements/scenarios using the existing format or bundled spec
    template. Each new requirement cites its registered contract with `Baseline: <path>`
-   and source evidence with `Source: <path>:Lx-Ly`. Link actual cases/checks. Example shape:
+   or its stable section. Keep exact implementation and test line references in the registered
+   contract, behavior inventory, assertion mapping or audit report. Apply this to the entire Spec
+   and to change deltas, including tables, footnotes and Markdown link targets. When updating an
+   older Spec, first preserve each locator and its Requirement ID in the corresponding Baseline
+   evidence record, then remove the inline citation without changing the promise or scenario.
+   For newly proposed behavior, use the applicable decision or change rationale. Example:
 
    ```markdown
    ### Requirement: REQ-LOOKUP-001 Existing lookup
    Verification: automated
    Baseline: docs/baseline/contracts/lookup.md
-   Source: src/lookup.py:L12-L28
    The service SHALL return the stored value for an existing key.
    #### Scenario: Known key
    - WHEN a stored key is queried

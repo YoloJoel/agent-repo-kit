@@ -51,6 +51,20 @@ TEST_SOURCE_SUFFIXES = (SOURCE_SUFFIXES - {".yaml", ".yml", ".toml", ".xml", ".j
     ".f", ".f90", ".f95", ".bash", ".zsh", ".ps1", ".psm1", ".bat", ".cmd",
     ".feature", ".robot", ".phpt",
 }
+SPEC_CODE_SUFFIXES = SOURCE_SUFFIXES | TEST_SOURCE_SUFFIXES | {
+    ".proto", ".gradle", ".cmake", ".vue", ".svelte", ".tcl", ".zig", ".ini", ".conf",
+}
+SPEC_CODE_LOCATION = re.compile(
+    # Explicit source-host/editor anchors are unambiguous even for extensionless scripts.
+    r"(?<![\w.-])(?:[\w.-]+\.[\w+-]+|[\w.-]+(?:/[\w.-]+)+|Makefile|Dockerfile|Jenkinsfile)`?"
+    r"(?::L|#L|#lines?-)[0-9]+\b"
+    # Bare numbers also occur in ports and prose; require a recognizable code/build filename.
+    r"|(?<!://)(?<![\w.-])(?:[\w.-]+(?:" + "|".join(sorted(map(re.escape, SPEC_CODE_SUFFIXES))) +
+    r")|Makefile|Dockerfile|Jenkinsfile|CMakeLists\.txt)`?"
+    r"(?::\d+\b|[ \t]+L\d+\b|[ ,:(]+lines?\s+\d+\b"
+    r"|[ ，,:：（(]*(?:的)?第\s*\d+(?:\s*[-–至到]\s*\d+)?\s*行)",
+    re.IGNORECASE,
+)
 LOCAL_IGNORE = "# Agent Repo Kit local evidence, locks, and session pointers\n.ai/runtime/\n"
 
 
@@ -1630,7 +1644,7 @@ def openspec_config_text(root, p, facts):
         "specs": ["Preserve existing requirement IDs; state observable normative behavior with concrete normal/error/boundary scenarios.",
                   "Discover observable cross-module behavior before selecting spec boundaries; require effective source-path evidence, attempted counterexamples and actual assertion mappings. Unknowns/defects do not automatically become current promises.",
                   "Draft a concrete acceptance case from the spec alone. For existing behavior compare its predicted result with the reachable source branch for that same input. For proposed behavior use the approved target as the expected result.",
-                  "Necessary contracts must be defined in current normative artifacts; Baseline/Source citations do not replace the behavior definition."],
+                  "Define the behavior in the current Spec or delta. Link stable Baseline contracts for provenance. Keep implementation and test line locations in Baseline or audit evidence."],
         "design": ["Document implementation for new dependencies, concurrency/data models and cross-module interfaces; preserve consequential decisions in ADRs."],
         "tasks": ["Include applicable characterization/regression/acceptance, actual verification evidence and native specification synchronization/archive; missing execution stays pending."]}
     lines = ["# Project configuration; source/content review is recorded separately.", "schema: spec-driven", "", "context: |"]
@@ -1937,7 +1951,10 @@ def baseline_spec_status(root, p, scope=None):
                 findings.append({"status": "PENDING", "code": "baseline-spec-evidence", "path": record["path"],
                                  "message": f"{identity} must cite Baseline: {document}; preserve native IDs and add the evidence link rather than duplicating the requirement."})
             linked.add(identity)
-    findings += specification_findings(root, p, [safe(root, name) for name in sorted({record["path"] for record in records if record["id"] in linked})])
+    spec_paths = None
+    if scope:
+        spec_paths = [safe(root, name) for name in sorted({record["path"] for record in records if record["id"] in linked})]
+    findings += specification_findings(root, p, spec_paths)
     verification = requirement_test_findings(root, p, [item for item in records if item["id"] in linked], current=True)
     return {"status": overall(findings + verification, []), "specification_status": overall(findings, []),
             "verification_status": overall(verification, []), "contracts": [item["document"] for item in documents],
@@ -2208,8 +2225,15 @@ def specification_findings(root, p, paths=None):
         records = spec_records(text, path.parent.name)
         def issue(status, code, message, line=1):
             findings.append({"status": status, "code": code, "path": relative, "line": line, "message": f"{relative}:{line}: {message}"})
+        structured = markdown_structure(text)
+        if path.name == "spec.md" or records:
+            for line_number, line_text in enumerate(text.splitlines(), 1):
+                if SPEC_CODE_LOCATION.search(line_text):
+                    issue("FAIL", "spec-source-line-reference",
+                          "Move the code line citation to Baseline or audit evidence. Keep the observable behavior and stable contract link here.",
+                          line_number)
         if path.name == "spec.md" and path.is_relative_to(safe(root, p["paths"]["specs"])):
-            purpose = re.search(r"(?ms)^## Purpose\s*\n(.*?)(?=^## |\Z)", markdown_structure(text))
+            purpose = re.search(r"(?ms)^## Purpose\s*\n(.*?)(?=^## |\Z)", structured)
             value = re.sub(r"\s+", " ", purpose.group(1)).strip() if purpose else ""
             if value:
                 if value in purposes and purposes[value] != relative:
@@ -2250,10 +2274,16 @@ def specification_findings(root, p, paths=None):
                         if dependency not in current_requirement_ids(root, p):
                             issue("PENDING", "spec-missing-owner", f"{identifier}: dependency {dependency} is not current; do not delegate a required payload/contract to an uncreated capability.", line)
             for match in re.finditer(r"(?im)^(?:Source|Baseline|Decision):\s*\x60?([^\s\x60]+)", body):
-                reference = re.sub(r":L?\d+(?:-L?\d+)?$", "", match.group(1).split("#", 1)[0])
-                if "://" not in reference and not safe(root, reference).is_file():
+                reference = re.sub(r":L?\d+(?:[-:]L?\d+)*$", "", match.group(1).split("#", 1)[0])
+                if "://" in reference:
+                    continue
+                try:
+                    exists = safe(root, reference).is_file()
+                except KitError:
+                    exists = False
+                if not exists:
                     issue("FAIL", "broken-evidence-link", f"Missing referenced evidence: {reference}", line)
-        for section in re.split(r"(?m)^## ", markdown_structure(text)):
+        for section in re.split(r"(?m)^## ", structured):
             if section.startswith("RENAMED Requirements"):
                 tags = re.findall(r"(?m)^\s*-?\s*(FROM|TO):", section)
                 if not tags or len(tags) % 2 or any(tag != ("FROM" if i % 2 == 0 else "TO") for i, tag in enumerate(tags)):

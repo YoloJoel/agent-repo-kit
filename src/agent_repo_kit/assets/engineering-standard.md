@@ -147,7 +147,7 @@ change scope or create a global active-task pointer.
 ## Existing repository specification handoff
 
 Existing-code onboarding includes source-backed current specs, not only Baseline prose.
-Extract observable preserved behavior with scenarios and Baseline/Source references; reuse
+Extract observable preserved behavior with scenarios and stable Baseline contract links. Keep implementation/test line citations in Baseline evidence or audit records. Reuse
 existing IDs and native paths. Record routine preservation analysis without inventing owner
 approval. Keep defects, contradictions and unknowns in the single ledger. Use baseline
 spec-status to check declared handoff; specification and actual verification are separate.
