@@ -1,0 +1,60 @@
+{
+  "kit_version": "0.4.0-rc.3",
+  "tested_date": "2026-11-21",
+  "base_commit": "ac7179f0098bcc59f556b2ddbc40e3d823d1f8f4",
+  "core_sha256": "c65f49a25c11c779584af71a3e8749f13a19a1d96e9f56ebd980d73c8d3868ba",
+  "product_quality": "PENDING",
+  "product_blockers": [
+    "module M frozen manual/Kit comparison",
+    "new independent holdout model trials and costs",
+    "real host sessions and private external integration"
+  ],
+  "checks": {
+    "source-tests.log": {
+      "status": "PASS",
+      "tests": 250,
+      "seconds": 80.823,
+      "note": "Printed FAIL JSON below unittest OK belongs to intentional negative-control tests."
+    },
+    "wheel-tests.log": {
+      "status": "PASS",
+      "tests": 250,
+      "seconds": 79.256,
+      "note": "Printed FAIL JSON below unittest OK belongs to intentional negative-control tests."
+    },
+    "native-changes": {
+      "status": "PASS",
+      "version": "2.0.0",
+      "scope": "Two related CLI changes, original anchor, target, negative mutation, restoration and native archive; no hosted model session"
+    },
+    "behavior-probes": "PENDING",
+    "source-facts": "PASS",
+    "wheel-parity": {
+      "status": "PASS",
+      "asset_files": 38,
+      "bytecode_files": 0,
+      "wheel_sha256": "1d92b42a24ef31a285b88b18e9d79e72cf4eb08c63dc2b124c1a78fc1ec10733"
+    },
+    "native-parity": {
+      "status": "PASS",
+      "asset_files": 38
+    },
+    "current-spec": {
+      "status": "PASS_WITH_WARNINGS",
+      "strict": "PENDING",
+      "long_requirement_warnings": 11,
+      "note": "Native Purpose/Requirements sections corrected; accepted wording retained."
+    }
+  },
+  "evidence_sha256": {
+    "source-tests.log": "3e5215d84d87c41d807e3bb446bcef11703ac66350dcd87c200100c3448dd7b3",
+    "wheel-tests.log": "344d7f44f10bf1b2488ae6601cb98d332865ff1825229e36b66b1f2827812ae3",
+    "wheel-build.log": "12d0c628046718502803d03908587c2025ab98a65259b24e947e1c7bddeb4676",
+    "native-changes.json": "4fe2a29301dc8d8ac3657c615372b00fa7e7314cad4b56ca8013693b8a39565e",
+    "behavior-probes.json": "c0e50e909b444fe9985e0003ee368c8c4d5b7c4c826c3c72958819158c6dfeea",
+    "source-facts.json": "de0c9028c5af07d00921ef901df4e9b998f94b5208240af747de68809de86697",
+    "delta-native-validation.log": "0b736130b61b59410c89793c57abd25e1cd98e357b34ed07f0bc6fa21d321a4f",
+    "current-spec-validation.log": "82954a7b1f1a14d512b2b358166fe58a8bdae7ea697181d438db9def5ea3b197",
+    "current-spec-strict.log": "7f4960c743a2761e68b9a47cf5544f97b43b9ca6e8b1f936ce7911062b8c2ad6"
+  }
+}

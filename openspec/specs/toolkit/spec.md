@@ -1,9 +1,11 @@
 # Agent Repo Kit behavior
 
-## Scope
+## Purpose
 
 Generic repository initialization and continuing AI-assisted engineering. Skills own
 semantic work; the CLI owns deterministic scaffolding, references, checks and evidence.
+
+## Requirements
 
 ### Requirement: Install through native plugin or Skill distribution (REQ-NATIVE-001)
 

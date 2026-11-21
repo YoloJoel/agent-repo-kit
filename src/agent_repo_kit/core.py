@@ -7,6 +7,7 @@ source semantics or turn inventory into an approved specification by itself.
 from __future__ import annotations
 
 import argparse
+import ast
 from bisect import bisect_left, bisect_right
 import contextlib
 import fnmatch
@@ -28,7 +29,7 @@ from datetime import date, datetime, timezone
 import uuid
 import xml.etree.ElementTree as ET
 
-VERSION = "0.4.0-rc.2"
+VERSION = "0.4.0-rc.3"
 ASSETS = Path(__file__).parent / "assets"
 POLICY = ".ai/policy.json"
 MANIFEST = ".ai/manifest.json"
@@ -262,6 +263,11 @@ def policy_at(root):
             raise KitError(f"Invalid check timeout: {check['name']}")
         if not isinstance(check.get("required", True), bool):
             raise KitError(f"check.required must be a boolean: {check['name']}")
+        report = check.get("case_report")
+        if report is not None and (not isinstance(report, dict) or report.get("format") not in {"junit", "ark-json"}
+                                   or not isinstance(report.get("required_cases", []), list)
+                                   or any(not isinstance(x, str) or not x for x in report.get("required_cases", []))):
+            raise KitError("case_report needs junit/ark-json format and optional nonempty required case identities")
         phases = check.get("phases", ["ready", "delivery"])
         if not isinstance(phases, list) or not phases or any(phase not in {"ready", "delivery"} for phase in phases):
             raise KitError("check.phases must select ready and/or delivery")
@@ -498,7 +504,9 @@ def entry_refresh(root, p):
         raise KitError("AGENTS.md managed block was edited; explicitly merge human changes before refresh")
     updated = block(existing, project_entry(root, p, project_profile(root, p), existing))
     manifest["agents_block"] = digest(updated[updated.index(START):updated.index(END) + len(END)].encode())
-    record = {"reviewer": data["reviewer"], "inputs": {name: digest(updated.encode()) if name == "AGENTS.md" else digest(safe(root, name).read_bytes()) for name in [".ai/project-entry.json", POLICY, *evidence]},
+    rule_sources = {rule["source"] for rule in p.get("artifact_rules", {}).values()}
+    record = {"reviewer": data["reviewer"], "inputs": {name: digest(updated.encode()) if name == "AGENTS.md" else digest(safe(root, name).read_bytes()) for name in [".ai/project-entry.json", POLICY, *evidence, *rule_sources]},
+              "rule_sources": {name: digest(safe(root, name).read_bytes()) for name in rule_sources},
               "agents_sha256": digest(updated.encode()), "gaps": data.get("gaps", []), "recorded_at": now(), "level": "agent-declared-project-entry"}
     transact(root, {"AGENTS.md": updated, MANIFEST: dump(manifest), ".ai/project-entry-review.json": dump(record)})
     return entry_status(root, p)
@@ -523,7 +531,8 @@ def entry_status(root, p):
 def fingerprint(root, p, change=None):
     files = inventory_files(root, p)
     # Configuration/contract inputs are always bound, even if excluded from inventory.
-    required = [POLICY, MANIFEST, "AGENTS.md", ".ai/project-entry.json", ".ai/project-entry-review.json", ".ai/capability-coverage-review.json", "openspec/config.yaml", ".ai/openspec-review.json", p["paths"]["baseline"] + "/README.md"]
+    required = [POLICY, MANIFEST, "AGENTS.md", ".ai/project-entry.json", ".ai/project-entry-review.json", ".ai/capability-coverage-review.json", "openspec/config.yaml", ".ai/openspec-review.json", ".ai/rule-review.json", ".ai/external-review.json", p["paths"]["baseline"] + "/README.md"]
+    files["@external"] = external_status(root, p)
     required.extend(rule["source"] for rule in p.get("artifact_rules", {}).values())
     behavior_review = read_json(safe(root, ".ai/behavior-review.json"), {})
     required += [".ai/behavior-review.json", *behavior_review.get("inputs", {})]
@@ -659,7 +668,7 @@ def init_repo(root, mode="auto", agents=None, hooks=False, ci=False, upgrade=Fal
 
         managed("hack/ai/ark.py", Path(__file__).read_bytes())
         for path in sorted(ASSETS.rglob("*")):
-            if path.is_file():
+            if path.is_file() and "__pycache__" not in path.parts and path.suffix not in {".pyc", ".pyo"}:
                 managed("hack/ai/assets/" + path.relative_to(ASSETS).as_posix(), path.read_bytes())
         context_path = p["paths"].get("context", "docs/project-context.md")
         standard_path = p["paths"].get("standard", "docs/engineering-standard.md")
@@ -1010,10 +1019,19 @@ def baseline_audit_record(root, p, report, files, artifacts, reviewer):
 def baseline_audit_status(root, p, report=None):
     ledger = read_json(safe(root, p["paths"]["baseline"] + "/audits.json"), {"reports": {}})
     records = [item for name, item in ledger["reports"].items() if report is None or name == report]
-    findings = []
+    findings, rounds = [], []
     if not records:
         findings.append({"status": "PENDING", "code": "source-audit-missing", "message": "Run the source-first audit and post-fix source recheck; structural checks do not replace them."})
     for item in records:
+        source_report = read_json(safe(root, item["report"]), {})
+        previous_open = set()
+        for number, review_pass in enumerate(source_report.get("passes", []), 1):
+            open_ids = {finding["id"] for finding in review_pass.get("findings", []) if finding.get("status") == "open"}
+            rounds.append({"report": item["report"], "round": number, "kind": review_pass.get("kind"),
+                           "open": sorted(open_ids), "new_or_reopened": sorted(open_ids - previous_open),
+                           "closed": sorted(previous_open - open_ids),
+                           "diagnostic": "Repeated unresolved findings; inspect missing evidence/root cause and checkpoint if blocked." if open_ids and open_ids == previous_open else None})
+            previous_open = open_ids
         changed = [name for name, expected in item["inputs"].items() if not safe(root, name).is_file() or digest(safe(root, name).read_bytes()) != expected]
         if changed:
             findings.append({"status": "PENDING", "code": "source-audit-stale", "path": item["report"], "changed": changed,
@@ -1021,7 +1039,7 @@ def baseline_audit_status(root, p, report=None):
         if item["open_findings"]:
             findings.append({"status": "PENDING", "code": "source-audit-open", "path": item["report"], "ids": item["open_findings"],
                              "message": "Unresolved source-audit findings remain; do not claim audit closure."})
-    return {"status": overall(findings, []), "findings": findings, "reports": records,
+    return {"status": overall(findings, []), "findings": findings, "reports": records, "rounds": rounds,
             "meaning": "Checks declared source-first/recheck coverage, dispositions and freshness; cannot prove rereading occurred or certify semantic correctness/zero defects."}
 
 
@@ -1153,7 +1171,244 @@ def behavior_data(root, p):
     return record, data
 
 
-def behavior_impact(root, p, changed):
+def discovery_scan(root, p):
+    """Produce source-only candidates, without reading the author's Spec or inventory."""
+    sources = capability_sources(root, p)
+    candidates, imports, limitations = [], [], []
+    for path in sorted(sources):
+        text = safe(root, path).read_text(encoding="utf-8", errors="replace")
+        counts = {}
+        def add(kind, line, expression, owner=""):
+            key = dump([path, owner, kind, expression])
+            counts[key] = counts.get(key, 0) + 1
+            candidates.append({"id": "SRC-" + digest((key + str(counts[key])).encode())[:20],
+                               "path": path, "reference": f"{path}:L{line}", "kind": kind,
+                               "owner": owner, "expression": expression, "source_sha256": sources[path]})
+        if Path(path).suffix == ".py":
+            try:
+                tree = ast.parse(text)
+            except SyntaxError as exc:
+                limitations.append({"path": path, "reason": "Python parse failed: " + str(exc)})
+                continue
+            class Visitor(ast.NodeVisitor):
+                def __init__(self): self.owner = []
+                def visit_FunctionDef(self, node):
+                    self.owner.append(node.name)
+                    add("entry", node.lineno, node.name, ".".join(self.owner))
+                    self.generic_visit(node)
+                    self.owner.pop()
+                visit_AsyncFunctionDef = visit_FunctionDef
+                def visit_ClassDef(self, node):
+                    self.owner.append(node.name); self.generic_visit(node); self.owner.pop()
+                def visit_If(self, node):
+                    for outcome in ("true", "false"):
+                        add("condition-" + outcome, node.lineno, ast.unparse(node.test), ".".join(self.owner))
+                    self.generic_visit(node)
+                def visit_Return(self, node):
+                    expression = ast.unparse(node.value) if node.value else "None"
+                    if isinstance(node.value, (ast.Compare, ast.BoolOp)):
+                        for outcome in ("true", "false"):
+                            add("return-" + outcome, node.lineno, expression, ".".join(self.owner))
+                    else:
+                        add("return", node.lineno, expression, ".".join(self.owner))
+                    self.generic_visit(node)
+                def visit_Raise(self, node):
+                    add("exception", node.lineno, ast.unparse(node), ".".join(self.owner)); self.generic_visit(node)
+                def visit_Import(self, node):
+                    for alias in node.names: imports.append({"consumer": path, "module": alias.name, "reference": f"{path}:L{node.lineno}"})
+                def visit_ImportFrom(self, node):
+                    module = node.module or ""
+                    if node.level:
+                        parent = Path(path).parent
+                        for _ in range(node.level - 1): parent = parent.parent
+                        module = (parent.as_posix().replace("/", ".").strip(".") + "." + module).strip(".")
+                    imports.append({"consumer": path, "module": module, "reference": f"{path}:L{node.lineno}"})
+            Visitor().visit(tree)
+        else:
+            masked = assertion_code_mask(text, Path(path).suffix.lower())
+            limitations.append({"path": path, "reason": "Lexical candidates only; inspect runtime enablement, dynamic dispatch and omitted constructs independently."})
+            for number, line in enumerate((masked or "").splitlines(), 1):
+                if re.search(r"\b(?:if|switch|case|return|throw|catch|register\w*|subscribe\w*|signal)\b", line):
+                    add("lexical-path", number, line.strip())
+        if not any(item["path"] == path for item in candidates):
+            add("source-review", 1, "Inspect observable effects/configuration and justify exclusions")
+    modules = {str(Path(path).with_suffix("")).replace("/", "."): path for path in sources if path.endswith(".py")}
+    edges = [{**item, "producer": modules[item["module"]], "kind": "import-candidate"}
+             for item in imports if item["module"] in modules and modules[item["module"]] != item["consumer"]]
+    return {"schema_version": 1, "status": "PENDING", "sources": sources, "candidates": candidates,
+            "edges": edges, "limitations": limitations,
+            "meaning": "Source-only review candidates, not exhaustive behavior discovery or a verified call graph."}
+
+
+def discovery_status(root, p):
+    scan = discovery_scan(root, p)
+    record = read_json(safe(root, ".ai/discovery-review.json"), {})
+    data = read_json(safe(root, record["document"]), {}) if record and safe(root, record["document"]).is_file() else {}
+    findings = []
+    entries = {item.get("id"): item for item in data.get("candidates", []) if isinstance(item, dict)}
+    current = current_requirement_ids(root, p)
+    coverage = read_json(safe(root, ".ai/capability-coverage-review.json"), {})
+    capabilities = read_json(safe(root, coverage["document"]), {}).get("capabilities", []) if coverage and safe(root, coverage["document"]).is_file() else []
+    samples = {case["id"] for capability in capabilities for case in capability.get("source_cases", [])}
+    for candidate in scan["candidates"]:
+        item = entries.get(candidate["id"], {})
+        disposition = item.get("disposition")
+        valid = (item.get("source_sha256") == candidate["source_sha256"] and isinstance(item.get("reason"), str) and bool(item["reason"].strip()))
+        if disposition == "specified":
+            valid = valid and bool(item.get("requirements")) and set(item["requirements"]).issubset(current) and bool(item.get("source_cases")) and set(item["source_cases"]).issubset(samples)
+        elif disposition not in {"baseline", "excluded"}:
+            valid = False
+        if not valid:
+            findings.append({"status": "PENDING", "code": "discovery-candidate-unreviewed", "candidate": candidate["id"],
+                             "path": candidate["path"], "reference": candidate["reference"], "kind": candidate["kind"],
+                             "message": "Reconcile this independently scanned source candidate, including contrasting outcomes and actual enablement."})
+    for limitation in scan["limitations"]:
+        review = data.get("source_reviews", {}).get(limitation["path"], {})
+        if (review.get("source_sha256") != scan["sources"][limitation["path"]] or not review.get("checked")
+                or not review.get("limitations") or not review.get("reviewer")):
+            findings.append({"status": "PENDING", "code": "discovery-provider-limited", **limitation,
+                             "message": "Record a source review of unsupported/dynamic behavior; candidate count cannot establish completeness."})
+    if not record or record.get("sha256") != digest(dump(data).encode()):
+        findings.append({"status": "PENDING", "code": "discovery-review-unrecorded", "message": "Record the actual source-only discovery reconciliation."})
+    return {"status": overall(findings, []), "candidate_count": len(scan["candidates"]),
+            "unreviewed": sum(x["code"] == "discovery-candidate-unreviewed" for x in findings),
+            "findings": findings, "edges": scan["edges"], "limitations": scan["limitations"],
+            "meaning": "Coverage of scanned candidates plus declared independent source review; not universal semantic completeness."}
+
+
+def discovery_record(root, p, document, reviewer):
+    data = read_json(safe(root, document))
+    if not reviewer.strip() or data.get("schema_version") != 1 or not isinstance(data.get("candidates"), list):
+        raise KitError("Discovery reconciliation needs schema 1, candidate dispositions and a reviewer")
+    identities = [item.get("id") for item in data["candidates"] if isinstance(item, dict)]
+    if len(identities) != len(data["candidates"]) or len(set(identities)) != len(identities):
+        raise KitError("Discovery dispositions must have unique candidate IDs")
+    record = {"document": document, "sha256": digest(dump(data).encode()), "reviewer": reviewer,
+              "recorded_at": now(), "sources": capability_sources(root, p), "review_mode": data.get("review_mode", "same-agent-separate-pass")}
+    snapshot = evidence_root(p) + "/discovery/" + digest(dump(record).encode())
+    transact(root, {".ai/discovery-review.json": dump(record), snapshot + "/record.json": dump(record), snapshot + "/review.json": dump(data)})
+    return discovery_status(root, p)
+
+
+def readback_directory(root, p, identity):
+    if not ID.fullmatch(identity):
+        raise KitError("Readback ID must be lowercase and hyphenated")
+    return safe(root, p["paths"]["baseline"] + "/readbacks/" + identity)
+
+
+def readback_open(root, p, identity, document, reviewer, mode="same-agent-separate-pass"):
+    directory = readback_directory(root, p, identity)
+    if directory.exists():
+        raise KitError("Readback identity already exists; retain the frozen inputs and start a new round")
+    data = read_json(safe(root, document))
+    questions = data.get("questions")
+    if (not reviewer.strip() or not isinstance(questions, list) or not questions
+            or any(not isinstance(q, dict) or set(q) != {"id", "stimulus"} or not all(isinstance(v, str) and v.strip() for v in q.values()) for q in questions)
+            or len({q["id"] for q in questions}) != len(questions)):
+        raise KitError("Reader questions need unique IDs and stimuli only; keep answers/source anchors outside the reader input")
+    if mode not in {"same-agent-separate-pass", "separate-context-attested"}:
+        raise KitError("Declare the actual review mode; separate contexts are attested, not filesystem isolation")
+    specs = {path: re.sub(r"(?m)^Baseline:.*\n?", "", safe(root, path).read_text(encoding="utf-8")) for path in spec_hashes(root, p)}
+    if not specs:
+        raise KitError("Freeze actual current specifications before readback")
+    reader = {"schema_version": 1, "questions": questions, "specs": specs}
+    record = {"schema_version": 1, "id": identity, "created_at": now(), "examiner": reviewer,
+              "mode": mode, "specs": spec_hashes(root, p), "sources": capability_sources(root, p),
+              "reader_sha256": digest(dump(reader).encode())}
+    base = directory.relative_to(root).as_posix()
+    transact(root, {base + "/open.json": dump(record), base + "/reader.json": dump(reader),
+                    ".ai/readback-active.json": dump({"id": identity})})
+    return {"status": "PENDING", "id": identity, "next": "Give only reader.json to the reader, then freeze predictions before revealing source outcomes.", "reader": base + "/reader.json"}
+
+
+def readback_record(root, p, identity, document, reviewer, judge=False):
+    directory = readback_directory(root, p, identity)
+    opened = read_json(directory / "open.json")
+    reader = read_json(directory / "reader.json")
+    if digest(dump(reader).encode()) != opened["reader_sha256"]:
+        raise KitError("Frozen reader input changed")
+    if opened["specs"] != spec_hashes(root, p) or opened["sources"] != capability_sources(root, p):
+        raise KitError("Source or Spec changed; preserve this round and open a new readback")
+    name = "judgment.json" if judge else "predictions.json"
+    if (directory / name).exists():
+        raise KitError("A frozen readback stage cannot be overwritten")
+    if not reviewer.strip(): raise KitError("Identify the actual reader/reviewer")
+    data = read_json(safe(root, document))
+    rows = data.get("answers")
+    if (not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows)
+            or len(rows) != len(reader["questions"]) or {row.get("id") for row in rows} != {q["id"] for q in reader["questions"]}):
+        raise KitError("Account for every frozen question exactly once, including ambiguous answers")
+    previous = read_json(directory / "predictions.json") if judge else None
+    if opened["mode"] == "separate-context-attested" and not judge and reviewer == opened["examiner"]:
+        raise KitError("Separate-context readback needs a distinct reader identity; identity alone does not prove isolation")
+    for row in rows:
+        if judge:
+            prediction = next(item for item in previous["answers"] if item["id"] == row["id"])
+            if row.get("status") not in {"entailed", "ambiguous", "contradicted", "source-unknown"} or not row.get("reason"):
+                raise KitError("Adjudicate textual entailment separately from source agreement, with a reason")
+            evidence = row.get("evidence", [])
+            if row["status"] != "source-unknown" and (not evidence or not all(behavior_anchor(root, anchor) for anchor in evidence)):
+                raise KitError("Judgments need actual source evidence")
+            if row["status"] == "entailed" and (prediction.get("status") != "predicted" or "observed" not in row or dump(prediction["expected"]) != dump(row["observed"])):
+                raise KitError("An ambiguous or contradicted prediction cannot be adjudicated entailed")
+        else:
+            if row.get("status") == "ambiguous":
+                if not row.get("missing"): raise KitError("Describe the missing deciding premise")
+                continue
+            quotes = row.get("premises", [])
+            if row.get("status") != "predicted" or "expected" not in row or not isinstance(quotes, list) or not quotes:
+                raise KitError("Prediction needs typed expected output and exact Spec-only premises")
+            if any(not isinstance(q, dict) or q.get("path") not in reader["specs"] or not q.get("quote") or q["quote"] not in reader["specs"][q["path"]] for q in quotes):
+                raise KitError("Every prediction premise must occur in a frozen current Spec")
+    record = {"schema_version": 1, "reviewer": reviewer, "recorded_at": now(), "reader_sha256": opened["reader_sha256"], "answers": rows}
+    if judge: record["predictions_sha256"] = digest((directory / "predictions.json").read_bytes())
+    atomic(directory / name, dump(record))
+    return readback_status(root, p, identity)
+
+
+def readback_status(root, p, identity=None):
+    base = safe(root, p["paths"]["baseline"] + "/readbacks")
+    active_id = identity or read_json(safe(root, ".ai/readback-active.json"), {}).get("id")
+    directories = [readback_directory(root, p, identity)] if identity else sorted(path.parent for path in base.glob("*/open.json"))
+    runs, findings = [], []
+    for directory in directories:
+        opened = read_json(directory / "open.json")
+        prediction = read_json(directory / "predictions.json", {})
+        judgment = read_json(directory / "judgment.json", {})
+        state = "PASS"
+        reason = "All frozen questions have source-agreeing, reviewer-adjudicated premises."
+        if opened["specs"] != spec_hashes(root, p) or opened["sources"] != capability_sources(root, p):
+            state, reason = "PENDING", "Frozen source/Spec inputs are no longer current."
+        elif (not judgment or not prediction or judgment.get("predictions_sha256") != digest((directory / "predictions.json").read_bytes())
+              or opened["reader_sha256"] != digest((directory / "reader.json").read_bytes())):
+            state, reason = "PENDING", "Freeze predictions before recording complete source/textual adjudication."
+        elif any(row["status"] == "contradicted" for row in judgment["answers"]):
+            state, reason = "FAIL", "A frozen prediction contradicts the source."
+        elif any(row["status"] != "entailed" for row in judgment["answers"]):
+            state, reason = "PENDING", "Some questions lack sufficient Spec premises or source evidence."
+        runs.append({"id": opened["id"], "status": state, "mode": opened["mode"], "reason": reason,
+                     "questions": len(read_json(directory / "reader.json")["questions"]),
+                     "prediction_frozen": bool(prediction), "adjudicated": bool(judgment)})
+    active_runs = [run for run in runs if run["id"] == active_id]
+    if not active_runs:
+        findings.append({"status": "PENDING", "code": "readback-missing", "message": "Freeze a Spec-only reader round before declaring semantic usability."})
+    else:
+        reader = read_json(readback_directory(root, p, active_id) / "reader.json")
+        coverage = read_json(safe(root, ".ai/capability-coverage-review.json"), {})
+        mapping = read_json(safe(root, coverage["document"]), {}) if coverage and safe(root, coverage["document"]).is_file() else {}
+        missing = sorted({case["stimulus"] for capability in mapping.get("capabilities", []) for case in capability.get("source_cases", [])}
+                         - {question["stimulus"] for question in reader["questions"]})
+        if missing:
+            findings.append({"status": "PENDING", "code": "readback-unasked-source-cases", "stimuli": missing,
+                             "message": "The active round must ask all recorded source-case stimuli, not only the author's favorable cases."})
+        for run in active_runs:
+            if run["status"] != "PASS":
+                findings.append({"status": run["status"], "code": "readback-incomplete", "id": run["id"], "message": run["reason"]})
+    return {"status": overall(findings, []), "active": active_id, "runs": runs, "findings": findings,
+            "meaning": "Recorded order, input currency and reviewer adjudication; mode is attested, semantic truth and context isolation are not mechanically certified."}
+
+
+def behavior_impact(root, p, changed, scan_sources=True):
     """Declared dependency closure, not a language-specific inferred call graph."""
     _, data = behavior_data(root, p)
     units = data.get("units", [])
@@ -1163,11 +1418,22 @@ def behavior_impact(root, p, changed):
                 or any(matches(t.get("path")) for t in u.get("tests", []))
                 or matches(u.get("spec_path"))}
     direct = sorted(affected)
+    candidate_edges = discovery_scan(root, p)["edges"] if scan_sources else []
+    source_affected = set(changed)
+    while True:
+        expanded_sources = source_affected | {edge["consumer"] for edge in candidate_edges if edge["producer"] in source_affected}
+        if expanded_sources == source_affected: break
+        source_affected = expanded_sources
+    inferred_units = {u["id"] for u in units if any(e.get("path") in source_affected for e in u.get("evidence", []))} - affected
+    affected |= inferred_units
     while True:
         expanded = affected | {u["id"] for u in units if set(u.get("depends_on", [])) & affected}
         if expanded == affected: break
         affected = expanded
     return {"direct": direct, "transitive": sorted(affected - set(direct)), "units": sorted(affected),
+            "source_candidates": sorted(source_affected - set(changed)), "candidate_units": sorted(inferred_units),
+            "candidate_edges": [edge for edge in candidate_edges if edge["producer"] in source_affected],
+            "source_discovery": "scanned" if scan_sources else "NOT_ASSESSED: run impact or baseline discover explicitly",
             "requirements": sorted({u["requirement"] for u in units if u["id"] in affected and u.get("requirement")}),
             "meaning": "Declared behavior/source/test/spec dependency candidates; inspect callers and runtime configuration for missing edges."}
 
@@ -1290,12 +1556,40 @@ def behavior_assertion_valid(root, test):
     assertion = test["assertion"].strip()
     if executable is None or re.match(r"(#|//|/\*|\*)", assertion):
         return False
+    # Require a complete assertion construct, not a substring of an assertion.
+    # Python uses its actual parser; other languages retain bounded syntax recognition.
+    if Path(test["path"]).suffix.lower() == ".py":
+        try:
+            tree = ast.parse(content)
+            statements = [node for node in ast.walk(tree) if isinstance(node, ast.Assert)
+                          or isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
+                          and isinstance(node.value.func, ast.Attribute)
+                          and re.fullmatch(r"assert[A-Z]\w*", node.value.func.attr)]
+            return any(ast.get_source_segment(content, node) == assertion
+                       and set(range(node.lineno, node.end_lineno + 1)).issubset(covered)
+                       for node in statements)
+        except SyntaxError:
+            return False
+    recognized = re.match(r"^(?:(?:\w+\.)*(?:assert\w*|ASSERT_\w+|EXPECT_\w+|CHECK|REQUIRE)\s*!?\s*\(|assert\s+)", assertion)
+    recognized = recognized or re.match(r"^assert\.(?:strictEqual|deepStrictEqual|equal|deepEqual|ok|throws|rejects)\s*\(", assertion)
+    recognized = recognized or (re.match(r"^expect\s*\(", assertion) and re.search(r"\)\s*\.(?:not\.)?to\w+\s*\(", assertion))
+    recognized = recognized or (Path(test["path"]).suffix == ".go" and re.match(r"^if\s+", assertion)
+                                and re.search(r"\{\s*(?:panic|\w+\.(?:Fatalf?|Errorf?))\s*\(", assertion))
+    if not recognized:
+        return False
     offsets = [0] + [match.end() for match in re.finditer("\n", content)]
     for match in re.finditer(re.escape(assertion), content):
         first, last = bisect_right(offsets, match.start()), bisect_right(offsets, match.end() - 1)
         if not executable[match.start()].isspace() and set(range(first, last + 1)).issubset(covered):
             return True
     return False
+
+
+def spec_scenarios(body):
+    """Content identities bind both the selecting conditions and every outcome line."""
+    return [{"name": match.group(1).strip(), "sha256": digest(body[match.start():match.end()].strip().encode()),
+             "body": body[match.start():match.end()].strip()}
+            for match in re.finditer(r"(?ms)^#### Scenario:[ \t]*([^\n]+).*?(?=^#### Scenario:|^### |^## |\Z)", markdown_structure(body))]
 
 
 def acceptance_readback_findings(unit, body):
@@ -1324,6 +1618,10 @@ def acceptance_readback_findings(unit, body):
         quote = case.get("spec_quote")
         if not isinstance(quote, str) or not quote.strip() or quote.strip() not in outcome_lines:
             yield "PENDING", "behavior-case-spec-evidence", prefix + "cite the full outcome line from this requirement."
+        premises = case.get("premises", [])
+        if (not isinstance(premises, list) or not premises or quote not in premises
+                or any(not isinstance(line, str) or not line.strip() or line.strip() not in body for line in premises)):
+            yield "PENDING", "behavior-case-premises", prefix + "retain the exact deciding Spec premises, including the outcome; equality alone is not entailment."
         if not isinstance(case.get("source_reference"), str) or case["source_reference"] not in scoped_evidence:
             yield "PENDING", "behavior-case-source-evidence", prefix + "cite the decisive branch/effect in the unit's source evidence."
 
@@ -1368,6 +1666,15 @@ def behavior_inventory_findings(root, p, data):
         if surface["status"] == "unknown" or surface["status"] == "applicable" and not links:
             add("behavior-surface-gap", f"Inspect or enumerate {name} behavior; directory coverage is insufficient")
     facts, mapped, quoted = {}, set(), {}
+    catalog = data.get("contract_catalog", {})
+    aliases = {}
+    if not isinstance(catalog, dict): raise KitError("contract_catalog must map canonical names to explicit aliases and conditions")
+    for canonical, contract in catalog.items():
+        if not isinstance(contract, dict) or not isinstance(contract.get("aliases", []), list) or not isinstance(contract.get("conditions", {}), dict):
+            raise KitError("Contract catalog needs aliases and canonical condition mappings")
+        for alias in [canonical, *contract.get("aliases", [])]:
+            if not isinstance(alias, str) or not alias.strip() or alias in aliases: raise KitError("Contract aliases must be unique and nonempty")
+            aliases[alias] = canonical
     for unit in units:
         identity = unit["id"]
         for key in ("capability", "trigger", "condition", "outcome", "owner"):
@@ -1423,7 +1730,12 @@ def behavior_inventory_findings(root, p, data):
             if not isinstance(fact, dict) or not all(isinstance(fact.get(k), str) and fact[k].strip() for k in ("key", "condition")) or "value" not in fact:
                 raise KitError("Canonical contract facts need key, effective condition and typed value")
             if unit["disposition"] == "current":
-                key = (fact["key"], fact["condition"])
+                canonical = aliases.get(fact["key"], fact["key"])
+                condition = catalog.get(canonical, {}).get("conditions", {}).get(fact["condition"], fact["condition"])
+                if not isinstance(condition, str) or not condition.strip(): raise KitError("Canonical conditions must be nonempty names")
+                if catalog and fact["key"] not in aliases:
+                    add("behavior-contract-unregistered", "Reconcile this shared fact with the canonical catalog: " + fact["key"], identity)
+                key = (canonical, condition)
                 value = json.dumps(fact["value"], sort_keys=True, ensure_ascii=False)
                 if key in facts and facts[key][0] != value:
                     add("behavior-contract-conflict", f"Conflicting {key} with {facts[key][1]}; reconcile actual applicability/contract", identity, "FAIL")
@@ -1463,6 +1775,14 @@ def behavior_inventory_findings(root, p, data):
             if not any(clause.strip() in quote for quote in quoted.get(identifier, [])):
                 add("behavior-clause-unmapped", f"{identifier}: normative clause lacks an actual behavior review: {clause.strip()}")
                 findings[-1]["path"] = requirements[identifier]["path"]
+        cases = [case for unit in units if unit.get("requirement") == identifier
+                 and unit.get("disposition") == "current" for case in unit.get("acceptance_cases", [])
+                 if isinstance(case, dict) and case.get("status") == "compared"]
+        for scenario in spec_scenarios(requirements[identifier]["raw"]):
+            bindings = [binding for case in cases for binding in case.get("scenarios", []) if isinstance(binding, dict)]
+            if not any(binding.get("name") == scenario["name"] and binding.get("sha256") == scenario["sha256"] for binding in bindings):
+                add("behavior-scenario-unmapped", f"{identifier}: review this complete Scenario's conditions/outcomes: {scenario['name']}")
+                findings[-1]["path"] = requirements[identifier]["path"]
     return findings
 
 
@@ -1497,6 +1817,9 @@ def behavior_record(root, p, document, reviewer):
               "source_revision": (git(root, "rev-parse", "HEAD", optional=True) or b"").decode().strip() or None,
               "production_sources": capability_sources(root, p), "inputs": behavior_inputs(root, p, data, document),
               "unit_states": {u["id"]: {"verification": u.get("verification"), "disposition": u["disposition"]} for u in data["units"]},
+              "unit_inputs": {u["id"]: {name: digest(safe(root, name).read_bytes()) if safe(root, name).is_file() else None
+                                        for name in {e["path"] for e in u.get("evidence", []) + u.get("tests", [])} | {u.get("spec_path") or POLICY}} for u in data["units"]},
+              "unit_sha256": {u["id"]: digest(dump(u).encode()) for u in data["units"]},
               "verification_changes": transitions, "previous_record": digest(dump(previous).encode()) if previous else None,
               "level": "declared-behavior-evidence-review"}
     snapshot = evidence_root(p) + "/behaviors/" + digest(dump(record).encode())
@@ -1520,12 +1843,23 @@ def behavior_status(root, p):
     pending = {x.get("unit") for x in findings}
     total = len(data["units"])
     reviewed = sum(u["confidence"] in {"verified", "defect"} and u["disposition"] != "gap" and u["id"] not in pending for u in data["units"])
-    if changed or any(x["code"] == "behavior-evidence-stale" for x in findings): reviewed = 0
+    stale_units = set()
+    if changed or any(x["code"] == "behavior-evidence-stale" for x in findings):
+        if not record.get("unit_inputs") or POLICY in changed:
+            stale_units = {u["id"] for u in data["units"]}
+        else:
+            changed_sources = set(record["production_sources"]) ^ set(capability_sources(root, p))
+            stale_units = set(behavior_impact(root, p, list(set(changed) | changed_sources))["units"])
+            for unit in data["units"]:
+                if record.get("unit_sha256", {}).get(unit["id"]) != digest(dump(unit).encode()): stale_units.add(unit["id"])
+                if any(not safe(root, name).is_file() or digest(safe(root, name).read_bytes()) != expected
+                       for name, expected in record["unit_inputs"].get(unit["id"], {}).items()): stale_units.add(unit["id"])
+        reviewed = sum(u["confidence"] in {"verified", "defect"} and u["disposition"] != "gap" and u["id"] not in pending | stale_units for u in data["units"])
     return {"status": overall(findings, []), "findings": findings, "source_revision": record["source_revision"],
             "coverage": {"discovered_units": total, "reviewed_units": reviewed, "ratio": reviewed / total,
                          "current_units": sum(u["disposition"] == "current" for u in data["units"]),
                          "unresolved_units": sum(u["disposition"] == "gap" or u["confidence"] in {"unknown", "inferred"} for u in data["units"])},
-            "verification_changes": record.get("verification_changes", []), "execution": "NOT_ASSESSED",
+            "stale_units": sorted(stale_units), "verification_changes": record.get("verification_changes", []), "execution": "NOT_ASSESSED",
             "meaning": "Coverage of the declared source-derived inventory only; neither complete behavior discovery, semantic certification nor executed assertion coverage. Review actual assertion quality and run native checks separately."}
 
 
@@ -1999,14 +2333,40 @@ def onboarding_status(root, p, record=False):
     verification = current_test_findings(root, p)
     overall_findings = entry["findings"] + configuration + baseline_orphan_findings(root, p) + baseline_index_findings(root, p) + structure_findings(root, p) + coverage["findings"] + behaviors["findings"] + specs["findings"] + audits["findings"] + findings + verification
     overall_findings.extend(source_cases["findings"])
+    discovery = discovery_status(root, p)
+    overall_findings.extend(discovery["findings"])
+    readback = readback_status(root, p)
+    overall_findings.extend(readback["findings"])
     result = {"status": overall(overall_findings, []), "completion": "COMPLETE_DECLARED" if not overall_findings else "PARTIAL", "source_cases": source_cases,
-            "entry_status": entry["status"], "configuration_status": overall(configuration, []), "coverage": coverage, "behavior_review": behaviors, "specification_status": specs["specification_status"],
+            "discovery": discovery, "readback": readback, "entry_status": entry["status"], "configuration_status": overall(configuration, []), "coverage": coverage, "behavior_review": behaviors, "specification_status": specs["specification_status"],
             "audit_status": audits["status"], "verification_mapping_status": overall(verification, []), "findings": overall_findings,
             "execution": "Not assessed by this quality declaration; cite actual build/test/external runs separately. Compilation is not business testing.",
             "verification_gaps": {"missing_mapping_count": len(verification), "missing_mapping_by_spec": {path: sum(item.get("path") == path for item in verification) for path in sorted({item.get("path", "") for item in verification})}},
             "structure_rechecked": True, "behavior_verification": "NOT_ASSESSED",
             "meaning": "Current declared onboarding quality and coverage, not zero defects or runtime verification. init-report.json is a historical setup snapshot."}
     return finish_onboarding(root, p, result, record, initial_inputs)
+
+
+def baseline_next(root, p):
+    """Derive recoverable work from existing authorities; do not create another ledger."""
+    report = onboarding_status(root, p)
+    stages = [
+        ("project", ("project-entry", "openspec-config", "rule-source"), "Read project-entry/configuration guidance and reconcile the actual project inputs."),
+        ("discover", ("discovery-", "capability-", "behavior-source"), "Run baseline discover; review contrasting paths and actual enablement, then reconcile candidates."),
+        ("specify", ("behavior-", "spec-", "source-case"), "Review the affected behavior units and complete their current Requirement/Scenario outcomes."),
+        ("readback", ("readback-",), "Freeze reader questions with readback-open, commit predictions, then adjudicate against source."),
+        ("audit", ("source-audit", "onboarding-"), "Reopen source, record remaining findings, repair and recheck the affected scope."),
+    ]
+    tasks, assigned = [], set()
+    for stage, prefixes, action in stages:
+        selected = [item for item in report.get("findings", []) if item.get("code", "").startswith(prefixes) and dump(item) not in assigned]
+        if selected:
+            tasks.append({"stage": stage, "action": action, "findings": selected})
+            assigned.update(dump(item) for item in selected)
+    others = [item for item in report.get("findings", []) if dump(item) not in assigned]
+    if others: tasks.append({"stage": "reconcile", "action": "Resolve the remaining concrete findings, retaining unavailable evidence as pending.", "findings": others})
+    return {"status": report["status"], "next": tasks[0] if tasks else None, "remaining_stages": tasks,
+            "meaning": "Read-only next work derived from current evidence; no automatic semantic approval or endless retry loop."}
 
 
 def baseline_spec_status(root, p, scope=None):
@@ -2580,6 +2940,10 @@ def behavior_plan(root, p, change):
                 raise KitError("Behavior cases must reference configured required checks")
         if not case.get("checks"):
             raise KitError("Behavior cases need actual required verification checks")
+        observations = case.get("observations", {})
+        if (not isinstance(observations, dict) or set(observations) - names
+                or any(not isinstance(ids, list) or not ids or any(not isinstance(x, str) or not x for x in ids) for ids in observations.values())):
+            raise KitError("Behavior observations map required check names to actual case/assertion identities")
         if case["effect"] == "preserve":
             if not isinstance(case.get("fixtures"), list) or not case["fixtures"]:
                 raise KitError("Preserved behavior needs actual fixture/test source paths")
@@ -2653,9 +3017,107 @@ def matching_artifact_rules(p, paths):
                    for path in paths for pattern in rule.get("paths", []))}
 
 
+def rule_record(root, p, reviewer):
+    if not reviewer.strip(): raise KitError("Name the reviewer who reconciled project rules with their sources")
+    rules = p.get("artifact_rules", {})
+    record = {"schema_version": 1, "reviewer": reviewer, "recorded_at": now(), "rules": rules,
+              "sources": {rule["source"]: digest(safe(root, rule["source"]).read_bytes()) for rule in rules.values()}}
+    transact(root, {".ai/rule-review.json": dump(record), evidence_root(p) + "/rules/" + digest(dump(record).encode()) + ".json": dump(record)})
+    return rule_status(root, p)
+
+
+def rule_status(root, p):
+    rules = p.get("artifact_rules", {})
+    record = read_json(safe(root, ".ai/rule-review.json"), {})
+    findings = []
+    for identity, rule in rules.items():
+        path = safe(root, rule["source"])
+        if (record.get("rules", {}).get(identity) != rule or not path.is_file()
+                or record.get("sources", {}).get(rule["source"]) != digest(path.read_bytes())):
+            findings.append({"status": "PENDING", "code": "rule-source-unreviewed", "rule": identity, "path": rule["source"],
+                             "message": "Reconcile the structured rule with its current source, then run rules record; existence alone does not prove equivalence."})
+    return {"status": overall(findings, []), "findings": findings, "reviewer": record.get("reviewer")}
+
+
+def external_record(root, p, document, reviewer):
+    data = read_json(safe(root, document))
+    dependencies = data.get("dependencies")
+    if not reviewer.strip() or not isinstance(dependencies, list) or not dependencies:
+        raise KitError("External dependencies need explicit local roots, file scopes and a reviewer")
+    aliases, records, snapshots = set(), [], {}
+    for dependency in dependencies:
+        alias = dependency.get("alias", "")
+        if not isinstance(alias, str) or not ID.fullmatch(alias) or alias in aliases:
+            raise KitError("Use unique external repository aliases to disambiguate names")
+        aliases.add(alias)
+        source = Path(dependency.get("root", "")).expanduser()
+        if not source.is_absolute() or not source.is_dir(): raise KitError("External roots must be explicit existing absolute directories")
+        source = source.resolve()
+        paths = dependency.get("files", [])
+        if not isinstance(paths, list) or not paths: raise KitError("List explicit external contract/source files; do not scan an entire external repository")
+        hashes = {}
+        for path in paths:
+            file = safe(source, path)
+            if not file.is_file() or file.stat().st_size > 4 * 1024 * 1024: raise KitError("External snapshot file missing or over 4 MiB")
+            content = file.read_bytes(); hashes[path] = digest(content)
+            snapshots[evidence_root(p) + "/external/" + hashes[path] + "/" + alias + "/" + path] = content
+        records.append({"alias": alias, "root": str(source), "files": hashes})
+    record = {"schema_version": 1, "reviewer": reviewer, "document": document,
+              "document_sha256": digest(dump(data).encode()), "recorded_at": now(), "dependencies": records}
+    transact(root, {**snapshots, ".ai/external-review.json": dump(record)})
+    return external_status(root, p)
+
+
+def external_status(root, p):
+    record = read_json(safe(root, ".ai/external-review.json"), {})
+    findings, files = [], {}
+    if record:
+        document = safe(root, record["document"])
+        if not document.is_file() or digest(dump(read_json(document)).encode()) != record["document_sha256"]:
+            findings.append({"status": "PENDING", "code": "external-map-stale", "message": "External dependency mapping changed; reconcile scopes explicitly."})
+    for dependency in record.get("dependencies", []):
+        for path, expected in dependency["files"].items():
+            file = safe(Path(dependency["root"]), path)
+            actual = digest(file.read_bytes()) if file.is_file() else None
+            key = dependency["alias"] + "::" + path
+            files[key] = actual
+            if actual != expected:
+                findings.append({"status": "PENDING", "code": "external-source-stale", "source": key,
+                                 "message": "External contract/source changed or is unavailable; recheck its consumers before recording again."})
+    return {"status": overall(findings, []), "files": files, "findings": findings,
+            "scope": "Explicit local external snapshots only; deployed compatibility, remote freshness and undeclared dependencies are NOT_ASSESSED."}
+
+
+def explain(root, p, identity):
+    _, inventory = behavior_data(root, p)
+    units = [unit for unit in inventory.get("units", []) if identity in {unit["id"], unit.get("requirement")}]
+    rules = p.get("artifact_rules", {})
+    change = None
+    try:
+        directory, metadata = change_at(root, p, identity)
+        impact = behavior_impact(root, p, metadata["scope"])
+        units = [unit for unit in inventory.get("units", []) if unit["id"] in impact["units"] or unit.get("requirement") in metadata.get("requirements", [])]
+        verification = read_json(directory / "verification.json", {})
+        proposal = (directory / "proposal.md").read_text(encoding="utf-8") if (directory / "proposal.md").is_file() else ""
+        change = {"metadata": metadata, "path": directory.relative_to(root).as_posix(), "impact": impact,
+                  "target_specs": sorted(path.relative_to(root).as_posix() for path in directory.glob("specs/**/*.md")),
+                  "adr": proposal_field(proposal, "ADR"), "verification": verification,
+                  "verification_current": bool(verification) and verification.get("fingerprint") == fingerprint(root, p, identity)}
+    except KitError:
+        pass
+    return {"status": "PASS" if units or identity in rules or change else "PENDING", "query": identity, "change": change,
+            "units": [{"id": unit["id"], "requirement": unit.get("requirement"), "spec_path": unit.get("spec_path"),
+                       "evidence": unit.get("evidence", []), "tests": unit.get("tests", []),
+                       "depends_on": unit.get("depends_on", []), "disposition": unit["disposition"],
+                       "confidence": unit["confidence"], "contract_facts": unit.get("contract_facts", [])} for unit in units],
+            "rule": rules.get(identity), "rule_currency": rule_status(root, p),
+            "behavior_currency": behavior_status(root, p), "external_currency": external_status(root, p),
+            "meaning": "Read-only navigation of recorded evidence and gaps; PASS means a matching record exists, not semantic approval."}
+
+
 def project_obligations(root, p, directory, metadata, phase, paths, deltas):
     """Combine actual scoped paths with the project's recorded semantic risk assessment."""
-    findings = []
+    findings = rule_status(root, p)["findings"] + external_status(root, p)["findings"]
     proposal = directory / "proposal.md"
     text = proposal.read_text(encoding="utf-8") if proposal.is_file() else ""
     kind = metadata["kind"]
@@ -2880,16 +3342,55 @@ def record_sync(root, p, change, artifact, reviewer, method="reviewed"):
     return {"status": "PASS", "change": change, "record": str((directory / "spec-sync.json").relative_to(root))}
 
 
-def run_check(root, check, run_dir):
+def execution_cases(path, kind, run_id):
+    if not path.is_file() or path.stat().st_size > 16 * 1024 * 1024:
+        raise KitError("This run did not produce a bounded test report")
+    if kind == "junit":
+        tree = ET.fromstring(path.read_bytes())
+        cases = [{"id": (node.get("classname", "") + "::" + node.get("name", "")).strip(":"),
+                  "status": "FAIL" if node.find("failure") is not None or node.find("error") is not None
+                  else "NOT_RUN" if node.find("skipped") is not None else "PASS"}
+                 for node in tree.iter("testcase")]
+    elif kind == "ark-json":
+        data = read_json(path)
+        if data.get("schema_version") != 1 or data.get("run_id") != run_id:
+            raise KitError("Test report must identify this exact ARK_RUN_ID")
+        cases = data.get("cases")
+    else:
+        raise KitError("Test report format must be junit or ark-json")
+    if not isinstance(cases, list):
+        raise KitError("Test report needs a cases array")
+    identities = set()
+    for case in cases:
+        if (not isinstance(case, dict) or not isinstance(case.get("id"), str) or not case["id"]
+                or case["id"] in identities or case.get("status") not in {"PASS", "FAIL", "NOT_RUN"}):
+            raise KitError("Test report case identities must be unique with PASS/FAIL/NOT_RUN states")
+        identities.add(case["id"])
+    return cases
+
+
+def run_check(root, check, run_dir, observations=None, test_paths=None):
     result = {"name": check["name"], "type": check.get("type", "command"), "required": check.get("required", True), "started_at": now()}
     argv = [sys.executable if part == "{python}" else part for part in check["argv"]]
     cwd = root if check.get("cwd", ".") == "." else safe(root, check["cwd"])
     result.update(argv=argv, cwd=str(cwd))
     log = run_dir / (check["name"] + ".log")
     started = time.monotonic()
+    report_config = check.get("case_report")
+    report_path = run_dir / (check["name"] + ".cases." + ("xml" if report_config and report_config.get("format") == "junit" else "json"))
+    preexisting_report = report_path.exists()
+    run_id = run_dir.name
+    executed_argv = [part.replace("{case_report}", str(report_path)).replace("{run_dir}", str(run_dir)) for part in argv]
+    report_kind = report_config.get("format") if report_config else None
+    supported_python = (bool(re.fullmatch(r"python(?:\d+(?:\.\d+)?)?(?:\.exe)?", Path(argv[0]).name.lower()))
+                        and len(argv) > 1 and (argv[1] in {"-c", "-m"} and len(argv) > 2 or not argv[1].startswith("-")))
+    if observations is not None and not report_config and supported_python:
+        executed_argv = [argv[0], str(ASSETS / "execution_probe.py"), str(report_path), str(root), dump(argv[1:]), dump(test_paths or ["tests", "src/test"])]
+        report_kind = "ark-json"
+    result["executed_argv"] = executed_argv
     try:
         with log.open("wb") as stream:
-            completed = subprocess.run(argv, cwd=cwd, stdout=stream, stderr=subprocess.STDOUT, timeout=check.get("timeout", 300), check=False, env={**os.environ, "ARK_VERIFY_ACTIVE": "1", "PYTHONPYCACHEPREFIX": str(run_dir / "bytecode")})
+            completed = subprocess.run(executed_argv, cwd=cwd, stdout=stream, stderr=subprocess.STDOUT, timeout=check.get("timeout", 300), check=False, env={**os.environ, "ARK_VERIFY_ACTIVE": "1", "ARK_RUN_ID": run_id, "ARK_CASE_REPORT": str(report_path), "PYTHONPYCACHEPREFIX": str(run_dir / "bytecode")})
         result.update(status="PASS" if completed.returncode == 0 else "FAIL", exit_code=completed.returncode)
         if completed.returncode < 0:
             try: result["termination"] = signal.Signals(-completed.returncode).name
@@ -2900,6 +3401,29 @@ def run_check(root, check, run_dir):
         result.update(status="FAIL", reason="timeout")
     except OSError as exc:
         result.update(status="NOT_RUN", reason=str(exc))
+    result["command_status"] = result["status"]
+    if observations is not None or report_config:
+        try:
+            if preexisting_report:
+                raise KitError("Refusing a test report path that existed before this invocation")
+            cases = execution_cases(report_path, report_kind, run_id)
+            by_id = {case["id"]: case["status"] for case in cases}
+            required = set((report_config or {}).get("required_cases", [])) | set((observations or {}).get("cases", []))
+            missing = sorted(identity for identity in required if by_id.get(identity) != "PASS")
+            fixtures = (observations or {}).get("fixtures", [])
+            unobserved = [path for path in fixtures if not any(case["id"].startswith(path + ":L") and case["status"] == "PASS" for case in cases)] if not report_config else []
+            failed = any(case["status"] == "FAIL" for case in cases)
+            passed = sum(case["status"] == "PASS" for case in cases)
+            state = "FAIL" if failed else "PENDING" if missing or unobserved or not passed else "PASS"
+            result["case_execution"] = {"status": state, "cases": cases, "required": sorted(required), "missing": missing,
+                                        "unobserved_fixtures": unobserved, "executed": sum(case["status"] != "NOT_RUN" for case in cases),
+                                        "report": report_path.relative_to(root).as_posix(), "sha256": digest(report_path.read_bytes()),
+                                        "meaning": "Observed case/assertion execution; semantic adequacy is reviewed separately."}
+            result["status"] = overall([{ "status": result["status"]}, {"status": state}], [])
+        except (KitError, ET.ParseError, ValueError, TypeError) as exc:
+            result["case_execution"] = {"status": "PENDING", "executed": 0, "reason": str(exc)}
+            if result["status"] == "PASS":
+                result.update(status="PENDING", reason="Command passed, but required behavior case execution is unproven: " + str(exc))
     result.update(duration_seconds=round(time.monotonic() - started, 3), finished_at=now(), log=log.relative_to(root).as_posix(),
                   log_sha256=digest(log.read_bytes()) if log.is_file() else None,
                   environment={"platform": sys.platform, "python": sys.version.split()[0]})
@@ -2943,6 +3467,7 @@ def verify(root, p, phase="structure", change=None, base=None, selected=None, pe
             raise KitError("Unknown --check selection")
         external = read_json(change_at(root, p, change)[0] / "evidence.json", {"checks": {}})
         before_names = set(behavior_signature(root, p, change)["before_checks"]) if phase == "ready" else None
+        planned_cases = behavior_plan(root, p, change)["cases"]
         for check in p["checks"]:
             if phase not in check.get("phases", ["ready", "delivery"]):
                 continue
@@ -2951,7 +3476,11 @@ def verify(root, p, phase="structure", change=None, base=None, selected=None, pe
             if selected and check["name"] not in selected:
                 checks.append({"name": check["name"], "required": check.get("required", True), "status": "NOT_RUN", "reason": "Not selected; partial execution cannot satisfy required delivery checks."})
             elif check.get("type", "command") == "command":
-                checks.append(run_check(root, check, run_dir))
+                relevant = [case for case in planned_cases if check["name"] in
+                            (case["checks"] if phase == "delivery" or case["effect"] == "preserve" else case.get("before_checks", []))]
+                observations = {"cases": sorted({identity for case in relevant for identity in case.get("observations", {}).get(check["name"], [])}),
+                                "fixtures": sorted({path for case in relevant if phase == "ready" or case["effect"] == "preserve" for path in case.get("fixtures", [])})} if relevant else None
+                checks.append(run_check(root, check, run_dir, observations, p["test_paths"]))
             else:
                 evidence = external.get("checks", {}).get(check["name"], {})
                 valid = evidence.get("fingerprint") == start_fingerprint and artifact_valid(root, evidence)
@@ -3165,7 +3694,7 @@ def context(root, p, session="default"):
         resume = (directory / "checkpoint.md").relative_to(root).as_posix()
     return {"project": str(root), "mode": p["mode"], "active_change": change, "declared_change": declared,
             "selection": selection, "affected_knowledge": knowledge_navigation(root, p, selection["changed_files"]),
-            "behavior_impact": behavior_impact(root, p, selection["changed_files"]),
+            "behavior_impact": behavior_impact(root, p, selection["changed_files"], scan_sources=False),
             "routing": {"facts": p["paths"]["baseline"], "behavior": p["paths"]["specs"], "decisions": p["paths"]["adr"], "work": p["paths"]["changes"]},
             "workflow": "Use OpenSpec, another development tool or direct conversation. Read relevant rules/evidence; run local checks before claiming delivery. No daily toolkit Skill or activation is required.",
             "resume": f"Read {resume} and actual diff." if resume else "Inspect candidate work and actual diff; overlapping scope stays ambiguous. No task is guessed from modification time.",
@@ -3449,9 +3978,36 @@ def parser():
     ctx.add_argument("--session", default="default")
     affected = sub.add_parser("impact")
     affected.add_argument("--base")
+    explanation = sub.add_parser("explain")
+    explanation.add_argument("identity")
+    rules = sub.add_parser("rules").add_subparsers(dest="operation", required=True)
+    rules.add_parser("status")
+    rules.add_parser("record").add_argument("--reviewer", required=True)
+    external = sub.add_parser("external").add_subparsers(dest="operation", required=True)
+    external.add_parser("status")
+    external_record_parser = external.add_parser("record")
+    external_record_parser.add_argument("--document", required=True)
+    external_record_parser.add_argument("--reviewer", required=True)
     sub.add_parser("install-git-hook")
     baseline = sub.add_parser("baseline").add_subparsers(dest="operation", required=True)
     baseline.add_parser("inventory")
+    baseline.add_parser("discover")
+    baseline.add_parser("next")
+    baseline.add_parser("discovery-status")
+    readback = baseline.add_parser("readback-open")
+    readback.add_argument("--id", required=True)
+    readback.add_argument("--document", required=True)
+    readback.add_argument("--reviewer", required=True)
+    readback.add_argument("--mode", choices=["same-agent-separate-pass", "separate-context-attested"], default="same-agent-separate-pass")
+    for operation in ("readback-predict", "readback-judge"):
+        readback = baseline.add_parser(operation)
+        readback.add_argument("--id", required=True)
+        readback.add_argument("--document", required=True)
+        readback.add_argument("--reviewer", required=True)
+    baseline.add_parser("readback-status").add_argument("--id")
+    discover = baseline.add_parser("discovery-record")
+    discover.add_argument("--document", required=True)
+    discover.add_argument("--reviewer", required=True)
     review = baseline.add_parser("review")
     review.add_argument("--document", required=True)
     review.add_argument("--files", nargs="+", required=True)
@@ -3608,6 +4164,14 @@ def main(argv=None):
                 result = context(root, p, args.session)
             elif args.command == "impact":
                 result = impact(root, p, args.base)
+            elif args.command == "explain":
+                result = explain(root, p, args.identity)
+            elif args.command == "rules":
+                with lock(root):
+                    result = rule_record(root, p, args.reviewer) if args.operation == "record" else rule_status(root, p)
+            elif args.command == "external":
+                with lock(root):
+                    result = external_record(root, p, args.document, args.reviewer) if args.operation == "record" else external_status(root, p)
             elif args.command == "install-git-hook":
                 result = install_git_hook(root, p)
             elif args.command == "verify":
@@ -3630,6 +4194,20 @@ def main(argv=None):
                 with lock(root):
                     if args.operation == "inventory":
                         result = baseline_inventory(root, p)
+                    elif args.operation == "discover":
+                        result = discovery_scan(root, p)
+                    elif args.operation == "next":
+                        result = baseline_next(root, p)
+                    elif args.operation == "readback-open":
+                        result = readback_open(root, p, args.id, args.document, args.reviewer, args.mode)
+                    elif args.operation in {"readback-predict", "readback-judge"}:
+                        result = readback_record(root, p, args.id, args.document, args.reviewer, args.operation == "readback-judge")
+                    elif args.operation == "readback-status":
+                        result = readback_status(root, p, args.id)
+                    elif args.operation == "discovery-status":
+                        result = discovery_status(root, p)
+                    elif args.operation == "discovery-record":
+                        result = discovery_record(root, p, args.document, args.reviewer)
                     elif args.operation == "review":
                         result = baseline_review(root, p, args.document, args.files, args.reviewer)
                     elif args.operation == "register":

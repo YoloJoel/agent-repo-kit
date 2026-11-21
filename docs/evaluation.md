@@ -1,5 +1,34 @@
 # 质量评测协议
 
+rc.3 的当前实现/资格见 [quality-status.md](quality-status.md)。以下记录协议与边界，不预填真实模型分数。
+
+运行 `python hack/ai/assets/quality_trial.py <manifest.json> --output <report.json>` 校验成对实测记录。
+仓内开发也可直接运行 `src/agent_repo_kit/assets/quality_trial.py`。输入均相对 manifest 所在目录，
+`inputs` 保存每个原始文件的 SHA256；判定不能仅提交汇总分数。
+
+| manifest 字段 | 内容 |
+| --- | --- |
+| schema_version / source_revision | 1 / 冻结源码版本，另在 inputs 保存实际源码快照摘要与任务材料 |
+| protocol / reference | 预先冻结的 JSON 协议与独立事实参照路径；协议保存相同 source_revision、dataset、release_gate |
+| dataset | split 为 development 或 holdout；case_ids 是独立建立的完整分母 |
+| inputs | 所有输入、Spec、预测、裁定、原始执行日志的文件路径→SHA256 |
+| runs | 每个 method(manual/kit)、stage(initial/source-audit/recheck)、repeat 的原始记录 |
+| runs.settings | model、model_version、host、tool_permissions、context_budget、generation_budget；同一对必须相同 |
+| runs 的产物 | spec、execution_log、predictions、judgments 路径；review_mode 明确 same-agent-separate-pass 或 separate-context-attested |
+| predictions | answers，每个 id 有 status 和 expected；无法推导时记录 ambiguous，而不是猜测 |
+| judgments | predictions_sha256 和 rows；每个 id 的 result、reason、evidence、observed；result 为 entailed/contradicted/ambiguous/unasked/source-unknown |
+| runs.cost | wall_seconds、input_tokens、output_tokens、manual_minutes、reminders、repair_rounds、false_blocks；缺失不能填 0 冒充测得 |
+| release_gate | 预先确定 minimum_entailed_ratio 和 minimum_repeats；关键项零缺口；不能读完结果后改门槛 |
+
+输出分开显示 accounting status、各阶段分母/结果/成本、每组成对差值和 product_quality。
+开发集、补审成绩、缺初稿、混模型预算、缺分母或缺成本不能冒充初稿留出集资格。
+评测器核对所提供记录的一致性；不能验证日志来源真实性、阅读上下文隔离或裁定者的语义判断。
+产品发布还必须满足真实连续变更、关键反例及宿主/运行环境的验收，不能由该文件的 PASS 单独批准。
+
+模块 M 的下一次对比应冻结相同 R1–R8 范围、同一人工 baseline 与 Kit 初稿，并由不看作者标签的
+读者回答同一组独立问题。报告分别列事实错误、遗漏、不可推导、矛盾、外部待验和成本；
+上述真实材料尚未在当前修复输入中提供，公开夹具不得替代这项结果。
+
 评测同时看生成产物与后续修改结果，禁止把文件数、格式 PASS、测试 ID 数和审计次数当成语义分数。
 
 | 评测层 | 输入和观察 | 输出 |

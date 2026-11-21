@@ -1,0 +1,500 @@
+{
+  "kit_version": "0.4.0-rc.3",
+  "meaning": "Actual bounded native probes, not model semantic quality, project coverage or production compatibility",
+  "platform": "linux",
+  "results": [
+    {
+      "compiler": "/usr/bin/cc",
+      "meaning": "Observed boundary regression detection only; not exhaustive stack/project qualification",
+      "runs": [
+        {
+          "build": {
+            "argv": [
+              "/usr/bin/cc",
+              "probe.c",
+              "-o",
+              "probe"
+            ],
+            "command_status": "PASS",
+            "cwd": "/tmp/ark-behavior-probe-321lg5uq",
+            "duration_seconds": 0.115,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "executed_argv": [
+              "/usr/bin/cc",
+              "probe.c",
+              "-o",
+              "probe"
+            ],
+            "exit_code": 0,
+            "finished_at": "2026-11-21T03:17:05+00:00",
+            "log": "/tmp/ark-quality-behavior-release/C/original/build.log",
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "name": "build",
+            "required": true,
+            "started_at": "2026-11-21T03:17:05+00:00",
+            "status": "PASS",
+            "type": "command"
+          },
+          "phase": "original",
+          "source_sha256": "b4ef8510c6c37d911f10482b402c1a7f7277ac1b51d3e1c82d11ab0828ca6401",
+          "test": {
+            "argv": [
+              "/tmp/ark-behavior-probe-321lg5uq/probe"
+            ],
+            "command_status": "PASS",
+            "cwd": "/tmp/ark-behavior-probe-321lg5uq",
+            "duration_seconds": 0.002,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "executed_argv": [
+              "/tmp/ark-behavior-probe-321lg5uq/probe"
+            ],
+            "exit_code": 0,
+            "finished_at": "2026-11-21T03:17:05+00:00",
+            "log": "/tmp/ark-quality-behavior-release/C/original/behavior.log",
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "name": "behavior",
+            "required": true,
+            "started_at": "2026-11-21T03:17:05+00:00",
+            "status": "PASS",
+            "type": "command"
+          }
+        },
+        {
+          "build": {
+            "argv": [
+              "/usr/bin/cc",
+              "probe.c",
+              "-o",
+              "probe"
+            ],
+            "command_status": "PASS",
+            "cwd": "/tmp/ark-behavior-probe-321lg5uq",
+            "duration_seconds": 0.065,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "executed_argv": [
+              "/usr/bin/cc",
+              "probe.c",
+              "-o",
+              "probe"
+            ],
+            "exit_code": 0,
+            "finished_at": "2026-11-21T03:17:05+00:00",
+            "log": "/tmp/ark-quality-behavior-release/C/mutation/build.log",
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "name": "build",
+            "required": true,
+            "started_at": "2026-11-21T03:17:05+00:00",
+            "status": "PASS",
+            "type": "command"
+          },
+          "phase": "mutation",
+          "source_sha256": "a6ebe3f49ee2a79913cad83a07c2c381e72e2228da12272ec19864e22aa48c7f",
+          "test": {
+            "argv": [
+              "/tmp/ark-behavior-probe-321lg5uq/probe"
+            ],
+            "command_status": "FAIL",
+            "cwd": "/tmp/ark-behavior-probe-321lg5uq",
+            "duration_seconds": 0.002,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "executed_argv": [
+              "/tmp/ark-behavior-probe-321lg5uq/probe"
+            ],
+            "exit_code": -6,
+            "finished_at": "2026-11-21T03:17:05+00:00",
+            "log": "/tmp/ark-quality-behavior-release/C/mutation/behavior.log",
+            "log_sha256": "4fe09b6e3f6854daf7084fbbfc681fd7a23e8298ef07dd84e04122b9e014f749",
+            "name": "behavior",
+            "required": true,
+            "started_at": "2026-11-21T03:17:05+00:00",
+            "status": "FAIL",
+            "termination": "SIGABRT",
+            "type": "command"
+          }
+        },
+        {
+          "build": {
+            "argv": [
+              "/usr/bin/cc",
+              "probe.c",
+              "-o",
+              "probe"
+            ],
+            "command_status": "PASS",
+            "cwd": "/tmp/ark-behavior-probe-321lg5uq",
+            "duration_seconds": 0.064,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "executed_argv": [
+              "/usr/bin/cc",
+              "probe.c",
+              "-o",
+              "probe"
+            ],
+            "exit_code": 0,
+            "finished_at": "2026-11-21T03:17:05+00:00",
+            "log": "/tmp/ark-quality-behavior-release/C/restored/build.log",
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "name": "build",
+            "required": true,
+            "started_at": "2026-11-21T03:17:05+00:00",
+            "status": "PASS",
+            "type": "command"
+          },
+          "phase": "restored",
+          "source_sha256": "b4ef8510c6c37d911f10482b402c1a7f7277ac1b51d3e1c82d11ab0828ca6401",
+          "test": {
+            "argv": [
+              "/tmp/ark-behavior-probe-321lg5uq/probe"
+            ],
+            "command_status": "PASS",
+            "cwd": "/tmp/ark-behavior-probe-321lg5uq",
+            "duration_seconds": 0.002,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "executed_argv": [
+              "/tmp/ark-behavior-probe-321lg5uq/probe"
+            ],
+            "exit_code": 0,
+            "finished_at": "2026-11-21T03:17:05+00:00",
+            "log": "/tmp/ark-quality-behavior-release/C/restored/behavior.log",
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "name": "behavior",
+            "required": true,
+            "started_at": "2026-11-21T03:17:05+00:00",
+            "status": "PASS",
+            "type": "command"
+          }
+        }
+      ],
+      "stack": "C",
+      "status": "PASS",
+      "version": [
+        "cc (Debian 14.2.0-19) 14.2.0"
+      ]
+    },
+    {
+      "compiler": "/usr/bin/c++",
+      "meaning": "Observed boundary regression detection only; not exhaustive stack/project qualification",
+      "runs": [
+        {
+          "build": {
+            "argv": [
+              "/usr/bin/c++",
+              "probe.cpp",
+              "-o",
+              "probe"
+            ],
+            "command_status": "PASS",
+            "cwd": "/tmp/ark-behavior-probe-louj7la1",
+            "duration_seconds": 0.516,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "executed_argv": [
+              "/usr/bin/c++",
+              "probe.cpp",
+              "-o",
+              "probe"
+            ],
+            "exit_code": 0,
+            "finished_at": "2026-11-21T03:17:06+00:00",
+            "log": "/tmp/ark-quality-behavior-release/Cpp/original/build.log",
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "name": "build",
+            "required": true,
+            "started_at": "2026-11-21T03:17:05+00:00",
+            "status": "PASS",
+            "type": "command"
+          },
+          "phase": "original",
+          "source_sha256": "2892ce07ffefab5e8f551bd5de14084cca9a688c5c04e40b9a2726c7cf00ae2f",
+          "test": {
+            "argv": [
+              "/tmp/ark-behavior-probe-louj7la1/probe"
+            ],
+            "command_status": "PASS",
+            "cwd": "/tmp/ark-behavior-probe-louj7la1",
+            "duration_seconds": 0.004,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "executed_argv": [
+              "/tmp/ark-behavior-probe-louj7la1/probe"
+            ],
+            "exit_code": 0,
+            "finished_at": "2026-11-21T03:17:06+00:00",
+            "log": "/tmp/ark-quality-behavior-release/Cpp/original/behavior.log",
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "name": "behavior",
+            "required": true,
+            "started_at": "2026-11-21T03:17:06+00:00",
+            "status": "PASS",
+            "type": "command"
+          }
+        },
+        {
+          "build": {
+            "argv": [
+              "/usr/bin/c++",
+              "probe.cpp",
+              "-o",
+              "probe"
+            ],
+            "command_status": "PASS",
+            "cwd": "/tmp/ark-behavior-probe-louj7la1",
+            "duration_seconds": 0.315,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "executed_argv": [
+              "/usr/bin/c++",
+              "probe.cpp",
+              "-o",
+              "probe"
+            ],
+            "exit_code": 0,
+            "finished_at": "2026-11-21T03:17:06+00:00",
+            "log": "/tmp/ark-quality-behavior-release/Cpp/mutation/build.log",
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "name": "build",
+            "required": true,
+            "started_at": "2026-11-21T03:17:06+00:00",
+            "status": "PASS",
+            "type": "command"
+          },
+          "phase": "mutation",
+          "source_sha256": "2ab2b785158f6c695beb8367225b4357db56fc7345a1f105a30ddfb56972879c",
+          "test": {
+            "argv": [
+              "/tmp/ark-behavior-probe-louj7la1/probe"
+            ],
+            "command_status": "FAIL",
+            "cwd": "/tmp/ark-behavior-probe-louj7la1",
+            "duration_seconds": 0.004,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "executed_argv": [
+              "/tmp/ark-behavior-probe-louj7la1/probe"
+            ],
+            "exit_code": -6,
+            "finished_at": "2026-11-21T03:17:06+00:00",
+            "log": "/tmp/ark-quality-behavior-release/Cpp/mutation/behavior.log",
+            "log_sha256": "704fed8089207c5abea9295e03bd5d1a544131ea7245770b6c3183a0d0d4c31b",
+            "name": "behavior",
+            "required": true,
+            "started_at": "2026-11-21T03:17:06+00:00",
+            "status": "FAIL",
+            "termination": "SIGABRT",
+            "type": "command"
+          }
+        },
+        {
+          "build": {
+            "argv": [
+              "/usr/bin/c++",
+              "probe.cpp",
+              "-o",
+              "probe"
+            ],
+            "command_status": "PASS",
+            "cwd": "/tmp/ark-behavior-probe-louj7la1",
+            "duration_seconds": 0.315,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "executed_argv": [
+              "/usr/bin/c++",
+              "probe.cpp",
+              "-o",
+              "probe"
+            ],
+            "exit_code": 0,
+            "finished_at": "2026-11-21T03:17:06+00:00",
+            "log": "/tmp/ark-quality-behavior-release/Cpp/restored/build.log",
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "name": "build",
+            "required": true,
+            "started_at": "2026-11-21T03:17:06+00:00",
+            "status": "PASS",
+            "type": "command"
+          },
+          "phase": "restored",
+          "source_sha256": "2892ce07ffefab5e8f551bd5de14084cca9a688c5c04e40b9a2726c7cf00ae2f",
+          "test": {
+            "argv": [
+              "/tmp/ark-behavior-probe-louj7la1/probe"
+            ],
+            "command_status": "PASS",
+            "cwd": "/tmp/ark-behavior-probe-louj7la1",
+            "duration_seconds": 0.004,
+            "environment": {
+              "platform": "linux",
+              "python": "3.12.14"
+            },
+            "executed_argv": [
+              "/tmp/ark-behavior-probe-louj7la1/probe"
+            ],
+            "exit_code": 0,
+            "finished_at": "2026-11-21T03:17:06+00:00",
+            "log": "/tmp/ark-quality-behavior-release/Cpp/restored/behavior.log",
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "name": "behavior",
+            "required": true,
+            "started_at": "2026-11-21T03:17:06+00:00",
+            "status": "PASS",
+            "type": "command"
+          }
+        }
+      ],
+      "stack": "C++",
+      "status": "PASS",
+      "version": [
+        "c++ (Debian 14.2.0-19) 14.2.0"
+      ]
+    },
+    {
+      "reason": "javac/runtime unavailable; no packages installed",
+      "stack": "Java",
+      "status": "NOT_RUN"
+    },
+    {
+      "meaning": "Six actual cross-module relay tests; mutation changes offline acceptance semantics",
+      "runs": [
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-v"
+          ],
+          "command_status": "PASS",
+          "cwd": "/tmp/ark-relay-probe-gbqblwco/relay",
+          "duration_seconds": 0.315,
+          "environment": {
+            "platform": "linux",
+            "python": "3.12.14"
+          },
+          "executed_argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-v"
+          ],
+          "exit_code": 0,
+          "finished_at": "2026-11-21T03:17:07+00:00",
+          "log": "/tmp/ark-quality-behavior-release/python/original.log",
+          "log_sha256": "e08ecded4aef6ce0f779e71ce2e6301f49579aa0eac07bbd78611302f374cf24",
+          "name": "original",
+          "required": true,
+          "started_at": "2026-11-21T03:17:06+00:00",
+          "status": "PASS",
+          "type": "command"
+        },
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-v"
+          ],
+          "command_status": "FAIL",
+          "cwd": "/tmp/ark-relay-probe-gbqblwco/relay",
+          "duration_seconds": 0.064,
+          "environment": {
+            "platform": "linux",
+            "python": "3.12.14"
+          },
+          "executed_argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-v"
+          ],
+          "exit_code": 1,
+          "finished_at": "2026-11-21T03:17:07+00:00",
+          "log": "/tmp/ark-quality-behavior-release/python/mutation.log",
+          "log_sha256": "71763a1ee2ceeba1b5f66732c44b1f731c6b1774fe661154f9a13104088ace9a",
+          "name": "mutation",
+          "required": true,
+          "started_at": "2026-11-21T03:17:07+00:00",
+          "status": "FAIL",
+          "type": "command"
+        },
+        {
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-v"
+          ],
+          "command_status": "PASS",
+          "cwd": "/tmp/ark-relay-probe-gbqblwco/relay",
+          "duration_seconds": 0.065,
+          "environment": {
+            "platform": "linux",
+            "python": "3.12.14"
+          },
+          "executed_argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-v"
+          ],
+          "exit_code": 0,
+          "finished_at": "2026-11-21T03:17:07+00:00",
+          "log": "/tmp/ark-quality-behavior-release/python/restored.log",
+          "log_sha256": "e08ecded4aef6ce0f779e71ce2e6301f49579aa0eac07bbd78611302f374cf24",
+          "name": "restored",
+          "required": true,
+          "started_at": "2026-11-21T03:17:07+00:00",
+          "status": "PASS",
+          "type": "command"
+        }
+      ],
+      "stack": "Python",
+      "status": "PASS"
+    }
+  ],
+  "status": "PENDING"
+}

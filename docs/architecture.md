@@ -1,5 +1,10 @@
 # Architecture
 
+Current candidate capability and qualification boundaries: [quality-status.md](quality-status.md).
+The rc.3 repair adds source-only discovery, frozen readback, execution-report adapters and
+read-only evidence projections; assertion execution and trial accounting live in standalone
+stdlib assets, while the portable command/runtime contract remains in core.py.
+
 The product is a native Claude plugin plus standard standalone Skill folders, with an
 optional Python developer distribution. Project initialization vendors the same runtime/
 resources into a consumer, so agent rules, direct CLI and CI share behavior.

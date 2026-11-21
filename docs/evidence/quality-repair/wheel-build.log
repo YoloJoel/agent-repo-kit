@@ -1,0 +1,12 @@
+Processing ./.
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: agent-repo-kit
+  Building wheel for agent-repo-kit (pyproject.toml): started
+  Building wheel for agent-repo-kit (pyproject.toml): finished with status 'done'
+  Created wheel for agent-repo-kit: filename=agent_repo_kit-0.4.0rc3-py3-none-any.whl size=153291 sha256=1d92b42a24ef31a285b88b18e9d79e72cf4eb08c63dc2b124c1a78fc1ec10733
+  Stored in directory: /tmp/pip-ephem-wheel-cache-fqgpsmfv/wheels/59/56/e7/2caff367232805ae67882b080bf47286ced0e98384dc4adc6b
+Successfully built agent-repo-kit
+
+[notice] A new release of pip is available: 26.2.2 -> 26.3
+[notice] To update, run: pip install --upgrade pip

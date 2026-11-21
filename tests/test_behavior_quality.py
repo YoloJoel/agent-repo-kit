@@ -29,6 +29,8 @@ class BehaviorQualityTests(RepositoryCase):
                 'normative_quote': 'The sender SHALL return false for absent input or failed publishing.',
                 'acceptance_cases': [{'status': 'compared', 'stimulus': 'send("offline")',
                                       'spec_quote': '- THEN return false', 'expected': False, 'source_outcome': False,
+                                      'premises': ['The sender SHALL return false for absent input or failed publishing.', '- THEN return false'],
+                                      'scenarios': [{k: v for k, v in scenario.items() if k != 'body'} for scenario in kit.spec_scenarios((self.root / 'openspec/specs/send/spec.md').read_text())],
                                       'source_reference': 'transport.py:L1-L2'}],
                 'evidence': evidence, 'depends_on': [],
                 'dimensions': {k: {'status': 'reviewed' if k in {'normal', 'negative', 'boundary'} else 'not-applicable',
@@ -85,7 +87,9 @@ class BehaviorQualityTests(RepositoryCase):
         spec.write_text(spec.read_text() + '#### Scenario: Success\n- WHEN a supplied value is published successfully\n'
                         '- THEN return true\n', encoding='utf-8')
         unit['acceptance_cases'].append({**unit['acceptance_cases'][0], 'stimulus': 'send("ok")',
-                                         'spec_quote': '- THEN return true', 'expected': True, 'source_outcome': True})
+                                         'spec_quote': '- THEN return true', 'expected': True, 'source_outcome': True,
+                                         'premises': ['- THEN return true'],
+                                         'scenarios': [{k: v for k, v in scenario.items() if k != 'body'} for scenario in kit.spec_scenarios(spec.read_text())]})
         self.record(p, data)
         self.assertEqual(kit.onboarding_status(self.root, p)['source_cases']['status'], 'PASS')
         # The two fields of a reader's comparison can agree with each other and still be wrong.

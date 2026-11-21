@@ -1,5 +1,8 @@
 # agent-repo-kit：七轮迭代与验收计划
 
+历史计划。当前修复阶段见 [八轮行为质量修复计划](iterations/quality-repair-program.md)，
+实际能力与待验范围以 [quality-status.md](quality-status.md) 为当前入口。下文保留当时版本和范围。
+
 版本：1.1｜日期：2026-11-13｜状态：按七轮执行；实际结果与未实测边界见 [最终验收](acceptance.md)。原计划范围保留下文。
 
 实施补充：业务仓不要求 GitHub 或任何 CI；本地校验是基础，CI/托管平台仅为可选增强。

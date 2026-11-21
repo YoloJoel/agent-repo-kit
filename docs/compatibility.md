@@ -1,6 +1,7 @@
 # Compatibility and deployment status
 
-Current product: 0.3.2. Consolidated pretest qualification is documented in docs/repairs/pretest-readiness-0.3.2.md.
+Current candidate: 0.4.0-rc.3. Current capability/evidence status is maintained in [quality-status.md](quality-status.md).
+Marketplace remains pinned to rc.2 until a separately qualified release is selected. Historical 0.3.2 pretest qualification is documented in docs/repairs/pretest-readiness-0.3.2.md.
 Source-fact workflow qualification remains documented in docs/repairs/source-facts-0.3.1.md.
 Behavior evidence and evaluation changes remain documented in docs/iterations/IT-08.md and docs/evaluation.md.
 0.2.6 configuration/content/final-state changes remain documented in docs/repairs/onboarding-completeness-0.2.6.md.
