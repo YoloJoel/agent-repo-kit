@@ -4,6 +4,7 @@ Requires Node/npm/network for the native CLI, Git and Python 3.11+. No model/API
 The journal is a scoped demonstration, not a production WAL or multi-writer guarantee.
 """
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -36,7 +37,8 @@ def qualify(root):
         return run(["npx", "--yes", "@fission-ai/openspec@2.0.0", *args])
     def require(report, status="PASS"):
         assert report["status"] == status, report
-        return {"status": report["status"], "run_id": report.get("run_id"), "checks": [{"name": x["name"], "status": x["status"]} for x in report.get("checks", [])]}
+        return {"status": report["status"], "run_id": report.get("run_id"), "checks": [{"name": x["name"], "status": x["status"]} for x in report.get("checks", [])],
+                "case_execution": {x["name"]: x["case_execution"] for x in report.get("checks", []) if "case_execution" in x}}
     def work(name, description, capability, block):
         native("new", "change", name, "--json")
         instructions = native("instructions", "proposal", "--change", name, "--json")
@@ -128,6 +130,8 @@ def main():
     if any(root.iterdir()):
         raise SystemExit("Qualification workspace must be empty")
     report = qualify(root)
+    report["kit_version"] = kit.VERSION
+    report["core_sha256"] = hashlib.sha256((ROOT / "src/agent_repo_kit/core.py").read_bytes()).hexdigest()
     report["privacy"] = {"fixture": "public synthetic event journal", "workspace_initially_empty": True,
                          "telemetry": "disabled", "version_check": "disabled",
                          "package_resolution": "offline-cache" if os.environ.get("npm_config_offline") == "true" else "npm-cache-or-registry"}

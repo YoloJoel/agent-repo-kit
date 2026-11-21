@@ -1,0 +1,88 @@
+{
+  "checks": [
+    {
+      "argv": [
+        "make",
+        "test"
+      ],
+      "exit_code": 0,
+      "log": "original-tests.log",
+      "log_sha256": "cdc244b0eb97b23603d148113761879992e7c45657869113f1be0689b7629712",
+      "name": "original-tests",
+      "status": "PASS"
+    },
+    {
+      "argv": [
+        "/tmp/ark-source-facts-b3m00saa/project/build/hub",
+        "dispatch",
+        "archive"
+      ],
+      "exit_code": 0,
+      "log": "unknown-command.log",
+      "log_sha256": "ee3aa64bb94a50845d5024cd4bd20202a4567aed5cd5328c0d97e9920775fc28",
+      "name": "unknown-command",
+      "status": "PASS"
+    },
+    {
+      "argv": [
+        "make",
+        "test"
+      ],
+      "exit_code": 0,
+      "log": "changed-rule-original-tests.log",
+      "log_sha256": "b3efe55a095cd0f02bd4f16466eaa6eda881cfe58add9c9e0b2f00d82f9bd4f3",
+      "name": "changed-rule-original-tests",
+      "status": "PASS"
+    },
+    {
+      "argv": [
+        "make",
+        "test"
+      ],
+      "exit_code": 0,
+      "log": "restored-original-tests.log",
+      "log_sha256": "b3efe55a095cd0f02bd4f16466eaa6eda881cfe58add9c9e0b2f00d82f9bd4f3",
+      "name": "restored-original-tests",
+      "status": "PASS"
+    }
+  ],
+  "meaning": "Bounded source observations and assertion counterexample; no private-repository or model-quality certification.",
+  "mismatches": {},
+  "observations": {
+    "both_rules_enabled_route": "global",
+    "emitted_token": 0,
+    "empty_report_fields": 0,
+    "filter_count_4": 0,
+    "filter_count_5": -2,
+    "identity": "hub.v2",
+    "received_arbitrary_token_value": 42,
+    "registered_resources": [
+      "stream",
+      "probe"
+    ],
+    "reports_after_next_event": 1,
+    "reports_after_timer_tick": 0,
+    "reports_at_boundary": 0,
+    "restored_original_tests_pass": true,
+    "termination_flushed": false,
+    "termination_returncode": -15,
+    "unknown_command_result": "-1",
+    "update_period_700": 700,
+    "validator_accepts_700": false,
+    "wrong_rule_still_passes_original_tests": true
+  },
+  "source_hashes": {
+    "Makefile": "79407234c150d0a721539b8866269f3ba4e6c8009d179ce18b81ab9cc94b6ebd",
+    "README.md": "5f1f6af73b02e2831732aa44448368c2fce6756c23cc7ee47c3955ddf4d79270",
+    "hub.c": "fca1a7e61e47b52eff97391a6f9c5aeb3f11d21ab73eac6b9027f6df11154bd8",
+    "hub.h": "c91220bd81440a84e88b83cf86d02bafd56a00c09295d038ace2311c5054f226",
+    "main.c": "773c08be88c4523f9c6725b01c6b22cf618061060983856e585c9622f3955905",
+    "tests/test_hub.py": "2347b3f6d5c11100409db973befb8d61279f3b9ab778afbba28eebe1cd5c0a0d"
+  },
+  "status": "PASS",
+  "toolchain": {
+    "cc": "/usr/bin/cc",
+    "make": "/usr/bin/make",
+    "python3": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3"
+  }
+}

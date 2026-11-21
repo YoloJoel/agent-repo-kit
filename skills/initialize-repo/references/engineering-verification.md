@@ -31,6 +31,22 @@ remove meaningful assertions or switch to manual merely to turn the result green
 method change must retain history, alternatives, unverified scope and actual review. Manual tests
 still need reproducible steps/expected output and actual execution evidence before verification.
 
+Behavior-linked commands must produce actual execution evidence. Python script/-m/-c commands
+can use the bundled assertion-line probe; uncalled assertions remain NOT_RUN. This probe reports
+lines reached, not test-framework cases or semantic adequacy. It does not trace subprocesses.
+For other runtimes or unsupported Python flags, configure `case_report` on the check:
+`{"format":"junit","required_cases":["Suite::case"]}` or `format: ark-json`.
+Write the report to `{case_report}` or ARK_CASE_REPORT; JSON requires schema_version 1, the
+current ARK_RUN_ID and cases with unique id/status (PASS/FAIL/NOT_RUN; represent skipped cases
+as NOT_RUN). JUnit IDs use
+classname::name (name alone if classname is absent). Reports must be written in this run's
+fresh path. The runner cannot detect a tool deliberately copying/fabricating an old report.
+Use behavior-plan `observations: {"check-name":["tests/file.py:L8"]}` (or native case IDs)
+to require precise observations. Legacy preserve fixtures require a passing assertion in each
+declared fixture; migrate critical behavior to exact IDs. Command PASS, skipped/missing required
+cases and behavior PASS are separate. Review the test's final consumer/state observation, and
+run a scoped correct→wrong→restored experiment for critical retained behavior.
+
 Do not require all historical defects/tests to be repaired for a knowledge-only onboarding.
 Report knowledge review, behavior evidence, build, selected tests, full-suite result and outstanding
 debt independently. For later development, execute original affected behavior before risky changes,

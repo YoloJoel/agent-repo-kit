@@ -10,7 +10,11 @@ and subsequent batches yourself; do not ask the user to choose ordering or appro
 continuation. Explicit user limits take priority. Checkpoints preserve progress while work
 continues; they do not shrink the completion scope or end the task after one slice.
 
-Read `references/source-facts.md` and `references/behavior-model.md` before drafting. Seed a
+Run `ark baseline next` after initialization or resuming. Work its next concrete stage; the
+remaining stages retain whole-scope obligations. Read `references/generation.md` when discovering
+or drafting, `references/readback.md` when checking Spec usability, and source-audit guidance
+when auditing. Do not load every reference at every step. Read the source facts and behavior
+model for the current slice before drafting. Seed a
 whole-scope checklist from executable entries, registrations, config consumers, data paths,
 background work and launch/build assembly. Complete each batch through a source fact table,
 current clauses, assertion review and source recheck; then continue the next pending batch.
@@ -22,7 +26,13 @@ Use the supplied initialize-repo helper if project rules/runtime are absent. Run
 1. Read applicable repository rules and path/section mappings. Reuse current manuals,
    contracts, decisions and tests as navigation; verify important claims against actual
    source/configuration/callers. Do not silently treat design targets as current facts.
-2. Run `ark baseline inventory`. Establish included modules, generated/vendor exclusions,
+2. Run `ark baseline inventory` and `ark baseline discover`. The second command derives candidates
+   directly from source and never uses the author's Spec/inventory as its discovery input. Keep
+   its limitations visible; Python syntax candidates and import edges are not a complete runtime
+   graph, and other languages currently need an explicit source review. Reconcile candidates
+   using `baseline discovery-record --document <review.json> --reviewer <identity>` after actual
+   inspection. An ignored candidate remains pending even if the author's declared cases are 1/1.
+   Establish included modules, generated/vendor exclusions,
    unavailable external sources and actual revision/workspace. Inventory is not understanding. Read `references/artifact-quality.md` before planning batches. Keep the whole repository
    inventory/capability map as the denominator unless the user explicitly limited scope.
    Derive a complete business/supporting capability map from actual production/build/config
@@ -62,7 +72,8 @@ Do not upgrade inferred behavior into SHALL/MUST or omit cross-module flows.
    with scenarios, stable Baseline contract links and actual verification gaps. Store source/test line locations in the supporting evidence. This is part of a
    bare baseline-repo invocation, not an optional user prompt. Preserve existing specs/IDs;
    record conflicts, defects and unknowns separately without endorsing or silently fixing them.
-   Before promotion, read the candidate Spec alone and write a concrete input and predicted
+   Before promotion, follow `references/readback.md`: open a frozen round, record predictions,
+   then adjudicate source/textual agreement. Read the candidate Spec alone and write a concrete input and predicted
    outcome for each current behavior unit. Compare the prediction against the reachable source
    for that same stimulus. Follow the acceptance_cases protocol in references/behavior-model.md.
    Also give the reader the recorded source-case stimuli and the current Specs. Withhold source

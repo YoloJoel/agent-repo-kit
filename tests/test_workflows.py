@@ -247,7 +247,7 @@ class BaselineTests(RepositoryCase):
         self.write("app.py", "def double(x):\n    return x * 2\n")
         p = self.initialize("existing")
         self.review_app(p)
-        self.configure(p, [{"name": "unit", "argv": ["{python}", "-c", "from app import double; assert double(3)==6 and double(-1)==-2"]}])
+        self.configure(p, [{"name": "unit", "argv": ["{python}", "-c", "exec(open('tests/preserve.py').read())"]}])
         self.change(p, scope=["app.py"])
         self.preserve_double(p)
         ready = kit.verify(self.root, p, "ready", "example")

@@ -2,7 +2,7 @@
 
 一次接入仓库工程规范。初始化和现状分析使用 Skill；日常开发自由使用 OpenSpec、其他 Skills 或直接对话。
 
-本分支为 **0.4.0-rc.2** 试用候选。该版本从既有 Spec 推导具体验收输入和预期，再用同一输入对照可达源码。见[可复现的公开样例和盲评方法](docs/iterations/spec-readback-pilot.md)。
+本分支为 **0.4.0-rc.3** 行为质量修复候选：增加独立源码候选、完整 Scenario 绑定、冻结回读和实际 case 执行证据。当前能力与待验范围统一见[质量状态](docs/quality-status.md)，八轮实施与结果见[修复计划](docs/iterations/quality-repair-program.md)。Marketplace 暂仍固定在 rc.2；工程通过不代表已达到人工 baseline 的生成质量。
 
 现状分析按行为批次先记录源码事实，再写条款、核对实际断言并重读源码。
 注册/命令字面量、实际校验边界、时序触发、策略优先级和最后生效的生命周期处理都要有决定性证据。

@@ -101,10 +101,13 @@ upgrading 0.2.x does not silently certify old inventory. Do not regenerate old s
    ```json
    {"acceptance_cases": [{"stimulus": "Submit a known key a whose stored value is 3.",
      "spec_quote": "- THEN the stored value is returned", "expected": 3,
+     "premises": ["The lookup SHALL return the value stored for an existing key.", "- THEN the stored value is returned"],
      "source_outcome": 3, "source_reference": "src/lookup.py:L8-L9", "status": "compared"}]}
    ```
 
-   Use a complete normative or outcome line from this requirement for `spec_quote`; the source
+   Also bind every covered complete Scenario with `scenarios: [{name, sha256}]` as described
+   in readback.md; compute the hash from the actual block, never invent a digest. Each premise
+   must occur in the same requirement. Use a complete normative or outcome line for `spec_quote`; the source
    reference must match a decisive branch/effect anchor in this unit. If the Spec leaves the
    outcome open use `status: spec-ambiguous`; if the source side is unavailable use
    `status: source-unknown`. Record what is missing with the stimulus and keep the case pending.

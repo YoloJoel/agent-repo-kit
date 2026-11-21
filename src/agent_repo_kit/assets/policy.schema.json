@@ -311,6 +311,28 @@
               "delivery"
             ]
           }
+        },
+        "case_report": {
+          "type": "object",
+          "required": [
+            "format"
+          ],
+          "properties": {
+            "format": {
+              "enum": [
+                "junit",
+                "ark-json"
+              ]
+            },
+            "required_cases": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
         }
       },
       "allOf": [

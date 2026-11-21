@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-repo-kit"
-version = "0.4.0-rc.2"
+version = "0.4.0-rc.3"
 description = "Reusable skills, templates, hooks, and checks for AI-driven software development"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -16,6 +16,10 @@ ark = "agent_repo_kit.core:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+namespaces = false
 
 [tool.setuptools.package-data]
 agent_repo_kit = ["assets/**/*"]
+
+[tool.setuptools.exclude-package-data]
+agent_repo_kit = ["**/__pycache__/*", "**/*.pyc", "**/*.pyo"]
