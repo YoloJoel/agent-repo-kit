@@ -8,9 +8,9 @@
       "source": {
         "source": "url",
         "url": "https://github.com/YoloJoel/agent-repo-kit.git",
-        "sha": "470f9a2afa6ae6a70700b038976a62ead112b0b9"
+        "sha": "e371805d732c623fd4050561cefe7a38b413b5bd"
       },
-      "version": "0.4.0-rc.2",
+      "version": "0.4.0-rc.3",
       "description": "Reusable repository initialization, source-grounded baseline and verified-delivery Skills."
     }
   ]

@@ -3,6 +3,13 @@
 起点：main ac7179f / 0.4.0-rc.2；候选：0.4.0-rc.3。依据：2026-11-21 的 36 项审计。
 完整计划见 quality-repair-program.md；本记录区分实现、自动验收与真实业务/模型实测，不能合并成“36 项全部关闭”。
 
+后续安装入口收尾：PR #27 的合并提交 `e371805d732c623fd4050561cefe7a38b413b5bd` 已通过 main CI，
+Claude Marketplace 随后同步到该固定 rc.3 候选，README 补充索引、插件缓存和业务仓 runtime 的分层升级步骤。
+以下“pin 未更新”描述的是本轮初始验收时的状态；候选分发完成不改变模块 M 和产品级验收仍待完成的结论。
+Claude Code 2.1.322 在隔离配置中完成 rc.3 新安装、安装后 initializer/runtime 核对，以及 rc.2 → rc.3 原生升级；
+源测试 250 项通过。CI 增加实际 Marketplace 安装及版本/提交/内核核对，避免 manifest 合法但仍分发旧版。
+具体证据见 [Claude Marketplace 资格记录](../evidence/quality-repair/claude-marketplace-qualification.json)，未执行真实模型会话。
+
 | 迭代 | 已实施 | 验收范围 |
 | --- | --- | --- |
 | Q1 | 完整 Scenario 绑定、决定前提、完整断言、共享契约别名/条件 | 场景新增/改动、含糊结果复用旧前提、普通调用、别名冲突均有回归 |

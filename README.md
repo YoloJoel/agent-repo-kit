@@ -2,7 +2,7 @@
 
 一次接入仓库工程规范。初始化和现状分析使用 Skill；日常开发自由使用 OpenSpec、其他 Skills 或直接对话。
 
-本分支为 **0.4.0-rc.3** 行为质量修复候选：增加独立源码候选、完整 Scenario 绑定、冻结回读和实际 case 执行证据。当前能力与待验范围统一见[质量状态](docs/quality-status.md)，八轮实施与结果见[修复计划](docs/iterations/quality-repair-program.md)。Marketplace 暂仍固定在 rc.2；工程通过不代表已达到人工 baseline 的生成质量。
+当前版本为 **0.4.0-rc.3** 行为质量修复候选：增加独立源码候选、完整 Scenario 绑定、冻结回读和实际 case 执行证据。当前能力与待验范围统一见[质量状态](docs/quality-status.md)，八轮实施与结果见[修复计划](docs/iterations/quality-repair-program.md)。Claude Marketplace 已固定到经工程验证的 rc.3 提交 `e371805`；候选可安装不代表已达到人工 baseline 的生成质量。
 
 现状分析按行为批次先记录源码事实，再写条款、核对实际断言并重读源码。
 注册/命令字面量、实际校验边界、时序触发、策略优先级和最后生效的生命周期处理都要有决定性证据。
@@ -20,6 +20,21 @@ Claude Code 原生 Plugin：
 /plugin install agent-repo-kit --marketplace YoloJoel/agent-repo-kit
 /agent-repo-kit:initialize-repo
 ```
+
+已安装旧版时，先在终端更新 Marketplace 索引，再更新已安装插件：
+
+```bash
+claude plugin marketplace update agent-repo-kit
+claude plugin update agent-repo-kit@agent-repo-kit
+claude plugin list --json
+```
+
+确认插件版本为 `0.4.0-rc.3`，再开启新会话或在当前会话运行 `/reload-plugins`。
+若旧版 Claude CLI 无法自动识别项目级安装，在 `plugin update` 后加上原安装范围
+`--scope project` 或 `--scope local`，不要切换安装范围或重复安装来覆盖已有设置。
+更新插件缓存不会自动更新业务仓内的 `hack/ai/ark.py` 和 assets；随后调用
+initialize-repo 明确要求升级已有接入，保留人工内容、Spec、ID 和历史。
+模块 M 验收时仅升级隔离业务副本，并核对 runtime 版本及内核哈希。
 
 其他运行器通过标准 Skills 安装，例如 Codex：
 
