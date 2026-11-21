@@ -1,0 +1,44 @@
+{
+  "recorded_at": "2026-11-21",
+  "claude_code": "2.1.322",
+  "configuration": "isolated CLAUDE_CONFIG_DIR; project-scoped marketplace and plugin; no model credentials required",
+  "fresh_install_and_vendored_runtime": {
+    "status": "PASS",
+    "version": "0.4.0-rc.3",
+    "commit": "e371805d732c623fd4050561cefe7a38b413b5bd",
+    "engine_sha256": "c65f49a25c11c779584af71a3e8749f13a19a1d96e9f56ebd980d73c8d3868ba",
+    "scope": "project",
+    "model_session": "NOT_RUN"
+  },
+  "upgrade": {
+    "status": "PASS",
+    "before": {
+      "version": "0.4.0-rc.2",
+      "gitCommitSha": "470f9a2afa6ae6a70700b038976a62ead112b0b9"
+    },
+    "after": {
+      "version": "0.4.0-rc.3",
+      "gitCommitSha": "e371805d732c623fd4050561cefe7a38b413b5bd"
+    },
+    "model_session": "NOT_RUN"
+  },
+  "commands": [
+    "claude plugin validate .claude-plugin/plugin.json --strict",
+    "claude plugin validate .claude-plugin/marketplace.json --strict",
+    "claude plugin marketplace add <local-marketplace-root> --scope project",
+    "claude plugin install agent-repo-kit@agent-repo-kit --scope project",
+    "claude plugin marketplace update agent-repo-kit",
+    "claude plugin update agent-repo-kit@agent-repo-kit"
+  ],
+  "upgrade_output": "Plugin \"agent-repo-kit\" updated from 0.4.0-rc.2 to 0.4.0-rc.3 for scope project. Restart to apply changes.",
+  "source_tests": {
+    "status": "PASS",
+    "count": 250
+  },
+  "native_generated_assets": "PASS",
+  "limits": [
+    "Marketplace listing was local; plugin content was fetched from the actual remote pinned commit.",
+    "Native plugin installation and installed initializer execution were tested; no authenticated model session or module M quality evaluation ran.",
+    "The standard manifest validation passed; optional plugin-directory submission advisories about license/icon were not resolved by this installation fix."
+  ]
+}
